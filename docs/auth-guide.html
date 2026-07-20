@@ -1,0 +1,644 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>How heycybercorp Auth Works — Next.js · Clerk · Convex</title>
+<style>
+  :root {
+    /* light (default) */
+    --bg: #eef2f0;
+    --surface: #ffffff;
+    --surface-2: #f4f7f5;
+    --border: #d7e2db;
+    --text: #10201a;
+    --text-dim: #556b61;
+    --accent: #00814a;   /* green  */
+    --accent-2: #0a7f97; /* teal   */
+    --amber: #9a6606;    /* token/temporary */
+    --ring: rgba(0,129,74,.35);
+    --shadow: 0 1px 2px rgba(16,32,26,.06), 0 8px 24px rgba(16,32,26,.06);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #080c0a;
+      --surface: #101915;
+      --surface-2: #16211c;
+      --border: #253530;
+      --text: #d8e3dc;
+      --text-dim: #8ea297;
+      --accent: #35c07a;
+      --accent-2: #3ac6dd;
+      --amber: #e2ab45;
+      --ring: rgba(53,192,122,.4);
+      --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #080c0a; --surface: #101915; --surface-2: #16211c; --border: #253530;
+    --text: #d8e3dc; --text-dim: #8ea297; --accent: #35c07a; --accent-2: #3ac6dd;
+    --amber: #e2ab45; --ring: rgba(53,192,122,.4);
+    --shadow: 0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+  }
+  :root[data-theme="light"] {
+    --bg: #eef2f0; --surface: #ffffff; --surface-2: #f4f7f5; --border: #d7e2db;
+    --text: #10201a; --text-dim: #556b61; --accent: #00814a; --accent-2: #0a7f97;
+    --amber: #9a6606; --ring: rgba(0,129,74,.35);
+    --shadow: 0 1px 2px rgba(16,32,26,.06), 0 8px 24px rgba(16,32,26,.06);
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16.5px;
+    line-height: 1.68;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .mono { font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", "SFMono-Regular", Consolas, monospace; }
+
+  /* ---------- layout ---------- */
+  .layout { max-width: 1060px; margin: 0 auto; padding: 0 24px 120px; display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; }
+  @media (max-width: 900px) { .layout { grid-template-columns: 1fr; gap: 0; padding-bottom: 80px; } }
+
+  nav.toc { align-self: start; }
+  @media (min-width: 901px) { nav.toc { position: sticky; top: 24px; } }
+  @media (max-width: 900px) { nav.toc { margin: 0 0 32px; } }
+  .toc-title { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--text-dim); margin: 0 0 12px; }
+  .toc ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 2px; counter-reset: toc; }
+  .toc a { display: flex; gap: 10px; align-items: baseline; text-decoration: none; color: var(--text-dim); font-size: 13.5px; padding: 6px 10px; border-radius: 7px; border-left: 2px solid transparent; }
+  .toc a:hover { color: var(--text); background: var(--surface-2); }
+  .toc a .n { font-family: ui-monospace, monospace; font-size: 11px; color: var(--accent); min-width: 16px; }
+
+  main { min-width: 0; }
+
+  /* ---------- header ---------- */
+  header.hero { padding: 48px 0 8px; }
+  .eyebrow { display: inline-flex; align-items: center; gap: 8px; font-family: ui-monospace, monospace; font-size: 11.5px; letter-spacing: .16em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--border); background: var(--surface); padding: 5px 11px; border-radius: 999px; }
+  h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.08; letter-spacing: -.015em; margin: 20px 0 14px; text-wrap: balance; font-weight: 780; }
+  h1 .hl { color: var(--accent); }
+  .lede { font-size: 19px; color: var(--text-dim); max-width: 60ch; margin: 0; }
+
+  /* ---------- sections ---------- */
+  section { margin-top: 64px; scroll-margin-top: 20px; }
+  .sec-head { display: flex; align-items: baseline; gap: 14px; margin-bottom: 8px; }
+  .sec-num { font-family: ui-monospace, monospace; font-size: 13px; color: var(--accent); font-weight: 600; padding-top: 4px; }
+  h2 { font-size: 25px; line-height: 1.2; letter-spacing: -.01em; margin: 0; font-weight: 730; text-wrap: balance; }
+  h3 { font-size: 17.5px; margin: 30px 0 8px; font-weight: 680; letter-spacing: -.005em; }
+  p { margin: 14px 0; max-width: 68ch; }
+  a { color: var(--accent); }
+  strong { color: var(--text); font-weight: 680; }
+  .dim { color: var(--text-dim); }
+
+  code.inline { font-family: ui-monospace, monospace; font-size: .86em; background: var(--surface-2); border: 1px solid var(--border); padding: 1px 6px; border-radius: 5px; color: var(--text); white-space: nowrap; }
+
+  /* ---------- cards ---------- */
+  .grid { display: grid; gap: 16px; margin: 22px 0; }
+  .grid.two { grid-template-columns: repeat(2, 1fr); }
+  .grid.four { grid-template-columns: repeat(2, 1fr); }
+  @media (max-width: 620px) { .grid.two, .grid.four { grid-template-columns: 1fr; } }
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px; box-shadow: var(--shadow); }
+  .card .role { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-dim); }
+  .card h4 { margin: 8px 0 6px; font-size: 18px; }
+  .card h4 .badge { font-family: ui-monospace, monospace; font-size: 11px; color: var(--accent); border: 1px solid var(--ring); padding: 1px 7px; border-radius: 999px; vertical-align: middle; margin-left: 6px; }
+  .card p { margin: 6px 0 0; font-size: 14.5px; }
+  .chip { display: inline-block; width: 34px; height: 34px; border-radius: 9px; display: grid; place-items: center; font-size: 18px; background: var(--surface-2); border: 1px solid var(--border); }
+
+  /* ---------- callouts ---------- */
+  .note { border: 1px solid var(--border); border-left: 3px solid var(--accent); background: var(--surface); border-radius: 0 10px 10px 0; padding: 14px 18px; margin: 22px 0; font-size: 15px; }
+  .note.key { border-left-color: var(--amber); }
+  .note .lbl { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 4px; }
+  .note.key .lbl { color: var(--amber); }
+  .note p { margin: 4px 0; max-width: none; }
+
+  /* ---------- code ---------- */
+  figure.code { margin: 20px 0; border-radius: 12px; overflow: hidden; border: 1px solid #223029; background: #0b1310; box-shadow: var(--shadow); }
+  figure.code figcaption { font-family: ui-monospace, monospace; font-size: 12px; color: #7f9a8c; padding: 9px 16px; border-bottom: 1px solid #1b2820; display: flex; align-items: center; gap: 8px; background: #0d1712; }
+  figure.code figcaption .dot { color: #35c07a; }
+  pre.code { margin: 0; padding: 16px 18px; overflow-x: auto; font-family: ui-monospace, "Cascadia Code", "JetBrains Mono", Consolas, monospace; font-size: 13px; line-height: 1.72; color: #c7d6cd; }
+  pre.code .c { color: #5f7a6d; font-style: italic; }
+  pre.code .k { color: #7fe0a8; }
+  pre.code .s { color: #e2b877; }
+  pre.code .t { color: #63c9dd; }
+  pre.code .n { color: #e2ab45; }
+
+  /* ---------- diagrams ---------- */
+  .diagram { margin: 22px 0; border: 1px solid #223029; background: #0a1310; border-radius: 12px; padding: 10px; overflow-x: auto; }
+  .diagram .cap { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: #7f9a8c; padding: 6px 8px 10px; }
+  .diagram pre.mermaid { margin: 0; background: transparent; text-align: center; min-width: 520px; }
+
+  /* ---------- steps ---------- */
+  ol.steps { counter-reset: step; list-style: none; padding: 0; margin: 22px 0; display: flex; flex-direction: column; gap: 12px; }
+  ol.steps > li { position: relative; padding: 14px 16px 14px 54px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; font-size: 15px; }
+  ol.steps > li::before { counter-increment: step; content: counter(step); position: absolute; left: 14px; top: 13px; width: 26px; height: 26px; border-radius: 8px; background: var(--surface-2); border: 1px solid var(--ring); color: var(--accent); font-family: ui-monospace, monospace; font-weight: 700; font-size: 13px; display: grid; place-items: center; }
+  ol.steps > li b { color: var(--text); }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; margin: 20px 0; border: 1px solid var(--border); border-radius: 12px; }
+  table { border-collapse: collapse; width: 100%; font-size: 14px; min-width: 520px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { font-family: ui-monospace, monospace; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--text-dim); background: var(--surface-2); }
+  tr:last-child td { border-bottom: none; }
+  td code { font-family: ui-monospace, monospace; font-size: 12.5px; color: var(--accent); }
+
+  /* ---------- glossary ---------- */
+  dl.gloss { display: grid; gap: 0; margin: 20px 0; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  dl.gloss > div { padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--surface); }
+  dl.gloss > div:last-child { border-bottom: none; }
+  dl.gloss dt { font-family: ui-monospace, monospace; font-weight: 600; color: var(--accent); font-size: 14px; }
+  dl.gloss dd { margin: 4px 0 0; font-size: 14.5px; color: var(--text); }
+
+  hr.rule { border: none; border-top: 1px solid var(--border); margin: 8px 0 0; }
+  .footer { margin-top: 72px; padding-top: 20px; border-top: 1px solid var(--border); font-size: 13px; color: var(--text-dim); font-family: ui-monospace, monospace; }
+  a:focus-visible, .toc a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <nav class="toc" aria-label="Contents">
+    <p class="toc-title">Contents</p>
+    <ol>
+      <li><a href="#big-picture"><span class="n">01</span> The four players</a></li>
+      <li><a href="#map"><span class="n">02</span> Where everything lives</a></li>
+      <li><a href="#jwt"><span class="n">03</span> The token (ID badge)</a></li>
+      <li><a href="#signin"><span class="n">04</span> Signing in &amp; syncing you</a></li>
+      <li><a href="#trust"><span class="n">05</span> How Convex trusts Clerk</a></li>
+      <li><a href="#request"><span class="n">06</span> A logged-in request</a></li>
+      <li><a href="#protect"><span class="n">07</span> Guarding pages</a></li>
+      <li><a href="#access"><span class="n">08</span> Owning a course</a></li>
+      <li><a href="#files"><span class="n">09</span> Your file map</a></li>
+      <li><a href="#glossary"><span class="n">10</span> Glossary</a></li>
+    </ol>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <span class="eyebrow">🔐 heycybercorp · system guide</span>
+      <h1>How your app checks <span class="hl">who you are</span> — and moves data safely</h1>
+      <p class="lede">You built the screens. This explains the plumbing behind them: how <strong>TypeScript</strong>, <strong>Next.js</strong>, <strong>Clerk</strong>, and <strong>Convex</strong> pass a person's identity around, and how a click in the browser becomes a trusted answer from the database — using your real code.</p>
+    </header>
+
+    <div class="note">
+      <span class="lbl">The 20-second version</span>
+      <p><strong>Clerk</strong> proves who you are and hands the browser a short-lived, tamper-proof <em>badge</em> (a token). Every time your app asks <strong>Convex</strong> for data, it shows that badge. Convex checks the badge is genuine, figures out which user it belongs to, and only then reads or writes the database. <strong>Next.js</strong> is the app the browser runs; <strong>TypeScript</strong> is the shared language that catches mistakes before they ship.</p>
+    </div>
+
+    <!-- 01 -->
+    <section id="big-picture">
+      <div class="sec-head"><span class="sec-num">01</span><h2>The four players (a members-club analogy)</h2></div>
+      <p>Imagine a private training club. Four things make it run — and each maps to one piece of your stack.</p>
+
+      <div class="grid four">
+        <div class="card">
+          <span class="chip">🏛️</span>
+          <h4>Next.js <span class="badge">the building</span></h4>
+          <p class="role">Frontend framework</p>
+          <p>The club itself — the rooms, doors and signs people walk through. It renders your pages (<code class="inline">/formations</code>, <code class="inline">/dashboard</code>) and runs the React code in the browser.</p>
+        </div>
+        <div class="card">
+          <span class="chip">🪪</span>
+          <h4>Clerk <span class="badge">the door team</span></h4>
+          <p class="role">Identity &amp; login</p>
+          <p>The people at the entrance. They verify who you are, keep the member list, and clip a <em>wristband</em> on you that proves your identity for a short while.</p>
+        </div>
+        <div class="card">
+          <span class="chip">🗄️</span>
+          <h4>Convex <span class="badge">the vault + staff</span></h4>
+          <p class="role">Database &amp; backend logic</p>
+          <p>The back office that holds everything valuable — courses, who bought what, progress — and only acts when a request shows a valid wristband.</p>
+        </div>
+        <div class="card">
+          <span class="chip">🧩</span>
+          <h4>TypeScript <span class="badge">the language</span></h4>
+          <p class="role">Typed JavaScript</p>
+          <p>The common language everyone speaks. Because it's <em>typed</em>, whole classes of mistakes are caught while you write, not after a user hits them.</p>
+        </div>
+      </div>
+
+      <div class="note key">
+        <span class="lbl">Key idea</span>
+        <p>The browser never talks to the database directly, and it never holds any secret keys. It only ever holds a <strong>short-lived badge</strong>. Everything sensitive happens on Clerk's and Convex's servers.</p>
+      </div>
+    </section>
+
+    <!-- 02 -->
+    <section id="map">
+      <div class="sec-head"><span class="sec-num">02</span><h2>Where everything actually lives</h2></div>
+      <p>Three separate places are involved. Two of them are cloud services you don't run — Clerk and Convex each host their own servers. Your Next.js app is the glue in the middle.</p>
+
+      <div class="diagram">
+        <div class="cap">Fig. 1 — the three environments and how they connect</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','primaryColor':'#12211b','primaryBorderColor':'#35c07a','lineColor':'#5f8a78','primaryTextColor':'#d8e3dc'}}}%%
+flowchart LR
+  subgraph BROWSER["Browser  ·  your Next.js app"]
+    UI["React components (TypeScript)"]
+  end
+  subgraph CLERK["Clerk cloud  ·  identity"]
+    CK["Login UI · member list · issues tokens"]
+  end
+  subgraph CONVEX["Convex cloud  ·  backend + database"]
+    FN["Functions"]
+    DB[("Database")]
+    FN --- DB
+  end
+  UI -- "1 · log in" --> CK
+  CK -- "2 · session + token" --> UI
+  UI -- "3 · request + token" --> FN
+  FN -- "4 · verified answer" --> UI
+</pre>
+      </div>
+
+      <p>Your credentials for these services live in one local file, <code class="inline">.env.local</code>, which never ships to the browser (except the values that start with <code class="inline">NEXT_PUBLIC_</code>, which are safe to be public). That's why you set the Clerk keys and the Convex URL there.</p>
+    </section>
+
+    <!-- 03 -->
+    <section id="jwt">
+      <div class="sec-head"><span class="sec-num">03</span><h2>The token — a tamper-proof ID badge</h2></div>
+      <p>The whole system hinges on one object: a <strong>JWT</strong> (JSON Web Token). Think of it as a wristband that Clerk stamps. It's just text, but it's <em>cryptographically signed</em>, so Convex can tell it's genuine and hasn't been edited — without calling Clerk.</p>
+
+      <p>A token carries small facts called <strong>claims</strong>. Yours (from the <code class="inline">convex</code> template we set up) looks conceptually like this:</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> what one of your tokens contains (decoded)</figcaption>
+<pre class="code"><span class="c">// signed by Clerk — anyone can read it, nobody can forge it</span>
+{
+  <span class="t">"iss"</span>: <span class="s">"https://top-iguana-44.clerk.accounts.dev"</span>, <span class="c">// who issued it (Clerk)</span>
+  <span class="t">"sub"</span>: <span class="s">"user_3Glrx…LbhF"</span>,   <span class="c">// which user (your Clerk ID)</span>
+  <span class="t">"aud"</span>: <span class="s">"convex"</span>,            <span class="c">// who it's FOR (audience)</span>
+  <span class="t">"email"</span>: <span class="s">"ethegreat17@gmail.com"</span>,
+  <span class="t">"name"</span>: <span class="s">"Emmanuel Thegreat"</span>,
+  <span class="t">"exp"</span>: <span class="n">1784558800</span>          <span class="c">// expires in ~60 seconds</span>
+}</pre>
+      </figure>
+
+      <div class="note key">
+        <span class="lbl">Why it expires so fast</span>
+        <p>The badge is valid for about <strong>60 seconds</strong>. If someone ever stole one, it's near-useless moments later. The browser silently asks Clerk for a fresh one whenever it's needed — you never notice.</p>
+      </div>
+
+      <p>Two claims do the heavy lifting later: <code class="inline">iss</code> (who made the badge) and <code class="inline">aud</code> (who the badge is for). Remember those two — Convex checks exactly them.</p>
+    </section>
+
+    <!-- 04 -->
+    <section id="signin">
+      <div class="sec-head"><span class="sec-num">04</span><h2>Signing in — and copying you into Convex</h2></div>
+      <p>When someone signs up or logs in on <code class="inline">/connexion</code>, Clerk handles the whole email/password/social dance. The one custom piece we added is the last step: copying the new person into your Convex <code class="inline">users</code> table so the rest of the app can attach data (purchases, progress) to them.</p>
+
+      <div class="diagram">
+        <div class="cap">Fig. 2 — from "click login" to "row exists in Convex"</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','actorBkg':'#12211b','actorBorder':'#35c07a','actorTextColor':'#d8e3dc','signalColor':'#8ea297','signalTextColor':'#b9cabf','noteBkgColor':'#16302a','noteBorderColor':'#35c07a','noteTextColor':'#d8e3dc','sequenceNumberColor':'#0a1310'}}}%%
+sequenceDiagram
+  autonumber
+  actor U as You
+  participant B as Browser (Next.js)
+  participant CK as Clerk
+  participant CV as Convex
+  U->>B: Open /connexion, enter details
+  B->>CK: Clerk SignIn component handles it
+  CK-->>B: Session created (secure cookie)
+  Note over B: You are now signed in
+  B->>CK: Give me a token (convex template)
+  CK-->>B: Token (aud convex, email, name)
+  B->>CV: users.store()  + token
+  CV->>CV: Verify token, read identity
+  CV->>CV: Insert or update your users row
+  CV-->>B: Done
+</pre>
+      </div>
+
+      <p>Steps 5–8 are the part you'd never get for free. That's the job of <strong>AuthSync</strong> — a tiny component that runs the moment you're signed in and calls a Convex function to save you:</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> src/components/AuthSync.tsx</figcaption>
+<pre class="code"><span class="k">"use client"</span>;
+<span class="k">import</span> { useUser } <span class="k">from</span> <span class="s">"@clerk/nextjs"</span>;
+<span class="k">import</span> { useMutation } <span class="k">from</span> <span class="s">"convex/react"</span>;
+<span class="k">import</span> { api } <span class="k">from</span> <span class="s">"../../convex/_generated/api"</span>;
+
+<span class="k">export default function</span> <span class="t">AuthSync</span>() {
+  <span class="k">const</span> { isSignedIn } = <span class="t">useUser</span>();          <span class="c">// from Clerk</span>
+  <span class="k">const</span> store = <span class="t">useMutation</span>(api.users.store); <span class="c">// a Convex write</span>
+
+  <span class="t">useEffect</span>(() => {
+    <span class="k">if</span> (isSignedIn) store({}); <span class="c">// save me into Convex</span>
+  }, [isSignedIn, store]);
+
+  <span class="k">return null</span>; <span class="c">// draws nothing — pure plumbing</span>
+}</pre>
+      </figure>
+
+      <p>And here is the Convex function it calls. Notice it never trusts the browser about <em>who</em> you are — it reads your identity straight from the verified token via <code class="inline">ctx.auth.getUserIdentity()</code>:</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> convex/users.ts — the store mutation (shortened)</figcaption>
+<pre class="code"><span class="k">export const</span> store = <span class="t">mutation</span>({
+  handler: <span class="k">async</span> (ctx) => {
+    <span class="k">const</span> identity = <span class="k">await</span> ctx.auth.<span class="t">getUserIdentity</span>();
+    <span class="k">if</span> (!identity) <span class="k">throw new</span> <span class="t">Error</span>(<span class="s">"Not authenticated"</span>);
+
+    <span class="c">// identity.subject = Clerk user id, from the token — trustworthy</span>
+    <span class="k">const</span> existing = <span class="k">await</span> ctx.db.<span class="t">query</span>(<span class="s">"users"</span>)
+      .<span class="t">withIndex</span>(<span class="s">"by_clerk_id"</span>, q => q.<span class="t">eq</span>(<span class="s">"clerkId"</span>, identity.subject))
+      .<span class="t">unique</span>();
+
+    <span class="k">if</span> (existing) <span class="k">return</span> existing._id;         <span class="c">// already saved</span>
+    <span class="k">return await</span> ctx.db.<span class="t">insert</span>(<span class="s">"users"</span>, {  <span class="c">// first time → create</span>
+      clerkId: identity.subject,
+      email: identity.email ?? <span class="s">""</span>,
+      name: identity.name,
+      role: <span class="s">"student"</span>,
+    });
+  },
+});</pre>
+      </figure>
+
+      <div class="note">
+        <span class="lbl">This is exactly what you saw</span>
+        <p>That row — <code class="inline">clerkId: user_3Glrx…</code>, <code class="inline">email</code>, <code class="inline">name</code>, <code class="inline">role: admin</code> — is the output of this function. When email/name showed as "unset", it was because the token wasn't carrying those claims yet. We added them to the <code class="inline">convex</code> token template, and on your next load <code class="inline">store()</code> filled them in.</p>
+      </div>
+    </section>
+
+    <!-- 05 -->
+    <section id="trust">
+      <div class="sec-head"><span class="sec-num">05</span><h2>The handshake: how Convex trusts Clerk</h2></div>
+      <p>Clerk and Convex are run by different companies. They never call each other. So how does Convex believe a token really came from <em>your</em> Clerk? Two matching facts — the same <code class="inline">iss</code> and <code class="inline">aud</code> from Section 3.</p>
+
+      <div class="grid two">
+        <div class="card">
+          <p class="role">On the Convex side</p>
+          <h4>auth.config.ts</h4>
+          <p>You told Convex: "only trust tokens issued by this exact Clerk address, made for an audience called <code class="inline">convex</code>."</p>
+        </div>
+        <div class="card">
+          <p class="role">On the Clerk side</p>
+          <h4>the "convex" JWT template</h4>
+          <p>You told Clerk: "when someone asks for a <code class="inline">convex</code> token, stamp <code class="inline">aud: convex</code> on it (plus email &amp; name)."</p>
+        </div>
+      </div>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> convex/auth.config.ts</figcaption>
+<pre class="code"><span class="k">export default</span> {
+  providers: [
+    {
+      domain: process.env.<span class="n">CLERK_JWT_ISSUER_DOMAIN</span>, <span class="c">// must equal token's "iss"</span>
+      applicationID: <span class="s">"convex"</span>,                    <span class="c">// must equal token's "aud"</span>
+    },
+  ],
+};</pre>
+      </figure>
+
+      <p>When both sides agree, the handshake works. Convex verifies the signature, checks <code class="inline">iss</code> and <code class="inline">aud</code> match its config, and accepts the token. That's the entire trust model — no shared password, no back-channel.</p>
+
+      <div class="diagram">
+        <div class="cap">Fig. 3 — the two settings that must line up</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','primaryColor':'#12211b','primaryBorderColor':'#35c07a','lineColor':'#5f8a78','primaryTextColor':'#d8e3dc','tertiaryColor':'#16302a'}}}%%
+flowchart LR
+  T["Token from Clerk<br/>iss = clerk.../  aud = convex"]
+  CFG["auth.config.ts<br/>domain = clerk.../  applicationID = convex"]
+  T -- "must match" --> CFG
+  CFG -->|"match ✓"| OK["Convex trusts the request"]
+  CFG -.->|"mismatch ✗"| NO["Rejected · not authenticated"]
+</pre>
+      </div>
+
+      <div class="note key">
+        <span class="lbl">The error you hit earlier</span>
+        <p>When <code class="inline">npx convex dev</code> complained that <code class="inline">CLERK_JWT_ISSUER_DOMAIN</code> wasn't set, it was this exact line failing — Convex had no "issuer" to compare against, so it refused to start. Setting that value fixed the left half of the handshake.</p>
+      </div>
+    </section>
+
+    <!-- 06 -->
+    <section id="request">
+      <div class="sec-head"><span class="sec-num">06</span><h2>A logged-in request, end to end</h2></div>
+      <p>This is the pattern you'll use everywhere: a component asks Convex a question, the badge rides along automatically, Convex answers, and the screen updates itself. Here's a real one — "does this user own this course?"</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> a React component asking a question</figcaption>
+<pre class="code"><span class="k">"use client"</span>;
+<span class="k">import</span> { useQuery } <span class="k">from</span> <span class="s">"convex/react"</span>;
+<span class="k">import</span> { api } <span class="k">from</span> <span class="s">"../../convex/_generated/api"</span>;
+
+<span class="k">function</span> <span class="t">LessonGate</span>({ courseId }) {
+  <span class="c">// asks Convex; re-renders automatically when the answer changes</span>
+  <span class="k">const</span> owns = <span class="t">useQuery</span>(api.entitlements.hasAccess, { courseId });
+
+  <span class="k">if</span> (owns === undefined) <span class="k">return</span> &lt;<span class="t">Spinner</span> /&gt;; <span class="c">// still loading</span>
+  <span class="k">return</span> owns ? &lt;<span class="t">VideoPlayer</span> /&gt; : &lt;<span class="t">BuyButton</span> /&gt;;
+}</pre>
+      </figure>
+
+      <p>You never touched a token, a URL, or a password in that code. That's because of one wrapper set up once in your app — <strong>ConvexProviderWithClerk</strong>. It's the bridge that, on every request, quietly asks Clerk for a fresh token and attaches it:</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> src/components/ConvexClientProvider.tsx (the bridge)</figcaption>
+<pre class="code">&lt;<span class="t">ConvexProviderWithClerk</span> client={client} useAuth={useAuth}&gt;
+  {children} <span class="c">// your whole app lives in here</span>
+&lt;/<span class="t">ConvexProviderWithClerk</span>&gt;</pre>
+      </figure>
+
+      <div class="diagram">
+        <div class="cap">Fig. 4 — what happens after useQuery(...) is called</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','actorBkg':'#12211b','actorBorder':'#35c07a','actorTextColor':'#d8e3dc','signalColor':'#8ea297','signalTextColor':'#b9cabf','noteBkgColor':'#16302a','noteBorderColor':'#35c07a','noteTextColor':'#d8e3dc'}}}%%
+sequenceDiagram
+  autonumber
+  participant C as Component
+  participant BR as Convex + Clerk bridge
+  participant CK as Clerk
+  participant FN as Convex function
+  participant DB as Database
+  C->>BR: useQuery(hasAccess, courseId)
+  BR->>CK: fresh token please (convex)
+  CK-->>BR: token
+  BR->>FN: run hasAccess + token
+  FN->>FN: getUserIdentity() verifies token
+  FN->>DB: is there an entitlement row?
+  DB-->>FN: yes / no
+  FN-->>C: true / false  (UI updates itself)
+</pre>
+      </div>
+
+      <p>And the Convex function on the other end — again, identity comes from the verified token, so a user can only ever ask about <em>their own</em> access:</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> convex/entitlements.ts</figcaption>
+<pre class="code"><span class="k">export const</span> hasAccess = <span class="t">query</span>({
+  args: { courseId: v.<span class="t">id</span>(<span class="s">"courses"</span>) },
+  handler: <span class="k">async</span> (ctx, { courseId }) => {
+    <span class="k">const</span> user = <span class="k">await</span> <span class="t">getCurrentUser</span>(ctx); <span class="c">// from the token</span>
+    <span class="k">if</span> (!user) <span class="k">return false</span>;
+
+    <span class="k">const</span> row = <span class="k">await</span> ctx.db.<span class="t">query</span>(<span class="s">"entitlements"</span>)
+      .<span class="t">withIndex</span>(<span class="s">"by_user_course"</span>,
+        q => q.<span class="t">eq</span>(<span class="s">"userId"</span>, user._id).<span class="t">eq</span>(<span class="s">"courseId"</span>, courseId))
+      .<span class="t">unique</span>();
+
+    <span class="k">return</span> row !== <span class="k">null</span>; <span class="c">// owns it? true / false</span>
+  },
+});</pre>
+      </figure>
+
+      <div class="note key">
+        <span class="lbl">The golden rule</span>
+        <p>The frontend decides what to <em>show</em>; the backend decides what's <em>true</em>. Hiding a button in React is not security — the real check always happens inside a Convex function, using the identity from the token. Never trust the browser.</p>
+      </div>
+
+      <h3>Query vs. mutation — the two verbs</h3>
+      <p>You'll see two words constantly. They're simple:</p>
+      <div class="grid two">
+        <div class="card">
+          <h4><code class="inline">useQuery</code> · read</h4>
+          <p>Asks a question and <em>keeps listening</em>. If the underlying data changes, your component re-renders on its own. Example: <em>hasAccess</em>, <em>list my courses</em>.</p>
+        </div>
+        <div class="card">
+          <h4><code class="inline">useMutation</code> · write</h4>
+          <p>Performs a change once, in a safe transaction. Example: <em>store me</em>, <em>record lesson progress</em>, <em>create a course</em>.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 -->
+    <section id="protect">
+      <div class="sec-head"><span class="sec-num">07</span><h2>Guarding whole pages before they load</h2></div>
+      <p>Section 6 protects <em>data</em>. But you also want to stop a signed-out person from even opening <code class="inline">/dashboard</code> or <code class="inline">/admin</code>. That's a doorman that runs on every request, before any page renders — in Next.js it's a file called <code class="inline">proxy.ts</code> (older projects call it <code class="inline">middleware.ts</code>).</p>
+
+      <figure class="code">
+        <figcaption><span class="dot">▍</span> src/proxy.ts</figcaption>
+<pre class="code"><span class="k">const</span> isProtected = <span class="t">createRouteMatcher</span>([<span class="s">"/dashboard(.*)"</span>, <span class="s">"/admin(.*)"</span>]);
+
+<span class="k">export default</span> <span class="t">clerkMiddleware</span>(<span class="k">async</span> (auth, request) => {
+  <span class="k">if</span> (<span class="t">isProtected</span>(request)) {
+    <span class="c">// not signed in? bounce to /connexion</span>
+    <span class="k">await</span> auth.<span class="t">protect</span>({
+      unauthenticatedUrl: <span class="k">new</span> <span class="t">URL</span>(<span class="s">"/connexion"</span>, request.url).<span class="t">toString</span>(),
+    });
+  }
+});</pre>
+      </figure>
+
+      <div class="diagram">
+        <div class="cap">Fig. 5 — the doorman's decision</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','primaryColor':'#12211b','primaryBorderColor':'#35c07a','lineColor':'#5f8a78','primaryTextColor':'#d8e3dc'}}}%%
+flowchart TD
+  R["Request for a page"] --> Q{"/dashboard or /admin?"}
+  Q -- "no" --> PUB["Show it · public page"]
+  Q -- "yes" --> S{"Signed in?"}
+  S -- "yes" --> OK["Show the protected page"]
+  S -- "no" --> RE["Redirect to /connexion"]
+</pre>
+      </div>
+
+      <p>This is exactly why, in testing, opening <code class="inline">/dashboard</code> while signed out gave a <code class="inline">307 → /connexion</code>, while <code class="inline">/formations</code> loaded normally. And it's why <code class="inline">/admin/login</code> was a 404 — there's no such page; login for everyone is <code class="inline">/connexion</code>.</p>
+    </section>
+
+    <!-- 08 -->
+    <section id="access">
+      <div class="sec-head"><span class="sec-num">08</span><h2>Owning a course: the one-time-purchase model</h2></div>
+      <p>Your model is <strong>pay once, keep forever, per course</strong>. That makes "access" beautifully simple: a person owns a course if — and only if — there is one row linking them to it in the <code class="inline">entitlements</code> table.</p>
+
+      <div class="diagram">
+        <div class="cap">Fig. 6 — how a purchase becomes access</div>
+        <pre class="mermaid">
+%%{init: {'theme':'dark','themeVariables':{'fontFamily':'ui-monospace, monospace','primaryColor':'#12211b','primaryBorderColor':'#35c07a','lineColor':'#5f8a78','primaryTextColor':'#d8e3dc'}}}%%
+flowchart LR
+  BUY["Click Buy"] --> ORD["orders row · pending"]
+  ORD --> PAY["Pay at Stripe"]
+  PAY --> WH["Stripe webhook confirms · verified"]
+  WH --> ENT["entitlements row created"]
+  ENT --> ACC["hasAccess = true · video unlocks"]
+</pre>
+      </div>
+
+      <ol class="steps">
+        <li><b>Start checkout.</b> A Convex mutation creates an <code class="inline">orders</code> row marked <em>pending</em> and sends you to Stripe. The price comes from the course record on the server — never from the browser.</li>
+        <li><b>Pay.</b> You pay on Stripe's own page. No card details ever touch your servers.</li>
+        <li><b>Stripe calls back.</b> Stripe sends a signed <em>webhook</em> to your backend confirming the payment. This is the only thing trusted to grant access — not a "success" screen in the browser, which could be faked.</li>
+        <li><b>Access granted.</b> The verified webhook flips the order to <em>paid</em> and inserts the <code class="inline">entitlements</code> row. From then on, <code class="inline">hasAccess</code> returns true and the lesson video unlocks.</li>
+      </ol>
+
+      <div class="note key">
+        <span class="lbl">Why the webhook, not the browser</span>
+        <p>Anyone can open the "payment complete" URL directly. Only Stripe can produce a correctly-signed webhook. Granting access strictly on the webhook is what keeps the paywall real. (This is Phase 4 — the tables and rules already exist; wiring Stripe comes next.)</p>
+      </div>
+    </section>
+
+    <!-- 09 -->
+    <section id="files">
+      <div class="sec-head"><span class="sec-num">09</span><h2>Your file map — who does what</h2></div>
+      <p>Every concept above lives in a real file in your project. When something confuses you, this table tells you where to look.</p>
+
+      <div class="tablewrap">
+        <table>
+          <thead><tr><th>File</th><th>Player</th><th>Its one job</th></tr></thead>
+          <tbody>
+            <tr><td><code>src/app/layout.tsx</code></td><td>Next + Clerk</td><td>Wraps the whole app in <code>ClerkProvider</code> (login context) and the Convex bridge.</td></tr>
+            <tr><td><code>src/components/ConvexClientProvider.tsx</code></td><td>Clerk ↔ Convex</td><td>The bridge that attaches a fresh token to every Convex request.</td></tr>
+            <tr><td><code>src/components/AuthSync.tsx</code></td><td>Clerk → Convex</td><td>On login, copies you into the Convex <code>users</code> table.</td></tr>
+            <tr><td><code>src/proxy.ts</code></td><td>Next + Clerk</td><td>The doorman — redirects signed-out users away from <code>/dashboard</code> &amp; <code>/admin</code>.</td></tr>
+            <tr><td><code>src/app/connexion / inscription</code></td><td>Clerk</td><td>The French login &amp; sign-up pages (Clerk's widgets in your brand).</td></tr>
+            <tr><td><code>convex/auth.config.ts</code></td><td>Convex</td><td>Tells Convex which Clerk to trust (the handshake).</td></tr>
+            <tr><td><code>convex/schema.ts</code></td><td>Convex</td><td>The shape of your database — every table and field.</td></tr>
+            <tr><td><code>convex/users.ts</code></td><td>Convex</td><td>Read/save the current user; the admin bootstrap.</td></tr>
+            <tr><td><code>convex/entitlements.ts</code></td><td>Convex</td><td>"Does this user own this course?" and "list my courses."</td></tr>
+            <tr><td><code>convex/orders.ts</code></td><td>Convex</td><td>Create pending orders; grant access when payment is verified.</td></tr>
+            <tr><td><code>.env.local</code></td><td>all</td><td>Your keys &amp; URLs. Secret — never committed, never sent to the browser.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- 10 -->
+    <section id="glossary">
+      <div class="sec-head"><span class="sec-num">10</span><h2>Glossary — every term, in one line</h2></div>
+      <dl class="gloss">
+        <div><dt>Frontend / backend</dt><dd>Frontend = what runs in the browser (your pages). Backend = what runs on a server you trust (Convex functions).</dd></div>
+        <div><dt>Component</dt><dd>A reusable piece of UI written in TypeScript/React, e.g. your <code class="inline">Navbar</code> or <code class="inline">HeroTerminal</code>.</dd></div>
+        <div><dt>"use client"</dt><dd>A tag at the top of a file meaning "this runs in the browser and can be interactive" (use state, clicks, Convex hooks).</dd></div>
+        <div><dt>Provider</dt><dd>A wrapper placed high in the app that makes something (login state, the Convex connection) available to everything inside it.</dd></div>
+        <div><dt>JWT / token</dt><dd>A short-lived, signed "badge" proving who you are. Readable by anyone, forgeable by no one.</dd></div>
+        <div><dt>Claim</dt><dd>One fact inside a token, e.g. <code class="inline">email</code>, <code class="inline">aud</code>, <code class="inline">exp</code>.</dd></div>
+        <div><dt>Issuer (iss)</dt><dd>Who created the token — your Clerk address. Convex checks it matches <code class="inline">auth.config.ts</code>.</dd></div>
+        <div><dt>Audience (aud)</dt><dd>Who a token is for. Yours says <code class="inline">convex</code>, which is why the <code class="inline">convex</code> JWT template exists.</dd></div>
+        <div><dt>Query</dt><dd>A Convex <em>read</em> that keeps your UI live — it re-renders when data changes.</dd></div>
+        <div><dt>Mutation</dt><dd>A Convex <em>write</em> that changes data once, safely, in a transaction.</dd></div>
+        <div><dt>Schema</dt><dd>The definition of your tables and fields (<code class="inline">convex/schema.ts</code>). TypeScript enforces it everywhere.</dd></div>
+        <div><dt>Entitlement</dt><dd>A row saying "this user owns this course." Its existence <em>is</em> the access check.</dd></div>
+        <div><dt>Middleware / proxy</dt><dd>Code that runs on every request before a page loads — your page doorman (<code class="inline">proxy.ts</code>).</dd></div>
+        <div><dt>Webhook</dt><dd>A signed server-to-server message (e.g. Stripe → you) confirming an event actually happened.</dd></div>
+        <div><dt>Environment variable</dt><dd>A setting kept out of code, in <code class="inline">.env.local</code>. <code class="inline">NEXT_PUBLIC_</code> ones are safe for the browser; the rest are secret.</dd></div>
+        <div><dt>SSR &amp; hydration</dt><dd>Next.js builds the page's HTML on the server first (fast first paint), then React "wakes it up" in the browser. A "hydration mismatch" just means the two versions differed — often a browser extension (like Google Translate) editing the page.</dd></div>
+      </dl>
+
+      <div class="note">
+        <span class="lbl">Where we are</span>
+        <p>Sections 1–7 are <strong>built and working</strong> in your app today. Section 8's tables and rules exist; wiring Stripe (Phase 4) and Azure video (Phase 3) is what's ahead. Next up: <strong>Phase 2</strong> — putting real courses behind the admin panel and dashboard.</p>
+      </div>
+
+      <p class="footer">heycybercorp · internal system guide · Next.js 16 · Clerk · Convex · TypeScript</p>
+    </section>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+  // Render the flow/sequence diagrams. Per-diagram %%{init}%% directives set their theme.
+  if (window.mermaid) {
+    mermaid.initialize({ startOnLoad: false });
+    mermaid.run();
+  }
+</script>
+</body>
+</html>

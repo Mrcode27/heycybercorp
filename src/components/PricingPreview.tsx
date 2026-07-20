@@ -20,7 +20,7 @@ const PLANS: Plan[] = [
     tagColor: "text-primary",
     priceEurope: "40€",
     priceAfrica: "15 000 FCFA",
-    suffix: "/mois",
+    suffix: "· paiement unique",
     features: [
       { label: "Accès aux modules débutant", included: true },
       { label: "Support communautaire", included: true },
@@ -33,7 +33,7 @@ const PLANS: Plan[] = [
     tagColor: "text-primary",
     priceEurope: "60€",
     priceAfrica: "30 000 FCFA",
-    suffix: "/mois",
+    suffix: "· paiement unique",
     featured: true,
     features: [
       { label: "Accès à vie", included: true },
@@ -48,7 +48,7 @@ const PLANS: Plan[] = [
     tagColor: "text-secondary",
     priceEurope: "80€",
     priceAfrica: "45 000 FCFA",
-    suffix: "/mois",
+    suffix: "· paiement unique",
     features: [
       { label: "Red Teaming & Exploitation", included: true },
       { label: "Accès Labs illimité", included: true },

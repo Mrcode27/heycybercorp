@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { SignIn } from "@clerk/nextjs";
 import AuthShell from "@/components/AuthShell";
-import AuthForm from "@/components/AuthForm";
 
 export const metadata: Metadata = {
   title: "Connexion | heycybercorp",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function ConnexionPage() {
   return (
     <AuthShell>
-      <AuthForm mode="login" />
+      <SignIn />
     </AuthShell>
   );
 }

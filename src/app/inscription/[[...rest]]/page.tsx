@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
+import { SignUp } from "@clerk/nextjs";
 import AuthShell from "@/components/AuthShell";
-import AuthForm from "@/components/AuthForm";
 
 export const metadata: Metadata = {
   title: "Inscription | heycybercorp",
@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 export default function InscriptionPage() {
   return (
     <AuthShell>
-      <AuthForm mode="register" />
+      <SignUp />
     </AuthShell>
   );
 }

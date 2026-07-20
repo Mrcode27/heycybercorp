@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(clerk init *)",
+      "Bash(rm -rf src/app/sign-in src/app/sign-up && rm -f src/app/connexion/page.tsx src/app/inscription/page.tsx && mkdir -p \"src/app/connexion/[[...rest]]\" \"src/app/inscription/[[...rest]]\" && npm install @clerk/themes 2>&1 | tail -4 && echo \"DONE\")",
+      "Bash(node -e \"const c=require\\('@clerk/nextjs'\\); const names=Object.keys\\(c\\); console.log\\('Show:', names.includes\\('Show'\\)\\); console.log\\('UserButton:', names.includes\\('UserButton'\\)\\); console.log\\('SignedIn:', names.includes\\('SignedIn'\\)\\); console.log\\(names.filter\\(n=>/Sign|Show|User|Protect|Gate/.test\\(n\\)\\).join\\(', '\\)\\);\")",
+      "Bash(node -e \"console.log\\(require\\('@clerk/nextjs/package.json'\\).version\\)\")",
+      "Bash(clerk doctor *)",
+      "Bash(break)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" http://localhost:3000/connexion)",
+      "Bash(curl -s -o /dev/null -w \"http=%{http_code} redirect=%{redirect_url}\\\\n\" http://localhost:3000/dashboard)",
+      "Bash(curl -s -o /dev/null -w \"http=%{http_code} redirect=%{redirect_url}\\\\n\" http://localhost:3000/admin)",
+      "Bash(curl -s -o /dev/null -w \"http=%{http_code}\\\\n\" http://localhost:3000/formations)",
+      "Bash(curl -s http://localhost:3000/connexion)",
+      "Bash(node -e \"const fs=require\\('fs'\\);const env=fs.readFileSync\\('.env.local','utf8'\\);const m=env.match\\(/NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=\\([^\\\\r\\\\n]+\\)/\\);const pk=\\(m?m[1]:''\\).trim\\(\\).replace\\(/^[\\\\\"']|[\\\\\"']\\\\$/g,''\\);const b64=pk.replace\\(/^pk_\\(test|live\\)_/,''\\);const dec=Buffer.from\\(b64,'base64'\\).toString\\('utf8'\\).replace\\(/\\\\\\\\\\\\$$/,''\\);console.log\\('CLERK_JWT_ISSUER_DOMAIN = https://'+dec\\);\")",
+      "Bash(npx convex *)",
+      "WebFetch(domain:docs.convex.dev)",
+      "Bash(clerk enable *)",
+      "Bash(clerk config *)",
+      "Bash(curl -s -o /dev/null -w \"home=%{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"connexion=%{http_code}\\\\n\" http://localhost:3000/connexion)",
+      "Bash(curl -s -o /dev/null -w \"dashboard=%{http_code} -> %{redirect_url}\\\\n\" http://localhost:3000/dashboard)",
+      "Skill(artifact-design)",
+      "Skill(artifact-design:*)"
+    ],
+    "additionalDirectories": [
+      "C:\\xampp\\htdocs\\heycybercorp\\src\\app\\connexion"
+    ]
+  }
+}

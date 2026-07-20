@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { Show, UserButton } from "@clerk/nextjs";
 import Icon from "./Icon";
 
 const NAV_LINKS = [
@@ -46,12 +47,23 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-3">
-          <Link
-            href="/connexion"
-            className="hidden sm:inline-block bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-bold hover:bg-primary transition-all active:scale-95"
-          >
-            Connexion
-          </Link>
+          <Show when="signed-out">
+            <Link
+              href="/connexion"
+              className="hidden sm:inline-block bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-bold hover:bg-primary transition-all active:scale-95"
+            >
+              Connexion
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              href="/dashboard"
+              className="hidden sm:inline-block text-on-surface-variant hover:text-primary font-bold transition-colors"
+            >
+              Mon espace
+            </Link>
+            <UserButton />
+          </Show>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}
@@ -80,13 +92,24 @@ export default function Navbar() {
               {link.label}
             </Link>
           ))}
-          <Link
-            href="/connexion"
-            onClick={() => setOpen(false)}
-            className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-bold text-center"
-          >
-            Connexion
-          </Link>
+          <Show when="signed-out">
+            <Link
+              href="/connexion"
+              onClick={() => setOpen(false)}
+              className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-bold text-center"
+            >
+              Connexion
+            </Link>
+          </Show>
+          <Show when="signed-in">
+            <Link
+              href="/dashboard"
+              onClick={() => setOpen(false)}
+              className="bg-primary-container text-on-primary-container px-6 py-2 rounded-lg font-bold text-center"
+            >
+              Mon espace
+            </Link>
+          </Show>
         </div>
       )}
     </nav>

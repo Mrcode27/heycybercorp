@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Icon from "./Icon";
 
@@ -8,7 +9,6 @@ export type SidebarItem = {
   icon: string;
   label: string;
   href?: string;
-  active?: boolean;
 };
 
 type ConsoleSidebarProps = {
@@ -26,24 +26,28 @@ export default function ConsoleSidebar({
   children,
 }: ConsoleSidebarProps) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   const nav = (
     <nav className="flex flex-col gap-1">
-      {items.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href ?? "#"}
-          onClick={() => setOpen(false)}
-          className={`flex items-center gap-3 px-4 py-3 rounded-lg font-body-md transition-all ${
-            item.active
-              ? "bg-primary/10 text-primary border border-primary/30"
-              : "text-on-surface-variant hover:bg-surface-variant hover:text-on-surface"
-          }`}
-        >
-          <Icon name={item.icon} className="text-xl" fill={item.active} />
-          {item.label}
-        </Link>
-      ))}
+      {items.map((item) => {
+        const active = !!item.href && pathname === item.href;
+        return (
+          <Link
+            key={item.label}
+            href={item.href ?? "#"}
+            onClick={() => setOpen(false)}
+            className={`flex items-center gap-3 px-4 py-3 rounded-lg font-body-md transition-all ${
+              active
+                ? "bg-primary/10 text-primary border border-primary/30"
+                : "text-on-surface-variant hover:bg-surface-variant hover:text-on-surface"
+            }`}
+          >
+            <Icon name={item.icon} className="text-xl" fill={active} />
+            {item.label}
+          </Link>
+        );
+      })}
     </nav>
   );
 

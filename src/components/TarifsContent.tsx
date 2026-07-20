@@ -12,7 +12,7 @@ const PLANS = [
     afrique: "15,000",
     europe: "40",
     levelColor: "text-on-surface-variant",
-    features: ["Introduction à la Cyber", "5 Labs Fondamentaux / mois", "Communauté Discord"],
+    features: ["Introduction à la Cyber", "5 Labs Fondamentaux inclus", "Communauté Discord"],
     cta: "Initialiser la Session",
     ctaClass:
       "border border-primary text-primary hover:bg-primary hover:text-on-primary",
@@ -26,7 +26,7 @@ const PLANS = [
     levelColor: "text-primary",
     features: [
       "Analyse de Malwares",
-      "20 Labs Avancés / mois",
+      "20 Labs Avancés inclus",
       "Préparation Certif. Junior",
       "Support Prioritaire 24/7",
     ],
@@ -43,7 +43,7 @@ const PLANS = [
     features: [
       "Red Teaming & Exploitation",
       "Accès Labs Illimité",
-      "Coaching 1-on-1 (2h/mois)",
+      "Coaching 1-on-1 (2h)",
       "Accès aux Exploits 0-day",
     ],
     cta: "Mode Root Activé",
@@ -63,8 +63,8 @@ const TABLE_ROWS = [
 
 const FAQ = [
   {
-    q: "Puis-je changer de plan en cours de mois ?",
-    a: "Affirmatif. Vous pouvez effectuer une mise à l'échelle (Upscale) à tout moment. La différence sera calculée au prorata de l'usage restant.",
+    q: "Le paiement est-il unique ou récurrent ?",
+    a: "Paiement unique. Vous achetez une formation une seule fois et vous y accédez à vie, sans abonnement ni frais mensuels.",
   },
   {
     q: "Les certifications sont-elles reconnues ?",
@@ -163,7 +163,7 @@ export default function TarifsContent() {
                     <span className="font-body-md text-on-surface-variant">
                       {region === "AFRIQUE" ? "FCFA" : "€"}
                     </span>
-                    <span className="text-on-surface-variant font-body-md">/ mois</span>
+                    <span className="text-on-surface-variant font-body-md">· à vie</span>
                   </div>
                 </div>
                 <ul className="space-y-4 mb-10 flex-grow">
