@@ -5,6 +5,8 @@ import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminReports from "@/components/console/AdminReports";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Rapports | Admin heycybercorp" };
 
 export default function Page() {

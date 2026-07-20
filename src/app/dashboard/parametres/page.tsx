@@ -4,6 +4,8 @@ import { DASHBOARD_NAV } from "@/components/consoleNav";
 import SectionHeader from "@/components/console/SectionHeader";
 import StudentSettings from "@/components/console/StudentSettings";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Paramètres | heycybercorp" };
 
 export default function Page() {

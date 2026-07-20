@@ -4,6 +4,8 @@ import { DASHBOARD_NAV } from "@/components/consoleNav";
 import SectionHeader from "@/components/console/SectionHeader";
 import LabsView from "@/components/console/LabsView";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Labs Pratiques | heycybercorp" };
 
 export default function Page() {

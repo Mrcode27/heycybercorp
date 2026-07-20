@@ -4,6 +4,8 @@ import { ADMIN_NAV } from "@/components/consoleNav";
 import AdminGate from "@/components/console/AdminGate";
 import AdminUsers from "@/components/console/AdminUsers";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Utilisateurs | Admin heycybercorp" };
 
 export default function Page() {

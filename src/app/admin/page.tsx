@@ -3,6 +3,8 @@ import ConsoleSidebar from "@/components/ConsoleSidebar";
 import { ADMIN_NAV } from "@/components/consoleNav";
 import AdminConsole from "@/components/AdminConsole";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Admin | heycybercorp",
 };

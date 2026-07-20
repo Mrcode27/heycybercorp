@@ -4,6 +4,8 @@ import { DASHBOARD_NAV } from "@/components/consoleNav";
 import SectionHeader from "@/components/console/SectionHeader";
 import CertificationsView from "@/components/console/CertificationsView";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Certifications | heycybercorp" };
 
 export default function Page() {

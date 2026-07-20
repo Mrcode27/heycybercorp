@@ -3,6 +3,8 @@ import ConsoleSidebar from "@/components/ConsoleSidebar";
 import { DASHBOARD_NAV } from "@/components/consoleNav";
 import DashboardConsole from "@/components/DashboardConsole";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Tableau de bord | heycybercorp",
 };

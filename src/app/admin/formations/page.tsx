@@ -4,6 +4,8 @@ import { ADMIN_NAV } from "@/components/consoleNav";
 import AdminGate from "@/components/console/AdminGate";
 import AdminCourses from "@/components/console/AdminCourses";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = { title: "Formations | Admin heycybercorp" };
 
 export default function Page() {
