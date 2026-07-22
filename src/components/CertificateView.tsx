@@ -27,8 +27,8 @@ export default function CertificateView({ code }: { code: string }) {
             Certificat non reconnu
           </h1>
           <p className="text-on-surface-variant mb-2">
-            Le code <span className="font-code-sm text-error">{code}</span> ne correspond à aucun
-            certificat émis par heycybercorp.
+            Le code <span className="font-code-sm text-error">{code}</span>{" "}
+            ne correspond à aucun certificat émis par heycybercorp.
           </p>
           <p className="text-on-surface-variant text-sm mb-8">
             Vérifiez la saisie ou contactez la personne qui vous l&apos;a transmis.

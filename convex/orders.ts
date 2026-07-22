@@ -11,25 +11,25 @@ const providerValidator = v.union(
 );
 
 /**
- * Create a pending order before redirecting the buyer to the payment provider.
- * Amount is derived server-side from the course price (never trust the client).
+ * Create a pending order for a PACKAGE before redirecting to the payment
+ * provider. Amount is derived server-side from the package price.
  */
 export const createPending = mutation({
   args: {
-    courseId: v.id("courses"),
+    packageId: v.id("packages"),
     provider: providerValidator,
     currency: v.union(v.literal("EUR"), v.literal("XOF")),
   },
-  handler: async (ctx, { courseId, provider, currency }) => {
+  handler: async (ctx, { packageId, provider, currency }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
-    const course = await ctx.db.get(courseId);
-    if (!course) throw new Error("Course not found");
+    const pkg = await ctx.db.get(packageId);
+    if (!pkg) throw new Error("Package introuvable.");
 
-    const amount = currency === "EUR" ? course.priceEur : course.priceXof;
+    const amount = currency === "EUR" ? pkg.priceEur : pkg.priceXof;
     return await ctx.db.insert("orders", {
       userId: user._id,
-      courseId,
+      packageId,
       provider,
       amount,
       currency,
@@ -38,47 +38,47 @@ export const createPending = mutation({
   },
 });
 
+/** Order + package + buyer email — used by the Stripe checkout action. */
+export const getWithPackage = internalQuery({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, { orderId }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order || !order.packageId) return null;
+    const [pkg, user] = await Promise.all([
+      ctx.db.get(order.packageId),
+      ctx.db.get(order.userId),
+    ]);
+    if (!pkg || !user) return null;
+    return { order, pkg, userEmail: user.email };
+  },
+});
+
 /**
- * Mark an order paid and grant the entitlement. INTERNAL — only callable from a
- * verified payment webhook (Convex httpAction), never from the client. Idempotent.
+ * Mark an order paid and grant the package entitlement. INTERNAL — only from a
+ * verified payment webhook / checkout action. Idempotent.
  */
 export const markPaid = internalMutation({
   args: { orderId: v.id("orders"), providerRef: v.string() },
   handler: async (ctx, { orderId, providerRef }) => {
     const order = await ctx.db.get(orderId);
     if (!order || order.status === "paid") return;
-
     await ctx.db.patch(orderId, { status: "paid", providerRef });
+    if (!order.packageId) return;
 
     const existing = await ctx.db
       .query("entitlements")
-      .withIndex("by_user_course", (q) =>
-        q.eq("userId", order.userId).eq("courseId", order.courseId),
+      .withIndex("by_user_package", (q) =>
+        q.eq("userId", order.userId).eq("packageId", order.packageId!),
       )
       .unique();
     if (!existing) {
       await ctx.db.insert("entitlements", {
         userId: order.userId,
-        courseId: order.courseId,
+        packageId: order.packageId,
         orderId,
         grantedAt: Date.now(),
       });
     }
-  },
-});
-
-/** Order + course + buyer email — used by the Stripe checkout action. */
-export const getWithCourse = internalQuery({
-  args: { orderId: v.id("orders") },
-  handler: async (ctx, { orderId }) => {
-    const order = await ctx.db.get(orderId);
-    if (!order) return null;
-    const [course, user] = await Promise.all([
-      ctx.db.get(order.courseId),
-      ctx.db.get(order.userId),
-    ]);
-    if (!course || !user) return null;
-    return { order, course, userEmail: user.email };
   },
 });
 
@@ -105,13 +105,17 @@ export const mine = query({
     return Promise.all(
       orders.map(async (o) => ({
         ...o,
-        courseTitle: (await ctx.db.get(o.courseId))?.title ?? "—",
+        label: o.packageId
+          ? ((await ctx.db.get(o.packageId))?.name ?? "Package")
+          : o.courseId
+            ? ((await ctx.db.get(o.courseId))?.title ?? "Formation")
+            : "—",
       })),
     );
   },
 });
 
-/** All orders with buyer + course info — admin only (the Ventes page). */
+/** All orders with buyer + package info — admin only (the Ventes page). */
 export const listAll = query({
   args: {},
   handler: async (ctx) => {
@@ -119,15 +123,16 @@ export const listAll = query({
     const orders = await ctx.db.query("orders").order("desc").collect();
     return Promise.all(
       orders.map(async (o) => {
-        const [course, user] = await Promise.all([
-          ctx.db.get(o.courseId),
+        const [user, label] = await Promise.all([
           ctx.db.get(o.userId),
+          (async () =>
+            o.packageId
+              ? ((await ctx.db.get(o.packageId))?.name ?? "Package")
+              : o.courseId
+                ? ((await ctx.db.get(o.courseId))?.title ?? "Formation")
+                : "—")(),
         ]);
-        return {
-          ...o,
-          courseTitle: course?.title ?? "—",
-          userEmail: user?.email ?? "—",
-        };
+        return { ...o, label, userEmail: user?.email ?? "—" };
       }),
     );
   },

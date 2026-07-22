@@ -1,6 +1,11 @@
 import Link from "next/link";
+import Socials from "./Socials";
 
-const SOCIAL = ["LinkedIn", "Facebook", "YouTube", "Mentions Légales", "Confidentialité"];
+// Legal links (placeholders for now — point them at real pages when they exist).
+const LEGAL = [
+  { label: "Mentions Légales", href: "#" },
+  { label: "Confidentialité", href: "#" },
+];
 
 export default function Footer() {
   return (
@@ -12,16 +17,20 @@ export default function Footer() {
         >
           heycybercorp
         </Link>
-        <div className="flex flex-wrap justify-center gap-6 md:gap-12">
-          {SOCIAL.map((item) => (
-            <a
-              key={item}
-              href="#"
-              className="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors"
-            >
-              {item}
-            </a>
-          ))}
+        <div className="flex flex-col sm:flex-row items-center gap-6 md:gap-10">
+          {/* Same social links as the homepage — edit them in src/lib/site.ts */}
+          <Socials variant="footer" />
+          <div className="flex flex-wrap justify-center gap-6">
+            {LEGAL.map((item) => (
+              <a
+                key={item.label}
+                href={item.href}
+                className="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
         </div>
         <div className="font-body-md text-body-md text-on-surface-variant text-center md:text-right">
           © 2026 heycybercorp. Protégez votre futur.

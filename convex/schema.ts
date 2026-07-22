@@ -1,9 +1,18 @@
 import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
+const levelValidator = v.union(
+  v.literal("Débutant"),
+  v.literal("Intermédiaire"),
+  v.literal("Avancé"),
+);
+
 /**
  * Hercyberloop / heycybercorp data model.
- * Billing model: one-time purchase per course → access = an `entitlements` row exists.
+ *
+ * Billing model: one-time purchase per PACKAGE (a priced tier that unlocks one
+ * or more difficulty levels). Owning a package that covers a course's level =
+ * lifetime access to that course. Courses no longer carry their own price.
  */
 export default defineSchema({
   // Synced from Clerk on sign-in (see users.store)
@@ -13,9 +22,7 @@ export default defineSchema({
     name: v.optional(v.string()),
     region: v.optional(v.union(v.literal("AFRIQUE"), v.literal("EUROPE"))),
     role: v.union(v.literal("student"), v.literal("admin")),
-    // A suspended account keeps its data but loses access to lessons/purchases.
     suspended: v.optional(v.boolean()),
-    // Notification preferences (Paramètres → Préférences).
     prefs: v.optional(
       v.object({
         emailNotifications: v.optional(v.boolean()),
@@ -26,18 +33,29 @@ export default defineSchema({
     .index("by_clerk_id", ["clerkId"])
     .index("by_email", ["email"]),
 
+  // Priced tiers. A package unlocks every course whose level is in `levels`.
+  packages: defineTable({
+    slug: v.string(),
+    name: v.string(),
+    tagline: v.optional(v.string()),
+    priceEur: v.number(), // cents
+    priceXof: v.number(), // whole FCFA
+    features: v.array(v.string()),
+    levels: v.array(levelValidator), // which course levels this package unlocks
+    published: v.boolean(),
+    featured: v.optional(v.boolean()), // highlight on the pricing page
+    order: v.number(),
+  }).index("by_slug", ["slug"]),
+
   courses: defineTable({
     slug: v.string(),
     title: v.string(),
-    level: v.union(
-      v.literal("Débutant"),
-      v.literal("Intermédiaire"),
-      v.literal("Avancé"),
-    ),
+    level: levelValidator, // difficulty — also decides which package unlocks it
     description: v.string(),
-    priceEur: v.number(), // in cents (e.g. 4000 = 40,00 €)
-    priceXof: v.number(), // in whole FCFA (e.g. 15000)
-    azureContainer: v.string(), // private Blob container holding this course's videos
+    // Legacy per-course prices — pricing now comes from the covering package.
+    priceEur: v.optional(v.number()),
+    priceXof: v.optional(v.number()),
+    azureContainer: v.string(),
     published: v.boolean(),
   }).index("by_slug", ["slug"]),
 
@@ -46,36 +64,37 @@ export default defineSchema({
     title: v.string(),
     description: v.optional(v.string()),
     order: v.number(),
-    // Azure path (Phase 3: signed SAS playback). Optional until videos are uploaded.
     blobPath: v.optional(v.string()),
-    // Direct/external video URL (mp4, YouTube, Vimeo) — dev & pre-Azure fallback.
     videoUrl: v.optional(v.string()),
     durationSec: v.optional(v.number()),
-    isPreview: v.boolean(), // previews are watchable without an entitlement
+    isPreview: v.boolean(),
   }).index("by_course", ["courseId"]),
 
-  // One row = the buyer owns that course for life.
+  // One row = the buyer owns that package for life.
   entitlements: defineTable({
     userId: v.id("users"),
-    courseId: v.id("courses"),
+    packageId: v.optional(v.id("packages")), // current model
+    courseId: v.optional(v.id("courses")), // legacy per-course entitlements
     grantedAt: v.number(),
     orderId: v.optional(v.id("orders")),
   })
     .index("by_user", ["userId"])
-    .index("by_course", ["courseId"])
-    .index("by_user_course", ["userId", "courseId"]),
+    .index("by_user_course", ["userId", "courseId"])
+    .index("by_user_package", ["userId", "packageId"])
+    .index("by_package", ["packageId"]),
 
   orders: defineTable({
     userId: v.id("users"),
-    courseId: v.id("courses"),
+    packageId: v.optional(v.id("packages")), // current model
+    courseId: v.optional(v.id("courses")), // legacy
     provider: v.union(
       v.literal("stripe"),
       v.literal("pawapay"),
       v.literal("paydunya"),
-      v.literal("manual"), // granted by an admin (offline payment, promo, support)
-      v.literal("simulation"), // test purchase made while Stripe keys are absent
+      v.literal("manual"),
+      v.literal("simulation"),
     ),
-    providerRef: v.optional(v.string()), // Stripe session id / PSP transaction id
+    providerRef: v.optional(v.string()),
     amount: v.number(),
     currency: v.string(), // "EUR" | "XOF"
     status: v.union(
@@ -99,8 +118,6 @@ export default defineSchema({
     .index("by_user_course", ["userId", "courseId"])
     .index("by_user_lesson", ["userId", "lessonId"]),
 
-  // Issued automatically when every lesson of an owned course is completed.
-  // `code` is public & verifiable on /certificat/[code].
   certificates: defineTable({
     userId: v.id("users"),
     courseId: v.id("courses"),
@@ -111,7 +128,6 @@ export default defineSchema({
     .index("by_code", ["code"])
     .index("by_user_course", ["userId", "courseId"]),
 
-  // Contact + quote form submissions (public site).
   messages: defineTable({
     kind: v.union(v.literal("contact"), v.literal("devis")),
     name: v.string(),
@@ -122,6 +138,15 @@ export default defineSchema({
   })
     .index("by_status", ["status"])
     .index("by_email", ["email"]),
+
+  freeVideos: defineTable({
+    title: v.string(),
+    description: v.string(),
+    youtubeUrl: v.string(),
+    order: v.number(),
+    published: v.boolean(),
+    courseId: v.optional(v.id("courses")),
+  }),
 
   auditLog: defineTable({
     actorClerkId: v.optional(v.string()),

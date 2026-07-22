@@ -15,12 +15,12 @@ import Stripe from "stripe";
  *   STRIPE_WEBHOOK_SECRET  whsec_… (endpoint: https://<deployment>.convex.site/stripe/webhook)
  *   SITE_URL               https://your-site.vercel.app (no trailing slash)
  *
- * ⚠ SIMULATION MODE: while STRIPE_SECRET_KEY is absent, buying a course
+ * ⚠ SIMULATION MODE: while STRIPE_SECRET_KEY is absent, buying a pack
  * "succeeds" instantly without any real payment — the order is recorded with
  * provider "simulation" and access is granted, so the whole student journey
  * is testable with zero keys. The moment the key exists, the same button goes
  * through real Stripe Checkout instead. Do NOT launch publicly without the
- * key set, or courses are effectively free.
+ * key set, or the packs are effectively free.
  */
 
 function siteUrl(): string {
@@ -38,27 +38,27 @@ function siteUrl(): string {
  *   relative success URL is returned (works on any host, no SITE_URL needed).
  */
 export const createCheckoutSession = action({
-  args: { courseId: v.id("courses") },
-  handler: async (ctx, { courseId }): Promise<string> => {
+  args: { packageId: v.id("packages") },
+  handler: async (ctx, { packageId }): Promise<string> => {
     const identity = await ctx.auth.getUserIdentity();
-    if (!identity) throw new Error("Connectez-vous pour acheter une formation.");
+    if (!identity) throw new Error("Connectez-vous pour acheter un pack.");
 
     const key = process.env.STRIPE_SECRET_KEY;
 
     // ---- Simulation mode: no Stripe key yet ----
     if (!key) {
       const orderId: Id<"orders"> = await ctx.runMutation(api.orders.createPending, {
-        courseId,
+        packageId,
         provider: "simulation",
         currency: "EUR",
       });
-      const info = await ctx.runQuery(internal.orders.getWithCourse, { orderId });
+      const info = await ctx.runQuery(internal.orders.getWithPackage, { orderId });
       if (!info) throw new Error("Commande introuvable.");
       await ctx.runMutation(internal.orders.markPaid, {
         orderId,
         providerRef: `SIM-${orderId.slice(-8).toUpperCase()}`,
       });
-      return `/formations/${info.course.slug}?paiement=simulation`;
+      return `/tarifs?paiement=simulation&pack=${info.pkg.slug}`;
     }
 
     // ---- Real Stripe ----
@@ -67,11 +67,11 @@ export const createCheckoutSession = action({
     // Pending order first: server-side price, and the id rides along in
     // metadata so the webhook knows exactly what was bought.
     const orderId: Id<"orders"> = await ctx.runMutation(api.orders.createPending, {
-      courseId,
+      packageId,
       provider: "stripe",
       currency: "EUR", // African mobile-money (XOF) arrives in Phase 7
     });
-    const info = await ctx.runQuery(internal.orders.getWithCourse, { orderId });
+    const info = await ctx.runQuery(internal.orders.getWithPackage, { orderId });
     if (!info) throw new Error("Commande introuvable.");
 
     const session = await stripe.checkout.sessions.create({
@@ -84,15 +84,15 @@ export const createCheckoutSession = action({
             currency: "eur",
             unit_amount: info.order.amount, // cents, from the DB
             product_data: {
-              name: info.course.title,
-              description: `Formation heycybercorp — accès à vie (${info.course.level})`,
+              name: `Pack ${info.pkg.name}`,
+              description: `heycybercorp — accès à vie à toutes les formations du pack ${info.pkg.name}`,
             },
           },
         },
       ],
       metadata: { orderId },
-      success_url: `${siteUrl()}/formations/${info.course.slug}?paiement=succes`,
-      cancel_url: `${siteUrl()}/formations/${info.course.slug}?paiement=annule`,
+      success_url: `${siteUrl()}/tarifs?paiement=succes&pack=${info.pkg.slug}`,
+      cancel_url: `${siteUrl()}/tarifs?paiement=annule&pack=${info.pkg.slug}`,
     });
 
     if (!session.url) throw new Error("Stripe n'a pas renvoyé d'URL de paiement.");

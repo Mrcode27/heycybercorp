@@ -4,6 +4,8 @@ import Icon from "@/components/Icon";
 import HeroTerminal from "@/components/HeroTerminal";
 import PricingPreview from "@/components/PricingPreview";
 import LiveForm from "@/components/LiveForm";
+import FreeContent from "@/components/FreeContent";
+import Socials from "@/components/Socials";
 
 const COURSES = [
   {
@@ -151,6 +153,24 @@ export default function Home() {
       {/* Pricing preview */}
       <section className="py-24 bg-surface-container-low border-y border-outline-variant/30">
         <PricingPreview />
+      </section>
+
+      {/* Free content + community */}
+      <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
+        <FreeContent />
+        <div className="text-center">
+          <div className="inline-flex items-center gap-2 text-secondary font-label-mono mb-4">
+            <span className="h-px w-8 bg-secondary" />
+            COMMUNAUTÉ
+          </div>
+          <h2 className="font-headline-lg text-headline-xl text-white mb-4 text-balance">
+            Rejoignez la communauté
+          </h2>
+          <p className="text-on-surface-variant max-w-xl mx-auto mb-10">
+            Suivez heycybercorp pour des astuces, des lives et les coulisses de la cyberdéfense.
+          </p>
+          <Socials variant="hero" />
+        </div>
       </section>
 
       {/* Quote request form */}

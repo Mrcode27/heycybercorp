@@ -83,10 +83,12 @@ function CourseCard({
             <Icon name="verified" className="text-sm" fill />
             POSSÉDÉ · ACCÈS À VIE
           </span>
-        ) : (
+        ) : course.priceEur != null && course.priceXof != null ? (
           <span className={`font-headline-lg-mobile font-bold ${accentText(course.level)}`}>
             {formatCoursePrice(course.priceEur, course.priceXof, region)}
           </span>
+        ) : (
+          <span className="font-code-sm text-code-sm text-on-surface-variant">Bientôt</span>
         )}
         <Icon
           name={owned ? "play_circle" : "arrow_forward"}

@@ -13,13 +13,13 @@ function roleClasses(role: string) {
     : "bg-surface-variant text-on-surface-variant border-outline-variant/40";
 }
 
-/** Expanded row: role, suspension, and per-course access for one user. */
+/** Expanded row: role, suspension, and per-package access for one user. */
 function UserManagePanel({
   user,
-  courses,
+  packages,
 }: {
   user: Doc<"users">;
-  courses: { _id: Id<"courses">; title: string }[];
+  packages: { _id: Id<"packages">; name: string }[];
 }) {
   const entitlements = useQuery(api.entitlements.forUser, { userId: user._id });
   const setRole = useMutation(api.users.setRole);
@@ -27,11 +27,11 @@ function UserManagePanel({
   const grant = useMutation(api.entitlements.grant);
   const revoke = useMutation(api.entitlements.revoke);
 
-  const [courseToGrant, setCourseToGrant] = useState<string>("");
+  const [packageToGrant, setPackageToGrant] = useState<string>("");
   const [error, setError] = useState<string | null>(null);
 
-  const ownedIds = new Set((entitlements ?? []).map((e) => e.courseId));
-  const grantable = courses.filter((c) => !ownedIds.has(c._id));
+  const ownedIds = new Set((entitlements ?? []).map((e) => e.packageId));
+  const grantable = packages.filter((p) => !ownedIds.has(p._id));
 
   async function run(fn: () => Promise<unknown>) {
     setError(null);
@@ -84,22 +84,22 @@ function UserManagePanel({
       {/* Access */}
       <div>
         <div className="font-label-mono text-xs uppercase text-on-surface-variant mb-2">
-          Formations possédées
+          Packs possédés
         </div>
         {entitlements === undefined ? (
           <p className="text-on-surface-variant font-code-sm text-code-sm">Chargement…</p>
         ) : (
           <>
             {entitlements.length === 0 && (
-              <p className="text-on-surface-variant text-sm mb-2">Aucune.</p>
+              <p className="text-on-surface-variant text-sm mb-2">Aucun.</p>
             )}
             <ul className="flex flex-col gap-1.5 mb-3">
               {entitlements.map((e) => (
-                <li key={e.courseId} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-on-surface truncate">{e.courseTitle}</span>
+                <li key={e.packageId} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="text-on-surface truncate">{e.packageName}</span>
                   <button
                     onClick={() =>
-                      run(() => revoke({ userId: user._id, courseId: e.courseId }))
+                      run(() => revoke({ userId: user._id, packageId: e.packageId! }))
                     }
                     className="text-on-surface-variant hover:text-error transition-colors shrink-0"
                     title="Révoquer l'accès"
@@ -113,26 +113,26 @@ function UserManagePanel({
             {grantable.length > 0 && (
               <div className="flex gap-2">
                 <select
-                  value={courseToGrant}
-                  onChange={(e) => setCourseToGrant(e.target.value)}
+                  value={packageToGrant}
+                  onChange={(e) => setPackageToGrant(e.target.value)}
                   className="flex-grow bg-[#000202] border border-outline-variant text-on-surface px-2 py-1.5 rounded text-xs outline-none focus:border-primary"
                 >
-                  <option value="">Choisir un cours…</option>
-                  {grantable.map((c) => (
-                    <option key={c._id} value={c._id}>
-                      {c.title}
+                  <option value="">Choisir un pack…</option>
+                  {grantable.map((p) => (
+                    <option key={p._id} value={p._id}>
+                      {p.name}
                     </option>
                   ))}
                 </select>
                 <button
-                  disabled={!courseToGrant}
+                  disabled={!packageToGrant}
                   onClick={() =>
                     run(async () => {
                       await grant({
                         userId: user._id,
-                        courseId: courseToGrant as Id<"courses">,
+                        packageId: packageToGrant as Id<"packages">,
                       });
-                      setCourseToGrant("");
+                      setPackageToGrant("");
                     })
                   }
                   className="px-3 py-1.5 bg-primary text-on-primary font-bold rounded text-xs hover:brightness-110 transition-all disabled:opacity-50"
@@ -156,7 +156,7 @@ function UserManagePanel({
 
 export default function AdminUsers({ title = "Utilisateurs" }: { title?: string }) {
   const users = useQuery(api.users.listAll, {});
-  const courses = useQuery(api.courses.listAll, {});
+  const packages = useQuery(api.packages.listAll, {});
   const [expanded, setExpanded] = useState<Id<"users"> | null>(null);
 
   return (
@@ -251,7 +251,7 @@ export default function AdminUsers({ title = "Utilisateurs" }: { title?: string 
                   <td colSpan={5} className="p-0">
                     <UserManagePanel
                       user={u}
-                      courses={(courses ?? []).map((c) => ({ _id: c._id, title: c.title }))}
+                      packages={(packages ?? []).map((p) => ({ _id: p._id, name: p.name }))}
                     />
                   </td>
                 </tr>

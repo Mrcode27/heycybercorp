@@ -37,7 +37,7 @@ export const analytics = query({
   args: {},
   handler: async (ctx) => {
     await requireAdmin(ctx);
-    const [users, courses, entitlements, orders, progress, lessons] =
+    const [users, courses, entitlements, orders, progress, lessons, pkgs] =
       await Promise.all([
         ctx.db.query("users").collect(),
         ctx.db.query("courses").collect(),
@@ -45,6 +45,7 @@ export const analytics = query({
         ctx.db.query("orders").collect(),
         ctx.db.query("progress").collect(),
         ctx.db.query("lessons").collect(),
+        ctx.db.query("packages").collect(),
       ]);
 
     const now = Date.now();
@@ -92,20 +93,21 @@ export const analytics = query({
         { eur: 0, xof: 0 },
       );
 
-    // --- Top courses by number of accesses (all time) ---
-    const countByCourse = new Map<string, number>();
+    // --- Top packages by number of purchases (all time) ---
+    const countByPackage = new Map<string, number>();
     for (const e of entitlements) {
-      countByCourse.set(e.courseId, (countByCourse.get(e.courseId) ?? 0) + 1);
+      if (!e.packageId) continue;
+      countByPackage.set(e.packageId, (countByPackage.get(e.packageId) ?? 0) + 1);
     }
-    const topCourses = [...countByCourse.entries()]
-      .map(([courseId, count]) => ({
-        title: courses.find((c) => c._id === courseId)?.title ?? "—",
+    const topPackages = [...countByPackage.entries()]
+      .map(([packageId, count]) => ({
+        title: pkgs.find((p) => p._id === packageId)?.name ?? "—",
         count,
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // --- Average completion across every (user, owned course) pair ---
+    // --- Average completion across every (user, accessible course) pair ---
     const lessonsByCourse = new Map<string, number>();
     for (const l of lessons) {
       lessonsByCourse.set(l.courseId, (lessonsByCourse.get(l.courseId) ?? 0) + 1);
@@ -116,14 +118,25 @@ export const analytics = query({
       const key = `${p.userId}:${p.courseId}`;
       completedByUserCourse.set(key, (completedByUserCourse.get(key) ?? 0) + 1);
     }
+    const pkgById = new Map(pkgs.map((p) => [p._id, p]));
+    const seenUserCourse = new Set<string>();
     let pctSum = 0;
     let pctCount = 0;
     for (const e of entitlements) {
-      const total = lessonsByCourse.get(e.courseId) ?? 0;
-      if (total === 0) continue;
-      const done = completedByUserCourse.get(`${e.userId}:${e.courseId}`) ?? 0;
-      pctSum += Math.min(done / total, 1);
-      pctCount += 1;
+      if (!e.packageId) continue;
+      const pkg = pkgById.get(e.packageId);
+      if (!pkg) continue;
+      for (const course of courses) {
+        if (!pkg.levels.includes(course.level)) continue;
+        const key = `${e.userId}:${course._id}`;
+        if (seenUserCourse.has(key)) continue;
+        seenUserCourse.add(key);
+        const total = lessonsByCourse.get(course._id) ?? 0;
+        if (total === 0) continue;
+        const done = completedByUserCourse.get(key) ?? 0;
+        pctSum += Math.min(done / total, 1);
+        pctCount += 1;
+      }
     }
 
     return {
@@ -134,7 +147,7 @@ export const analytics = query({
       newStudentsPrev30d: users.filter((u) => inPrev30(u._creationTime)).length,
       paidOrders30d: paid.filter((o) => in30(o._creationTime)).length,
       completionPct: pctCount === 0 ? null : Math.round((pctSum / pctCount) * 100),
-      topCourses,
+      topPackages,
     };
   },
 });

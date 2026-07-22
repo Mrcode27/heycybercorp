@@ -30,7 +30,7 @@ export default function AdminReports() {
   const hasRevenue = data.months.some((m) => m.eur > 0 || m.xof > 0);
   const chartValues = data.months.map((m) => (currency === "eur" ? m.eur : m.xof));
   const chartMax = Math.max(...chartValues, 1);
-  const topMax = Math.max(...data.topCourses.map((t) => t.count), 1);
+  const topMax = Math.max(...data.topPackages.map((t) => t.count), 1);
 
   const KPIS = [
     {
@@ -153,16 +153,16 @@ export default function AdminReports() {
         {/* Top courses */}
         <div className="glass-card rounded-xl p-6">
           <h3 className="font-headline-lg-mobile text-on-surface mb-1">
-            Formations les plus vendues
+            Packs les plus vendus
           </h3>
           <p className="text-on-surface-variant text-sm mb-6">Par nombre d&apos;accès accordés</p>
-          {data.topCourses.length === 0 ? (
+          {data.topPackages.length === 0 ? (
             <p className="text-on-surface-variant text-sm">
               Aucun accès accordé pour l&apos;instant.
             </p>
           ) : (
             <div className="flex flex-col gap-5">
-              {data.topCourses.map((t) => (
+              {data.topPackages.map((t) => (
                 <div key={t.title}>
                   <div className="flex justify-between items-baseline mb-1.5">
                     <span className="text-on-surface text-sm">{t.title}</span>

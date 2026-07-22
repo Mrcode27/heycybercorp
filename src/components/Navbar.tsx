@@ -24,18 +24,19 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
       <div className="flex items-center justify-between px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="flex items-center gap-2 min-w-0 shrink">
           {/* Logo + wordmark. Both the tab favicon and this image resolve to
-              /public/logo.png — swap that file and the brand updates site-wide. */}
+              /public/logo.png — swap that file and the brand updates site-wide.
+              Wordmark shrinks on mobile so it can't collide with the avatar. */}
           <Image
             src="/logo.png"
             alt="heycybercorp"
             width={299}
             height={299}
             priority
-            className="h-9 w-auto"
+            className="h-8 md:h-9 w-auto shrink-0"
           />
-          <span className="font-headline-lg text-headline-lg font-bold text-primary tracking-tighter">
+          <span className="font-headline-lg text-headline-lg-mobile md:text-headline-lg font-bold text-primary tracking-tighter whitespace-nowrap">
             heycybercorp
           </span>
         </Link>
@@ -56,7 +57,7 @@ export default function Navbar() {
           ))}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <Show when="signed-out">
             <Link
               href="/connexion"

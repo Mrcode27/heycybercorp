@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUser } from "./users";
+import { ownedLevels } from "./entitlements";
 import type { MutationCtx } from "./_generated/server";
 import type { Doc } from "./_generated/dataModel";
 
@@ -72,13 +73,11 @@ export const record = mutation({
     if (!lesson) throw new Error("Leçon introuvable.");
 
     if (!lesson.isPreview) {
-      const ent = await ctx.db
-        .query("entitlements")
-        .withIndex("by_user_course", (q) =>
-          q.eq("userId", user._id).eq("courseId", lesson.courseId),
-        )
-        .unique();
-      if (!ent) throw new Error("Vous ne possédez pas ce cours.");
+      const course = await ctx.db.get(lesson.courseId);
+      const levels = await ownedLevels(ctx, user._id);
+      if (!course || !levels.has(course.level)) {
+        throw new Error("Vous ne possédez pas ce cours.");
+      }
     }
 
     const existing = await ctx.db

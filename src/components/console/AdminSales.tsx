@@ -47,7 +47,7 @@ export default function AdminSales() {
             <thead>
               <tr className="bg-surface-container-high font-label-mono text-label-mono uppercase text-on-surface-variant text-xs">
                 <th className="p-4">Client</th>
-                <th className="p-4">Formation</th>
+                <th className="p-4">Achat</th>
                 <th className="p-4">Montant</th>
                 <th className="p-4">Fournisseur</th>
                 <th className="p-4">Statut</th>
@@ -60,7 +60,7 @@ export default function AdminSales() {
               {orders?.map((o, i) => (
                 <tr key={o._id} className={`border-t border-outline-variant/20 ${i % 2 ? "bg-surface-container-lowest/50" : ""}`}>
                   <td className="p-4 text-on-surface-variant text-sm">{o.userEmail}</td>
-                  <td className="p-4 text-on-surface font-medium">{o.courseTitle}</td>
+                  <td className="p-4 text-on-surface font-medium">{o.label}</td>
                   <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{money(o.amount, o.currency)}</td>
                   <td className="p-4 text-on-surface-variant capitalize">{o.provider}</td>
                   <td className="p-4">

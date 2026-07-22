@@ -1,65 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import { useQuery } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import Icon from "./Icon";
+import BuyPackageButton from "./BuyPackageButton";
+import { formatCoursePrice, type Region } from "@/lib/format";
 
-type Plan = {
-  tag: string;
-  tagColor: string;
-  name?: string;
-  priceEurope: string;
-  priceAfrica: string;
-  suffix?: string;
-  features: { label: string; included: boolean }[];
-  cta: string;
-  featured?: boolean;
-};
-
-const PLANS: Plan[] = [
-  {
-    tag: "STARTER",
-    tagColor: "text-primary",
-    priceEurope: "40€",
-    priceAfrica: "15 000 FCFA",
-    suffix: "· paiement unique",
-    features: [
-      { label: "Accès aux modules débutant", included: true },
-      { label: "Support communautaire", included: true },
-      { label: "Certification officielle", included: false },
-    ],
-    cta: "Choisir Starter",
-  },
-  {
-    tag: "PROFESSIONAL",
-    tagColor: "text-primary",
-    priceEurope: "60€",
-    priceAfrica: "30 000 FCFA",
-    suffix: "· paiement unique",
-    featured: true,
-    features: [
-      { label: "Accès à vie", included: true },
-      { label: "Certification heycybercorp", included: true },
-      { label: "Labs pratiques (VMs)", included: true },
-      { label: "Mentorat 1-on-1", included: true },
-    ],
-    cta: "S'inscrire",
-  },
-  {
-    tag: "HACKING PRO",
-    tagColor: "text-secondary",
-    priceEurope: "80€",
-    priceAfrica: "45 000 FCFA",
-    suffix: "· paiement unique",
-    features: [
-      { label: "Red Teaming & Exploitation", included: true },
-      { label: "Accès Labs illimité", included: true },
-      { label: "Coaching 1-on-1", included: true },
-    ],
-    cta: "Mode Root",
-  },
-];
-
+/** Homepage pricing — live packages from Convex, with working buy buttons. */
 export default function PricingPreview() {
-  const [isEurope, setIsEurope] = useState(true);
+  const packages = useQuery(api.packages.listPublished);
+  const me = useQuery(api.users.current);
+  const [regionOverride, setRegionOverride] = useState<Region | null>(null);
+  const region: Region = regionOverride ?? me?.region ?? "EUROPE";
 
   return (
     <div className="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center">
@@ -67,91 +20,95 @@ export default function PricingPreview() {
         Investissez dans votre Futur
       </h2>
       <p className="text-on-surface-variant mb-12 max-w-2xl mx-auto">
-        Des tarifs adaptés pour démocratiser l&apos;accès à l&apos;expertise cyber, quel que soit
-        votre continent.
+        Des packs adaptés pour démocratiser l&apos;accès à l&apos;expertise cyber, quel que soit
+        votre continent. Achat unique, accès à vie à toutes les formations du pack.
       </p>
 
-      {/* Region Toggle */}
+      {/* Region toggle */}
       <div className="flex items-center justify-center gap-4 mb-16">
         <span
           className={`font-label-mono text-on-surface-variant transition-opacity ${
-            isEurope ? "opacity-100" : "opacity-50"
+            region === "EUROPE" ? "opacity-100" : "opacity-50"
           }`}
         >
           Europe
         </span>
         <button
           type="button"
-          onClick={() => setIsEurope((v) => !v)}
+          onClick={() => setRegionOverride(region === "EUROPE" ? "AFRIQUE" : "EUROPE")}
           aria-label="Basculer la région"
           className="relative w-16 h-8 rounded-full bg-surface-container-highest border border-outline-variant p-1 transition-all"
         >
           <div
             className="absolute top-1 w-6 h-6 rounded-full bg-primary transition-all duration-300"
-            style={{ left: isEurope ? "4px" : "32px" }}
+            style={{ left: region === "EUROPE" ? "4px" : "32px" }}
           />
         </button>
         <span
           className={`font-label-mono text-on-surface-variant transition-opacity ${
-            isEurope ? "opacity-50" : "opacity-100"
+            region === "EUROPE" ? "opacity-50" : "opacity-100"
           }`}
         >
           Afrique
         </span>
       </div>
 
+      {packages === undefined && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {[0, 1, 2].map((i) => (
+            <div key={i} className="bg-surface-dim p-10 rounded-xl h-96 animate-pulse" />
+          ))}
+        </div>
+      )}
+
+      {packages?.length === 0 && (
+        <p className="text-on-surface-variant">Les packs seront bientôt disponibles.</p>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 text-left">
-        {PLANS.map((plan) => (
+        {packages?.map((pkg) => (
           <div
-            key={plan.tag}
+            key={pkg._id}
             className={
-              plan.featured
+              pkg.featured
                 ? "bg-surface-container-highest p-10 rounded-xl border-2 border-primary relative overflow-hidden flex flex-col lg:scale-105 shadow-2xl"
                 : "bg-surface-dim p-10 rounded-xl border border-outline-variant/30 flex flex-col"
             }
           >
-            {plan.featured && (
+            {pkg.featured && (
               <div className="absolute top-4 right-4 bg-primary text-on-primary text-[10px] font-bold px-2 py-1 rounded">
                 POPULAIRE
               </div>
             )}
-            <div className={`font-label-mono mb-4 ${plan.tagColor}`}>{plan.tag}</div>
+            <div className="font-label-mono mb-2 text-primary uppercase tracking-widest text-xs">
+              {pkg.name}
+            </div>
+            {pkg.tagline && (
+              <div className="text-on-surface-variant text-sm mb-4">{pkg.tagline}</div>
+            )}
             <div className="flex items-baseline gap-1 mb-8">
               <span className="font-headline-xl text-headline-xl text-white">
-                {isEurope ? plan.priceEurope : plan.priceAfrica}
+                {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
               </span>
-              <span className="text-on-surface-variant text-sm">{plan.suffix}</span>
+              <span className="text-on-surface-variant text-sm">· à vie</span>
             </div>
             <ul className="space-y-4 mb-10 flex-1">
-              {plan.features.map((f) => (
-                <li
-                  key={f.label}
-                  className={`flex items-center gap-3 ${
-                    f.included ? "text-on-surface" : "text-on-surface-variant opacity-60"
-                  }`}
-                >
-                  <span
-                    className={`material-symbols-outlined text-sm ${
-                      f.included ? "text-primary" : ""
-                    }`}
-                    aria-hidden="true"
-                  >
-                    {f.included ? "check_circle" : "cancel"}
-                  </span>
-                  {f.label}
+              {pkg.features.map((f) => (
+                <li key={f} className="flex items-center gap-3 text-on-surface">
+                  <Icon name="check_circle" className="text-primary text-sm" fill />
+                  {f}
                 </li>
               ))}
             </ul>
-            <button
-              type="button"
+            <BuyPackageButton
+              packageId={pkg._id}
+              label={`Choisir ${pkg.name}`}
               className={
-                plan.featured
-                  ? "w-full py-4 rounded-lg bg-primary text-on-primary font-bold hover:brightness-110 cyber-glow-primary transition-all"
-                  : "w-full py-3 rounded-lg border border-outline text-white hover:bg-surface-variant transition-all"
+                pkg.featured
+                  ? "w-full py-4 rounded-lg bg-primary text-on-primary font-bold hover:brightness-110 cyber-glow-primary transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                  : "w-full py-3 rounded-lg border border-outline text-white hover:bg-surface-variant transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60"
               }
-            >
-              {plan.cta}
-            </button>
+            />
           </div>
         ))}
       </div>

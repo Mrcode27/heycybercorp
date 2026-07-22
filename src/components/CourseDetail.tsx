@@ -1,14 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useUser } from "@clerk/nextjs";
-import { useQuery, useAction } from "convex/react";
+import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
+import BuyPackageButton from "@/components/BuyPackageButton";
 import { formatCoursePrice, formatDuration, type Region } from "@/lib/format";
-import { cleanConvexError } from "@/lib/errors";
 
 function levelBadge(level: string) {
   return level === "Avancé"
@@ -21,13 +19,8 @@ function levelBadge(level: string) {
 /** Course landing page: overview, lesson list, price card + Stripe buy flow. */
 export default function CourseDetail({ slug }: { slug: string }) {
   const detail = useQuery(api.courses.detail, { slug });
-  const { isSignedIn } = useUser();
-  const createCheckout = useAction(api.stripe.createCheckoutSession);
   const searchParams = useSearchParams();
   const paiement = searchParams.get("paiement");
-
-  const [buying, setBuying] = useState(false);
-  const [buyError, setBuyError] = useState<string | null>(null);
 
   if (detail === undefined) {
     return (
@@ -60,22 +53,10 @@ export default function CourseDetail({ slug }: { slug: string }) {
     );
   }
 
-  const { course, lessons, owned } = detail;
+  const { course, lessons, owned, pkg } = detail;
   const region: Region = detail.region ?? "EUROPE";
   const totalSec = lessons.reduce((s, l) => s + (l.durationSec ?? 0), 0);
   const duration = formatDuration(totalSec);
-
-  async function buy() {
-    setBuying(true);
-    setBuyError(null);
-    try {
-      const url = await createCheckout({ courseId: course._id });
-      window.location.href = url;
-    } catch (err) {
-      setBuyError(cleanConvexError(err, "Le paiement a échoué. Réessayez."));
-      setBuying(false);
-    }
-  }
 
   return (
     <>
@@ -249,52 +230,31 @@ export default function CourseDetail({ slug }: { slug: string }) {
                   Accéder au cours
                 </Link>
               </>
-            ) : (
+            ) : pkg ? (
               <>
                 <div className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-2">
-                  Paiement unique
+                  Pack {pkg.name} · paiement unique
                 </div>
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="font-headline-xl text-headline-xl text-on-surface">
-                    {formatCoursePrice(course.priceEur, course.priceXof, region)}
+                    {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
                   </span>
                 </div>
                 <div className="text-on-surface-variant text-sm mb-6">
                   soit{" "}
                   {formatCoursePrice(
-                    course.priceEur,
-                    course.priceXof,
+                    pkg.priceEur,
+                    pkg.priceXof,
                     region === "EUROPE" ? "AFRIQUE" : "EUROPE",
                   )}{" "}
-                  · accès à vie
+                  · débloque toutes les formations {course.level}
                 </div>
 
-                {isSignedIn ? (
-                  <button
-                    type="button"
-                    onClick={buy}
-                    disabled={buying}
-                    className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all disabled:opacity-60"
-                  >
-                    <Icon name={buying ? "hourglass_top" : "shopping_cart"} />
-                    {buying ? "Redirection vers Stripe…" : "Acheter maintenant"}
-                  </button>
-                ) : (
-                  <Link
-                    href="/connexion"
-                    className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all"
-                  >
-                    <Icon name="login" />
-                    Se connecter pour acheter
-                  </Link>
-                )}
-
-                {buyError && (
-                  <p className="mt-4 font-code-sm text-code-sm text-error flex items-start gap-2">
-                    <Icon name="error" className="text-sm mt-0.5" />
-                    {buyError}
-                  </p>
-                )}
+                <BuyPackageButton
+                  packageId={pkg._id}
+                  label="Débloquer ce pack"
+                  className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all disabled:opacity-60"
+                />
 
                 <div className="mt-6 pt-6 border-t border-outline-variant/20 space-y-2 font-code-sm text-code-sm text-on-surface-variant">
                   <p className="flex items-center gap-2">
@@ -313,6 +273,15 @@ export default function CourseDetail({ slug }: { slug: string }) {
                     </p>
                   )}
                 </div>
+              </>
+            ) : (
+              <>
+                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-2">
+                  Bientôt disponible
+                </div>
+                <p className="text-on-surface-variant text-sm">
+                  Aucun pack ne couvre encore ce niveau. Revenez très prochainement.
+                </p>
               </>
             )}
           </div>

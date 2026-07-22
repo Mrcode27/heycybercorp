@@ -56,7 +56,7 @@ export default function StudentPurchases() {
           <thead>
             <tr className="bg-surface-container-high font-label-mono text-label-mono uppercase text-on-surface-variant text-xs">
               <th className="p-4">Date</th>
-              <th className="p-4">Formation</th>
+              <th className="p-4">Achat</th>
               <th className="p-4">Montant</th>
               <th className="p-4">Statut</th>
             </tr>
@@ -70,7 +70,7 @@ export default function StudentPurchases() {
                 <td className="p-4 text-on-surface-variant font-code-sm text-code-sm whitespace-nowrap">
                   {new Date(o._creationTime).toLocaleDateString("fr-FR")}
                 </td>
-                <td className="p-4 text-on-surface font-medium">{o.courseTitle}</td>
+                <td className="p-4 text-on-surface font-medium">{o.label}</td>
                 <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{money(o.amount, o.currency)}</td>
                 <td className="p-4">
                   <span className={`px-2 py-0.5 text-xs font-bold rounded border ${statusClasses(o.status)}`}>

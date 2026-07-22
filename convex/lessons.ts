@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUser, requireAdmin } from "./users";
+import { ownedLevels } from "./entitlements";
 import { logAudit } from "./lib/audit";
 
 /**
@@ -27,13 +28,8 @@ export const playback = query({
 
     let allowed = lesson.isPreview;
     if (!allowed && user) {
-      const ent = await ctx.db
-        .query("entitlements")
-        .withIndex("by_user_course", (q) =>
-          q.eq("userId", user._id).eq("courseId", lesson.courseId),
-        )
-        .unique();
-      allowed = ent !== null;
+      const levels = await ownedLevels(ctx, user._id);
+      allowed = levels.has(course.level);
     }
     if (!allowed) return { allowed: false as const, reason: "non-acheté" };
 
