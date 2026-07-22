@@ -27,6 +27,14 @@ export const metadata: Metadata = {
   title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
   description:
     "Formations de pointe en cybersécurité pour les talents africains et européens. Du débutant au hacking éthique avancé.",
+  // Single source of truth: the favicon (browser tab), bookmark icon and Apple
+  // touch icon all point at /public/logo.png. Replace that one file and every
+  // icon — plus the navbar logo, which loads the same path — updates everywhere.
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({

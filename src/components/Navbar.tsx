@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Show, UserButton } from "@clerk/nextjs";
@@ -23,11 +24,20 @@ export default function Navbar() {
   return (
     <nav className="fixed top-0 w-full z-50 bg-surface/80 backdrop-blur-xl border-b border-outline-variant/30 shadow-sm">
       <div className="flex items-center justify-between px-margin-mobile md:px-margin-desktop py-4 max-w-container-max mx-auto">
-        <Link
-          href="/"
-          className="font-headline-lg text-headline-lg font-bold text-primary tracking-tighter"
-        >
-          heycybercorp
+        <Link href="/" className="flex items-center gap-2.5">
+          {/* Logo + wordmark. Both the tab favicon and this image resolve to
+              /public/logo.png — swap that file and the brand updates site-wide. */}
+          <Image
+            src="/logo.png"
+            alt="heycybercorp"
+            width={299}
+            height={299}
+            priority
+            className="h-9 w-auto"
+          />
+          <span className="font-headline-lg text-headline-lg font-bold text-primary tracking-tighter">
+            heycybercorp
+          </span>
         </Link>
 
         <div className="hidden md:flex items-center gap-8">

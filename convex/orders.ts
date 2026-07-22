@@ -1,4 +1,4 @@
-import { mutation, internalMutation, query } from "./_generated/server";
+import { mutation, internalMutation, internalQuery, query } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUser, requireAdmin } from "./users";
 
@@ -6,6 +6,8 @@ const providerValidator = v.union(
   v.literal("stripe"),
   v.literal("pawapay"),
   v.literal("paydunya"),
+  v.literal("manual"),
+  v.literal("simulation"),
 );
 
 /**
@@ -62,6 +64,21 @@ export const markPaid = internalMutation({
         grantedAt: Date.now(),
       });
     }
+  },
+});
+
+/** Order + course + buyer email — used by the Stripe checkout action. */
+export const getWithCourse = internalQuery({
+  args: { orderId: v.id("orders") },
+  handler: async (ctx, { orderId }) => {
+    const order = await ctx.db.get(orderId);
+    if (!order) return null;
+    const [course, user] = await Promise.all([
+      ctx.db.get(order.courseId),
+      ctx.db.get(order.userId),
+    ]);
+    if (!course || !user) return null;
+    return { order, course, userEmail: user.email };
   },
 });
 

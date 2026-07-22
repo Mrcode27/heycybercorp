@@ -13,8 +13,9 @@ function levelBadge(level: string) {
       : "bg-primary/10 text-primary border-primary/20";
 }
 
+/** Owned courses with real progress bars; empty state links to the catalogue. */
 export default function StudentCourses() {
-  const myCourses = useQuery(api.entitlements.myCourses);
+  const myCourses = useQuery(api.entitlements.myCoursesWithProgress);
 
   if (myCourses === undefined) {
     return <p className="text-on-surface-variant font-code-sm">Chargement…</p>;
@@ -54,18 +55,46 @@ export default function StudentCourses() {
             >
               {c.level}
             </span>
-            <Icon name="verified" className="text-primary" fill />
+            {c.certificateCode ? (
+              <Link
+                href={`/certificat/${c.certificateCode}`}
+                className="flex items-center gap-1 text-primary font-code-sm text-code-sm hover:underline"
+              >
+                <Icon name="workspace_premium" className="text-sm" fill />
+                Certifié
+              </Link>
+            ) : (
+              <Icon name="verified" className="text-primary" fill />
+            )}
           </div>
           <h4 className="font-headline-lg-mobile text-on-surface mb-2">{c.title}</h4>
-          <p className="text-on-surface-variant text-sm mb-6 flex-grow line-clamp-2">
+          <p className="text-on-surface-variant text-sm mb-5 flex-grow line-clamp-2">
             {c.description}
           </p>
+
+          <div className="mb-4">
+            <div className="flex justify-between font-code-sm text-code-sm mb-1.5">
+              <span className="text-on-surface-variant">
+                {c.totalLessons === 0
+                  ? "Programme en préparation"
+                  : `${c.completedLessons}/${c.totalLessons} leçons`}
+              </span>
+              <span className="text-primary tabular-nums">{c.pct}%</span>
+            </div>
+            <div className="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-primary shadow-[0_0_10px_rgba(106,221,147,0.5)]"
+                style={{ width: `${c.pct}%` }}
+              />
+            </div>
+          </div>
+
           <Link
-            href={`/formations/${c.slug}`}
+            href={`/dashboard/formations/${c.slug}`}
             className="mt-auto inline-flex items-center justify-center gap-2 py-2.5 bg-primary text-on-primary font-bold rounded-lg text-sm hover:brightness-110 transition-all"
           >
             <Icon name="play_arrow" fill />
-            Continuer
+            {c.pct === 0 ? "Commencer" : c.pct === 100 ? "Revoir" : "Continuer"}
           </Link>
         </div>
       ))}

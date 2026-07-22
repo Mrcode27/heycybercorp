@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
-import DemoForm from "@/components/DemoForm";
+import LiveForm from "@/components/LiveForm";
 
 export const metadata: Metadata = {
   title: "Contact | heycybercorp",
@@ -67,7 +67,8 @@ export default function ContactPage() {
 
           {/* Form */}
           <div className="lg:col-span-3">
-            <DemoForm
+            <LiveForm
+              kind="contact"
               className="glass-card p-8 md:p-12 rounded-sm space-y-6"
               submitLabel="Envoyer le message"
               submitIcon="send"
@@ -76,16 +77,17 @@ export default function ContactPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className={labelClass}>Nom</label>
-                  <input className={inputClass} placeholder="Jean Dupont" type="text" required />
+                  <input name="nom" className={inputClass} placeholder="Jean Dupont" type="text" required />
                 </div>
                 <div className="space-y-2">
                   <label className={labelClass}>Email</label>
-                  <input className={inputClass} placeholder="jean@email.com" type="email" required />
+                  <input name="email" className={inputClass} placeholder="jean@email.com" type="email" required />
                 </div>
               </div>
               <div className="space-y-2">
                 <label className={labelClass}>Sujet</label>
                 <input
+                  name="sujet"
                   className={inputClass}
                   placeholder="Objet de votre message"
                   type="text"
@@ -95,13 +97,15 @@ export default function ContactPage() {
               <div className="space-y-2">
                 <label className={labelClass}>Message</label>
                 <textarea
+                  name="message"
                   className={inputClass}
                   placeholder="Écrivez votre message ici..."
                   rows={6}
                   required
+                  minLength={10}
                 />
               </div>
-            </DemoForm>
+            </LiveForm>
           </div>
         </div>
       </section>

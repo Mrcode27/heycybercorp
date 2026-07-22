@@ -14,5 +14,7 @@ export const ADMIN_NAV: SidebarItem[] = [
   { icon: "group", label: "Utilisateurs", href: "/admin/utilisateurs" },
   { icon: "school", label: "Formations", href: "/admin/formations" },
   { icon: "point_of_sale", label: "Ventes", href: "/admin/ventes" },
+  { icon: "mail", label: "Messages", href: "/admin/messages" },
   { icon: "assessment", label: "Rapports", href: "/admin/rapports" },
+  { icon: "history", label: "Journal", href: "/admin/journal" },
 ];

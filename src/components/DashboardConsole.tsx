@@ -25,6 +25,16 @@ export default function DashboardConsole() {
 
   return (
     <>
+      {me?.suspended && (
+        <div className="glass-card rounded-xl px-6 py-4 mb-8 border-error/50 flex items-center gap-3">
+          <Icon name="gpp_bad" className="text-error" fill />
+          <p className="text-on-surface">
+            <span className="font-bold text-error">Compte suspendu.</span>{" "}
+            L&apos;accès à vos formations est temporairement désactivé — contactez le support.
+          </p>
+        </div>
+      )}
+
       {/* Welcome */}
       <div className="glass-card rounded-xl p-8 mb-8 relative overflow-hidden cyber-grid-dots">
         <div className="font-label-mono text-label-mono text-primary uppercase tracking-widest mb-2">

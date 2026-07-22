@@ -1,18 +1,85 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { getCurrentUser } from "./users";
+import type { MutationCtx } from "./_generated/server";
+import type { Doc } from "./_generated/dataModel";
 
-/** Upsert watch progress for a lesson. */
+/** Random, unguessable certificate code, e.g. HCC-2026-8F3KQ2ZL. */
+function makeCertCode() {
+  const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no 0/O/1/I ambiguity
+  let tail = "";
+  for (let i = 0; i < 8; i++) {
+    tail += alphabet[Math.floor(Math.random() * alphabet.length)];
+  }
+  return `HCC-${new Date().getFullYear()}-${tail}`;
+}
+
+/** Issue the course certificate once every lesson is completed. Idempotent. */
+async function maybeIssueCertificate(ctx: MutationCtx, user: Doc<"users">, courseId: Doc<"courses">["_id"]) {
+  const existing = await ctx.db
+    .query("certificates")
+    .withIndex("by_user_course", (q) =>
+      q.eq("userId", user._id).eq("courseId", courseId),
+    )
+    .unique();
+  if (existing) return existing.code;
+
+  const lessons = await ctx.db
+    .query("lessons")
+    .withIndex("by_course", (q) => q.eq("courseId", courseId))
+    .collect();
+  if (lessons.length === 0) return null;
+
+  const rows = await ctx.db
+    .query("progress")
+    .withIndex("by_user_course", (q) =>
+      q.eq("userId", user._id).eq("courseId", courseId),
+    )
+    .collect();
+  const completedLessonIds = new Set(
+    rows.filter((r) => r.completedAt).map((r) => r.lessonId),
+  );
+  const allDone = lessons.every((l) => completedLessonIds.has(l._id));
+  if (!allDone) return null;
+
+  const code = makeCertCode();
+  await ctx.db.insert("certificates", {
+    userId: user._id,
+    courseId,
+    code,
+    issuedAt: Date.now(),
+  });
+  return code;
+}
+
+/**
+ * Upsert watch progress for a lesson. Only owners (or preview lessons) may
+ * record progress; completing the last lesson auto-issues the certificate.
+ * Returns the certificate code when this call earned it, else null.
+ */
 export const record = mutation({
   args: {
     lessonId: v.id("lessons"),
-    courseId: v.id("courses"),
     secondsWatched: v.number(),
     completed: v.boolean(),
   },
-  handler: async (ctx, { lessonId, courseId, secondsWatched, completed }) => {
+  handler: async (ctx, { lessonId, secondsWatched, completed }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
+    if (user.suspended) throw new Error("Compte suspendu.");
+
+    const lesson = await ctx.db.get(lessonId);
+    if (!lesson) throw new Error("Leçon introuvable.");
+
+    if (!lesson.isPreview) {
+      const ent = await ctx.db
+        .query("entitlements")
+        .withIndex("by_user_course", (q) =>
+          q.eq("userId", user._id).eq("courseId", lesson.courseId),
+        )
+        .unique();
+      if (!ent) throw new Error("Vous ne possédez pas ce cours.");
+    }
 
     const existing = await ctx.db
       .query("progress")
@@ -28,20 +95,24 @@ export const record = mutation({
         secondsWatched: Math.max(existing.secondsWatched, secondsWatched),
         completedAt: existing.completedAt ?? completedAt,
       });
-      return existing._id;
+    } else {
+      await ctx.db.insert("progress", {
+        userId: user._id,
+        lessonId,
+        courseId: lesson.courseId,
+        secondsWatched,
+        completedAt,
+      });
     }
 
-    return await ctx.db.insert("progress", {
-      userId: user._id,
-      lessonId,
-      courseId,
-      secondsWatched,
-      completedAt,
-    });
+    if (completed) {
+      return await maybeIssueCertificate(ctx, user, lesson.courseId);
+    }
+    return null;
   },
 });
 
-/** Progress rows for the current user across one course. */
+/** Progress rows for the current user across one course (the player sidebar). */
 export const forCourse = query({
   args: { courseId: v.id("courses") },
   handler: async (ctx, { courseId }) => {
@@ -49,8 +120,9 @@ export const forCourse = query({
     if (!user) return [];
     return ctx.db
       .query("progress")
-      .withIndex("by_user", (q) => q.eq("userId", user._id))
-      .filter((q) => q.eq(q.field("courseId"), courseId))
+      .withIndex("by_user_course", (q) =>
+        q.eq("userId", user._id).eq("courseId", courseId),
+      )
       .collect();
   },
 });

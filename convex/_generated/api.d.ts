@@ -9,10 +9,17 @@
  */
 
 import type * as admin from "../admin.js";
+import type * as audit from "../audit.js";
+import type * as certificates from "../certificates.js";
 import type * as courses from "../courses.js";
 import type * as entitlements from "../entitlements.js";
+import type * as http from "../http.js";
+import type * as lessons from "../lessons.js";
+import type * as lib_audit from "../lib/audit.js";
+import type * as messages from "../messages.js";
 import type * as orders from "../orders.js";
 import type * as progress from "../progress.js";
+import type * as stripe from "../stripe.js";
 import type * as users from "../users.js";
 
 import type {
@@ -23,10 +30,17 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
+  audit: typeof audit;
+  certificates: typeof certificates;
   courses: typeof courses;
   entitlements: typeof entitlements;
+  http: typeof http;
+  lessons: typeof lessons;
+  "lib/audit": typeof lib_audit;
+  messages: typeof messages;
   orders: typeof orders;
   progress: typeof progress;
+  stripe: typeof stripe;
   users: typeof users;
 }>;
 

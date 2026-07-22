@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import PublicShell from "@/components/PublicShell";
-import FormationsCatalogue from "@/components/FormationsCatalogue";
+import CourseDetail from "@/components/CourseDetail";
 
 // Live Convex data via client hooks — render at request time, not build time.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "heycybercorp | Catalogue des Formations",
+  title: "Formation | heycybercorp",
 };
 
-export default function FormationsPage() {
+export default async function CourseDetailPage({
+  params,
+}: PageProps<"/formations/[slug]">) {
+  const { slug } = await params;
   return (
     <PublicShell>
       <div className="pt-32 pb-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto cyber-grid">
-        <FormationsCatalogue />
+        <CourseDetail slug={slug} />
       </div>
     </PublicShell>
   );

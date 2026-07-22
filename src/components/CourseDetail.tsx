@@ -1,0 +1,323 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
+import { useQuery, useAction } from "convex/react";
+import { api } from "../../convex/_generated/api";
+import Icon from "@/components/Icon";
+import { formatCoursePrice, formatDuration, type Region } from "@/lib/format";
+import { cleanConvexError } from "@/lib/errors";
+
+function levelBadge(level: string) {
+  return level === "Avancé"
+    ? "bg-error/10 text-error border-error/20"
+    : level === "Intermédiaire"
+      ? "bg-secondary/10 text-secondary border-secondary/20"
+      : "bg-primary/10 text-primary border-primary/20";
+}
+
+/** Course landing page: overview, lesson list, price card + Stripe buy flow. */
+export default function CourseDetail({ slug }: { slug: string }) {
+  const detail = useQuery(api.courses.detail, { slug });
+  const { isSignedIn } = useUser();
+  const createCheckout = useAction(api.stripe.createCheckoutSession);
+  const searchParams = useSearchParams();
+  const paiement = searchParams.get("paiement");
+
+  const [buying, setBuying] = useState(false);
+  const [buyError, setBuyError] = useState<string | null>(null);
+
+  if (detail === undefined) {
+    return (
+      <div className="glass-panel rounded-xl p-16 animate-pulse">
+        <div className="h-4 w-32 bg-surface-variant rounded mb-6" />
+        <div className="h-8 w-2/3 bg-surface-variant rounded mb-4" />
+        <div className="h-4 w-full bg-surface-variant rounded" />
+      </div>
+    );
+  }
+
+  if (detail === null) {
+    return (
+      <div className="glass-panel rounded-xl p-16 text-center">
+        <Icon name="search_off" className="text-error text-5xl mb-4" />
+        <h1 className="font-headline-lg text-headline-lg text-on-surface mb-2">
+          Formation introuvable
+        </h1>
+        <p className="text-on-surface-variant mb-8">
+          Ce cours n&apos;existe pas ou n&apos;est plus publié.
+        </p>
+        <Link
+          href="/formations"
+          className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-on-primary font-bold rounded-lg hover:brightness-110 transition-all"
+        >
+          <Icon name="arrow_back" className="text-sm" />
+          Retour au catalogue
+        </Link>
+      </div>
+    );
+  }
+
+  const { course, lessons, owned } = detail;
+  const region: Region = detail.region ?? "EUROPE";
+  const totalSec = lessons.reduce((s, l) => s + (l.durationSec ?? 0), 0);
+  const duration = formatDuration(totalSec);
+
+  async function buy() {
+    setBuying(true);
+    setBuyError(null);
+    try {
+      const url = await createCheckout({ courseId: course._id });
+      window.location.href = url;
+    } catch (err) {
+      setBuyError(cleanConvexError(err, "Le paiement a échoué. Réessayez."));
+      setBuying(false);
+    }
+  }
+
+  return (
+    <>
+      {/* Payment result banners (Stripe redirects back with ?paiement=…) */}
+      {paiement === "succes" && (
+        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-primary/40 flex items-center gap-3">
+          <Icon name="check_circle" className="text-primary" fill />
+          <p className="text-on-surface">
+            <span className="font-bold text-primary">Paiement confirmé.</span>{" "}
+            Votre accès s&apos;active en quelques secondes — cette page se mettra à jour toute
+            seule.
+          </p>
+        </div>
+      )}
+      {paiement === "annule" && (
+        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-outline-variant/40 flex items-center gap-3">
+          <Icon name="info" className="text-secondary" />
+          <p className="text-on-surface-variant">
+            Paiement annulé. Votre carte n&apos;a pas été débitée.
+          </p>
+        </div>
+      )}
+      {paiement === "simulation" && (
+        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-secondary/50 flex items-center gap-3">
+          <Icon name="science" className="text-secondary" fill />
+          <p className="text-on-surface">
+            <span className="font-bold text-secondary">Achat simulé (mode test).</span>{" "}
+            Stripe n&apos;est pas encore configuré — aucun paiement réel n&apos;a été traité,
+            mais votre accès est bien actif pour tester la plateforme.
+          </p>
+        </div>
+      )}
+
+      <Link
+        href="/formations"
+        className="inline-flex items-center gap-2 font-label-mono text-label-mono text-on-surface-variant hover:text-primary transition-colors uppercase tracking-widest mb-8"
+      >
+        <Icon name="arrow_back" className="text-sm" />
+        Catalogue
+      </Link>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
+        {/* Left: overview + lessons */}
+        <div className="lg:col-span-2">
+          <div className="flex items-center gap-3 mb-4">
+            <span
+              className={`px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold border rounded-sm ${levelBadge(
+                course.level,
+              )}`}
+            >
+              {course.level}
+            </span>
+            {owned && (
+              <span className="px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold border rounded-sm bg-primary/10 text-primary border-primary/20 flex items-center gap-1">
+                <Icon name="verified" className="text-[12px]" fill /> Possédé
+              </span>
+            )}
+          </div>
+          <h1 className="font-headline-xl text-headline-xl text-on-surface mb-4">
+            {course.title}
+          </h1>
+          <p className="text-on-surface-variant font-body-lg text-body-lg mb-8">
+            {course.description}
+          </p>
+
+          <div className="flex flex-wrap gap-4 mb-12 font-code-sm text-code-sm text-on-surface-variant">
+            <span className="flex items-center gap-2">
+              <Icon name="play_lesson" className="text-primary text-lg" />
+              {lessons.length} leçon{lessons.length > 1 ? "s" : ""}
+            </span>
+            {duration && (
+              <span className="flex items-center gap-2">
+                <Icon name="schedule" className="text-primary text-lg" />
+                {duration}
+              </span>
+            )}
+            <span className="flex items-center gap-2">
+              <Icon name="all_inclusive" className="text-primary text-lg" />
+              Accès à vie
+            </span>
+            <span className="flex items-center gap-2">
+              <Icon name="workspace_premium" className="text-primary text-lg" />
+              Certificat vérifiable inclus
+            </span>
+          </div>
+
+          {/* Lessons */}
+          <div className="flex items-center gap-4 mb-6">
+            <h2 className="font-headline-lg text-headline-lg-mobile text-on-surface">
+              Programme
+            </h2>
+            <div className="h-px flex-grow bg-outline-variant/30" />
+          </div>
+
+          {lessons.length === 0 ? (
+            <div className="glass-panel rounded-xl p-10 text-center">
+              <Icon name="pending_actions" className="text-secondary text-4xl mb-3" />
+              <p className="text-on-surface-variant">
+                Le programme détaillé sera publié très prochainement.
+              </p>
+            </div>
+          ) : (
+            <ol className="flex flex-col gap-3">
+              {lessons.map((lesson, i) => {
+                const accessible = owned || lesson.isPreview;
+                const row = (
+                  <div
+                    className={`glass-panel rounded-xl px-5 py-4 flex items-center gap-4 ${
+                      accessible ? "hover:border-primary/40 transition-colors" : "opacity-75"
+                    }`}
+                  >
+                    <span className="font-code-sm text-code-sm text-on-surface-variant tabular-nums w-8">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="flex-grow min-w-0">
+                      <div className="text-on-surface font-medium truncate">{lesson.title}</div>
+                      {lesson.description && (
+                        <div className="text-on-surface-variant text-sm truncate">
+                          {lesson.description}
+                        </div>
+                      )}
+                    </div>
+                    {lesson.isPreview && !owned && (
+                      <span className="px-2 py-0.5 text-[10px] uppercase tracking-widest font-bold border rounded-sm bg-secondary/10 text-secondary border-secondary/20 whitespace-nowrap">
+                        Aperçu gratuit
+                      </span>
+                    )}
+                    {lesson.durationSec ? (
+                      <span className="font-code-sm text-code-sm text-on-surface-variant whitespace-nowrap">
+                        {formatDuration(lesson.durationSec)}
+                      </span>
+                    ) : null}
+                    <Icon
+                      name={accessible ? "play_circle" : "lock"}
+                      className={accessible ? "text-primary" : "text-on-surface-variant"}
+                    />
+                  </div>
+                );
+                return (
+                  <li key={lesson._id}>
+                    {accessible ? (
+                      <Link href={`/dashboard/formations/${course.slug}?lecon=${lesson._id}`}>
+                        {row}
+                      </Link>
+                    ) : (
+                      row
+                    )}
+                  </li>
+                );
+              })}
+            </ol>
+          )}
+        </div>
+
+        {/* Right: price / access card */}
+        <div>
+          <div className="glass-panel rounded-xl p-8 sticky top-28">
+            {owned ? (
+              <>
+                <div className="font-label-mono text-label-mono text-primary uppercase tracking-widest mb-2">
+                  Accès actif
+                </div>
+                <p className="text-on-surface-variant text-sm mb-6">
+                  Vous possédez cette formation. Bon entraînement, opérateur.
+                </p>
+                <Link
+                  href={`/dashboard/formations/${course.slug}`}
+                  className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all"
+                >
+                  <Icon name="play_arrow" fill />
+                  Accéder au cours
+                </Link>
+              </>
+            ) : (
+              <>
+                <div className="font-label-mono text-label-mono text-on-surface-variant uppercase tracking-widest mb-2">
+                  Paiement unique
+                </div>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="font-headline-xl text-headline-xl text-on-surface">
+                    {formatCoursePrice(course.priceEur, course.priceXof, region)}
+                  </span>
+                </div>
+                <div className="text-on-surface-variant text-sm mb-6">
+                  soit{" "}
+                  {formatCoursePrice(
+                    course.priceEur,
+                    course.priceXof,
+                    region === "EUROPE" ? "AFRIQUE" : "EUROPE",
+                  )}{" "}
+                  · accès à vie
+                </div>
+
+                {isSignedIn ? (
+                  <button
+                    type="button"
+                    onClick={buy}
+                    disabled={buying}
+                    className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all disabled:opacity-60"
+                  >
+                    <Icon name={buying ? "hourglass_top" : "shopping_cart"} />
+                    {buying ? "Redirection vers Stripe…" : "Acheter maintenant"}
+                  </button>
+                ) : (
+                  <Link
+                    href="/connexion"
+                    className="w-full inline-flex items-center justify-center gap-2 py-4 bg-primary text-on-primary font-bold rounded-lg glow-primary hover:brightness-110 transition-all"
+                  >
+                    <Icon name="login" />
+                    Se connecter pour acheter
+                  </Link>
+                )}
+
+                {buyError && (
+                  <p className="mt-4 font-code-sm text-code-sm text-error flex items-start gap-2">
+                    <Icon name="error" className="text-sm mt-0.5" />
+                    {buyError}
+                  </p>
+                )}
+
+                <div className="mt-6 pt-6 border-t border-outline-variant/20 space-y-2 font-code-sm text-code-sm text-on-surface-variant">
+                  <p className="flex items-center gap-2">
+                    <Icon name="lock" className="text-sm text-primary" /> Paiement sécurisé
+                    Stripe
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <Icon name="credit_card" className="text-sm text-primary" /> Carte · PayPal ·
+                    SEPA · Revolut Pay
+                  </p>
+                  {region === "AFRIQUE" && (
+                    <p className="flex items-start gap-2">
+                      <Icon name="phone_iphone" className="text-sm text-secondary mt-0.5" />
+                      Mobile Money (Orange/MTN/Wave) arrive bientôt — en attendant, le paiement
+                      par carte est disponible.
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}

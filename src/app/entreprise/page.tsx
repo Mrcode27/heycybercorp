@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
-import DemoForm from "@/components/DemoForm";
+import LiveForm from "@/components/LiveForm";
 
 export const metadata: Metadata = {
   title: "heycybercorp | Solutions Entreprise",
@@ -205,7 +205,8 @@ export default function EntreprisePage() {
           </div>
 
           <div className="lg:col-span-3">
-            <DemoForm
+            <LiveForm
+              kind="devis"
               className="glass-card p-8 md:p-12 rounded-sm space-y-6"
               submitLabel="Envoyer la requête"
               submitIcon="send"
@@ -214,11 +215,12 @@ export default function EntreprisePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className={labelClass}>Nom Complet</label>
-                  <input className={inputClass} placeholder="ex: Jean Dupont" type="text" required />
+                  <input name="nom" className={inputClass} placeholder="ex: Jean Dupont" type="text" required />
                 </div>
                 <div className="space-y-2">
                   <label className={labelClass}>Email Professionnel</label>
                   <input
+                    name="email"
                     className={inputClass}
                     placeholder="nom@entreprise.com"
                     type="email"
@@ -229,11 +231,11 @@ export default function EntreprisePage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className={labelClass}>Entreprise</label>
-                  <input className={inputClass} placeholder="Nom de votre société" type="text" />
+                  <input name="entreprise" className={inputClass} placeholder="Nom de votre société" type="text" />
                 </div>
                 <div className="space-y-2">
                   <label className={labelClass}>Effectif IT</label>
-                  <select className={inputClass}>
+                  <select name="effectif" className={inputClass}>
                     <option>1 - 10</option>
                     <option>11 - 50</option>
                     <option>50 - 200</option>
@@ -244,12 +246,15 @@ export default function EntreprisePage() {
               <div className="space-y-2">
                 <label className={labelClass}>Votre Projet</label>
                 <textarea
+                  name="message"
                   className={inputClass}
                   placeholder="Décrivez vos objectifs de formation ou de sécurité..."
                   rows={4}
+                  required
+                  minLength={10}
                 />
               </div>
-            </DemoForm>
+            </LiveForm>
           </div>
         </div>
       </section>

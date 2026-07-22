@@ -3,6 +3,7 @@ import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
 import HeroTerminal from "@/components/HeroTerminal";
 import PricingPreview from "@/components/PricingPreview";
+import LiveForm from "@/components/LiveForm";
 
 const COURSES = [
   {
@@ -186,16 +187,23 @@ export default function Home() {
           </div>
 
           <div className="p-12 lg:p-16">
-            <form className="space-y-6">
+            <LiveForm
+              kind="devis"
+              className="space-y-6"
+              submitLabel="Envoyer ma demande"
+              submitClassName="w-full py-4 bg-secondary text-on-secondary font-bold rounded-lg hover:brightness-110 cyber-glow-secondary transition-all"
+            >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                     Nom Complet
                   </label>
                   <input
+                    name="nom"
                     className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="Jean Dupont"
                     type="text"
+                    required
                   />
                 </div>
                 <div className="space-y-2">
@@ -203,9 +211,11 @@ export default function Home() {
                     Email Professionnel
                   </label>
                   <input
+                    name="email"
                     className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="jean@entreprise.com"
                     type="email"
+                    required
                   />
                 </div>
               </div>
@@ -213,7 +223,10 @@ export default function Home() {
                 <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                   Type de Formation
                 </label>
-                <select className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none">
+                <select
+                  name="type"
+                  className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
+                >
                   <option>Audit &amp; Pentesting</option>
                   <option>Sécurité Cloud</option>
                   <option>Réponse aux Incidents</option>
@@ -225,18 +238,15 @@ export default function Home() {
                   Votre Message
                 </label>
                 <textarea
+                  name="message"
                   className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                   placeholder="Décrivez votre projet..."
                   rows={4}
+                  required
+                  minLength={10}
                 />
               </div>
-              <button
-                className="w-full py-4 bg-secondary text-on-secondary font-bold rounded-lg hover:brightness-110 cyber-glow-secondary transition-all"
-                type="submit"
-              >
-                Envoyer ma demande
-              </button>
-            </form>
+            </LiveForm>
           </div>
         </div>
       </section>

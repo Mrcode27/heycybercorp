@@ -1,6 +1,7 @@
 import { query, mutation, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
+import { logAudit } from "./lib/audit";
 
 /** Resolve the Convex user row for the currently-authenticated Clerk identity. */
 export async function getCurrentUser(ctx: QueryCtx): Promise<Doc<"users"> | null> {
@@ -70,6 +71,60 @@ export const store = mutation({
       region,
       role: "student",
     });
+  },
+});
+
+/** Save notification preferences (Paramètres → Préférences). */
+export const updatePrefs = mutation({
+  args: {
+    prefs: v.object({
+      emailNotifications: v.optional(v.boolean()),
+      weeklySummary: v.optional(v.boolean()),
+    }),
+  },
+  handler: async (ctx, { prefs }) => {
+    const user = await getCurrentUser(ctx);
+    if (!user) throw new Error("Not authenticated");
+    await ctx.db.patch(user._id, { prefs: { ...user.prefs, ...prefs } });
+  },
+});
+
+/** Change a user's role — admin only. You cannot change your own role. */
+export const setRole = mutation({
+  args: {
+    userId: v.id("users"),
+    role: v.union(v.literal("student"), v.literal("admin")),
+  },
+  handler: async (ctx, { userId, role }) => {
+    const admin = await requireAdmin(ctx);
+    if (admin._id === userId) {
+      throw new Error("Vous ne pouvez pas modifier votre propre rôle.");
+    }
+    const target = await ctx.db.get(userId);
+    if (!target) throw new Error("Utilisateur introuvable.");
+    if (target.role === role) return;
+
+    await ctx.db.patch(userId, { role });
+    await logAudit(ctx, "user.role_changed", target.email, `${target.role} → ${role}`);
+  },
+});
+
+/** Suspend / reinstate an account — admin only. Admins must be demoted first. */
+export const setSuspended = mutation({
+  args: { userId: v.id("users"), suspended: v.boolean() },
+  handler: async (ctx, { userId, suspended }) => {
+    const admin = await requireAdmin(ctx);
+    if (admin._id === userId) {
+      throw new Error("Vous ne pouvez pas suspendre votre propre compte.");
+    }
+    const target = await ctx.db.get(userId);
+    if (!target) throw new Error("Utilisateur introuvable.");
+    if (suspended && target.role === "admin") {
+      throw new Error("Rétrogradez cet administrateur avant de le suspendre.");
+    }
+
+    await ctx.db.patch(userId, { suspended });
+    await logAudit(ctx, suspended ? "user.suspended" : "user.reinstated", target.email);
   },
 });
 
