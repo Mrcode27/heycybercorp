@@ -21,3 +21,15 @@ export function isConfigured(href: string): boolean {
   const h = href.trim();
   return h !== "" && h !== "#";
 }
+
+/**
+ * Canonical origin — single source of truth for absolute URLs (metadataBase,
+ * robots, sitemap, JSON-LD). The apex 308-redirects to www, so www IS canonical;
+ * mixing the two splits ranking signals across two hostnames.
+ * Override per-environment with NEXT_PUBLIC_SITE_URL (e.g. preview deployments).
+ */
+export const SITE_URL = (
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.heycybercorp.fr"
+).replace(/\/$/, "");
+
+export const SITE_NAME = "heycybercorp";

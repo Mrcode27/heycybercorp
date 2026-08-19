@@ -2,10 +2,14 @@ import type { Metadata } from "next";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
 import LiveForm from "@/components/LiveForm";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "Contact | heycybercorp",
-};
+  description:
+    "Une question sur nos formations en cybersécurité, une demande entreprise ou un partenariat ? Contactez l'équipe heycybercorp.",
+  path: "/contact",
+});
 
 const inputClass =
   "w-full bg-[#000202] border border-outline-variant text-on-surface px-4 py-3 rounded-sm focus:ring-1 focus:ring-secondary focus:border-secondary transition-all outline-none";

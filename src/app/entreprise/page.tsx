@@ -3,10 +3,14 @@ import Link from "next/link";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
 import LiveForm from "@/components/LiveForm";
+import { pageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: "heycybercorp | Solutions Entreprise",
-};
+  description:
+    "Formez vos équipes à la cybersécurité : sensibilisation, hygiène numérique, gouvernance et tests d'intrusion. Programmes sur mesure pour entreprises en Afrique et en Europe.",
+  path: "/entreprise",
+});
 
 const TEAM = [
   {

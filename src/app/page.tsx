@@ -6,6 +6,7 @@ import PricingPreview from "@/components/PricingPreview";
 import LiveForm from "@/components/LiveForm";
 import FreeContent from "@/components/FreeContent";
 import Socials from "@/components/Socials";
+import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
 
 const COURSES = [
   {
@@ -43,6 +44,7 @@ const COURSES = [
 export default function Home() {
   return (
     <PublicShell>
+      <OrganizationJsonLd />
       {/* Hero */}
       <section className="relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid">
         <div className="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">

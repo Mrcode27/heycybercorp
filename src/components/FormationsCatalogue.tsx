@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useQuery } from "convex/react";
+import { useQuery, usePreloadedQuery, type Preloaded } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
@@ -99,9 +99,19 @@ function CourseCard({
   );
 }
 
-/** Live catalogue — courses come from Convex (admin-managed), no hardcoded data. */
-export default function FormationsCatalogue() {
-  const courses = useQuery(api.courses.listPublished);
+/**
+ * Live catalogue — courses come from Convex (admin-managed), no hardcoded data.
+ * The course list arrives *preloaded from the server* so the titles are in the
+ * initial HTML: crawlers index the catalogue without executing JavaScript. The
+ * two per-user queries below stay client-side — they depend on the session and
+ * are irrelevant to an anonymous crawler.
+ */
+export default function FormationsCatalogue({
+  preloaded,
+}: {
+  preloaded: Preloaded<typeof api.courses.listPublished>;
+}) {
+  const courses = usePreloadedQuery(preloaded);
   const me = useQuery(api.users.current);
   const ownedIds = useQuery(api.entitlements.myCourseIds);
 

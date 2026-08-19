@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import ConvexClientProvider from "@/components/ConvexClientProvider";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -23,10 +24,17 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+const DESCRIPTION =
+  "Formations de pointe en cybersécurité pour les talents africains et européens. Du débutant au hacking éthique avancé.";
+
 export const metadata: Metadata = {
+  // Without metadataBase, every relative og:image/canonical resolves against
+  // localhost at build time and ships broken absolute URLs.
+  metadataBase: new URL(SITE_URL),
   title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
-  description:
-    "Formations de pointe en cybersécurité pour les talents africains et européens. Du débutant au hacking éthique avancé.",
+  description: DESCRIPTION,
+  // Child pages override this with their own path; the root claims the origin.
+  alternates: { canonical: "/" },
   // Single source of truth: the favicon (browser tab), bookmark icon and Apple
   // touch icon all point at /public/logo.png. Replace that one file and every
   // icon — plus the navbar logo, which loads the same path — updates everywhere.
@@ -34,6 +42,26 @@ export const metadata: Metadata = {
     icon: "/logo.png",
     shortcut: "/logo.png",
     apple: "/logo.png",
+  },
+  openGraph: {
+    type: "website",
+    locale: "fr_FR",
+    siteName: SITE_NAME,
+    url: SITE_URL,
+    title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
+    description: DESCRIPTION,
+    images: [{ url: "/logo.png", width: 512, height: 512, alt: "heycybercorp" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
+    description: DESCRIPTION,
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large", "max-snippet": -1 },
   },
 };
 
