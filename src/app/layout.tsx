@@ -35,14 +35,14 @@ export const metadata: Metadata = {
   description: DESCRIPTION,
   // Child pages override this with their own path; the root claims the origin.
   alternates: { canonical: "/" },
-  // Single source of truth: the favicon (browser tab), bookmark icon and Apple
-  // touch icon all point at /public/logo.png. Replace that one file and every
-  // icon — plus the navbar logo, which loads the same path — updates everywhere.
-  icons: {
-    icon: "/logo.png",
-    shortcut: "/logo.png",
-    apple: "/logo.png",
-  },
+  // Icons come from the app-directory file convention (src/app/favicon.ico,
+  // icon.png, apple-icon.png) — Next emits the <link> tags with correct sizes
+  // and types, and serves /favicon.ico for browsers that request it directly.
+  // Those files are the square, dark-backed crop of public/logo.png, which
+  // stays as-is for the navbar.
+  // og:image / twitter:image come from src/app/opengraph-image.png and
+  // twitter-image.png (1200x630) — Next emits the URL plus correct width,
+  // height and type, so the dimensions can't drift out of sync with the file.
   openGraph: {
     type: "website",
     locale: "fr_FR",
@@ -50,13 +50,11 @@ export const metadata: Metadata = {
     url: SITE_URL,
     title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
     description: DESCRIPTION,
-    images: [{ url: "/logo.png", width: 512, height: 512, alt: "heycybercorp" }],
   },
   twitter: {
     card: "summary_large_image",
     title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
     description: DESCRIPTION,
-    images: ["/logo.png"],
   },
   robots: {
     index: true,
