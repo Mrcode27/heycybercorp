@@ -17,6 +17,8 @@ const STATIC_ROUTES: Array<{
   { path: "/tarifs", priority: 0.8, changeFrequency: "monthly" },
   { path: "/entreprise", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },
+  { path: "/mentions-legales", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/confidentialite", priority: 0.3, changeFrequency: "yearly" },
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {

@@ -9,7 +9,14 @@ import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
 import { formatDuration } from "@/lib/format";
 
-/** youtube/vimeo links become embeds; anything else plays in a <video> tag. */
+/**
+ * Turn a lesson URL into something playable.
+ *
+ * YouTube, Vimeo and Bunny Stream get their own iframe players; a plain file
+ * URL goes into a <video> tag. Note the gap this leaves: an HLS playlist
+ * (.m3u8) pasted as a bare URL only plays natively in Safari, so Bunny content
+ * belongs here as an iframe embed rather than as a raw playlist link.
+ */
 function toPlayerSource(url: string): { type: "iframe" | "video"; src: string } {
   const yt = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/,
@@ -17,6 +24,17 @@ function toPlayerSource(url: string): { type: "iframe" | "video"; src: string } 
   if (yt) return { type: "iframe", src: `https://www.youtube-nocookie.com/embed/${yt[1]}` };
   const vimeo = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
   if (vimeo) return { type: "iframe", src: `https://player.vimeo.com/video/${vimeo[1]}` };
+  // Bunny Stream: both the /embed/ and /play/ forms name the same video, and
+  // only /embed/ is meant to be framed.
+  const bunny = url.match(
+    /iframe\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([\w-]+)/,
+  );
+  if (bunny) {
+    return {
+      type: "iframe",
+      src: `https://iframe.mediadelivery.net/embed/${bunny[1]}/${bunny[2]}`,
+    };
+  }
   return { type: "video", src: url };
 }
 

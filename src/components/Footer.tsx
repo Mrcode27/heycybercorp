@@ -1,10 +1,9 @@
 import Link from "next/link";
 import Socials from "./Socials";
-
-// Legal links (placeholders for now — point them at real pages when they exist).
+// Real pages now — see /mentions-legales and /confidentialite.
 const LEGAL = [
-  { label: "Mentions Légales", href: "#" },
-  { label: "Confidentialité", href: "#" },
+  { label: "Mentions Légales", href: "/mentions-legales" },
+  { label: "Confidentialité", href: "/confidentialite" },
 ];
 
 export default function Footer() {
@@ -22,13 +21,13 @@ export default function Footer() {
           <Socials variant="footer" />
           <div className="flex flex-wrap justify-center gap-6">
             {LEGAL.map((item) => (
-              <a
+              <Link
                 key={item.label}
                 href={item.href}
                 className="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors"
               >
                 {item.label}
-              </a>
+              </Link>
             ))}
           </div>
         </div>

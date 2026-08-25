@@ -37,8 +37,8 @@ export default function AdminSales() {
         <div className="p-12 text-center">
           <Icon name="receipt_long" className="text-on-surface-variant text-4xl mb-3 opacity-60" />
           <p className="text-on-surface-variant">
-            Aucune commande pour l&apos;instant. Les ventes apparaîtront ici dès l&apos;activation
-            des paiements (Stripe — Phase&nbsp;4).
+            Aucune commande pour l&apos;instant. Chaque paiement Stripe confirmé
+            apparaîtra ici automatiquement.
           </p>
         </div>
       ) : (

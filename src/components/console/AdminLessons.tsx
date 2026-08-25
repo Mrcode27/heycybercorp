@@ -159,7 +159,7 @@ export default function AdminLessons({ courseId }: { courseId: string }) {
           </div>
           <div>
             <label className="font-label-mono text-xs uppercase text-on-surface-variant">URL vidéo (mp4 / YouTube / Vimeo)</label>
-            <input value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} className={inputClass} placeholder="https://…" type="url" />
+            <input value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} className={inputClass} placeholder="YouTube · Vimeo · Bunny Stream · .mp4" type="url" />
           </div>
           <div>
             <label className="font-label-mono text-xs uppercase text-on-surface-variant">Durée (minutes)</label>

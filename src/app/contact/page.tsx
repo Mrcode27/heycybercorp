@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
 import LiveForm from "@/components/LiveForm";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -16,7 +17,7 @@ const inputClass =
 const labelClass = "font-label-mono text-label-mono text-on-surface-variant uppercase";
 
 const CHANNELS = [
-  { icon: "mail", color: "text-primary", label: "Email", value: "contact@heycybercorp.com" },
+  { icon: "mail", color: "text-primary", label: "Email", value: CONTACT_EMAIL },
   { icon: "call", color: "text-secondary", label: "Téléphone", value: "+33 1 84 80 00 00" },
   { icon: "location_on", color: "text-primary", label: "Bureaux", value: "Paris · Dakar · Casablanca" },
 ];

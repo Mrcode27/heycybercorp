@@ -11,7 +11,7 @@ import { cleanConvexError } from "@/lib/errors";
 
 /**
  * Buy a package. Signed-out → sign-in link. Already owned → "possédé" link to
- * the dashboard. Otherwise starts checkout (real Stripe or the simulator).
+ * the dashboard. Otherwise opens a real Stripe Checkout session.
  */
 export default function BuyPackageButton({
   packageId,
@@ -52,7 +52,12 @@ export default function BuyPackageButton({
     setBusy(true);
     setError(null);
     try {
-      const url = await createCheckout({ packageId });
+      // The origin lets one Convex deployment serve both localhost and the
+      // live site; the server only honours it if it is allowlisted.
+      const url = await createCheckout({
+        packageId,
+        origin: window.location.origin,
+      });
       window.location.href = url;
     } catch (err) {
       setError(cleanConvexError(err, "Le paiement a échoué. Réessayez."));

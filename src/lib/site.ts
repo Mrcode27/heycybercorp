@@ -11,9 +11,9 @@ export type SocialLink = { key: SocialKey; label: string; href: string };
  * └────────────────────────────────────────────────────────────────────┘
  */
 export const SOCIALS: SocialLink[] = [
-  { key: "youtube", label: "YouTube", href: "#" }, //  e.g. "https://www.youtube.com/@heycybercorp"
-  { key: "linkedin", label: "LinkedIn", href: "#" }, // e.g. "https://www.linkedin.com/company/heycybercorp"
-  { key: "discord", label: "Discord", href: "#" }, //  e.g. "https://discord.gg/your-invite-code"
+  { key: "youtube", label: "YouTube", href: "https://www.youtube.com/@rai1797" },
+  { key: "linkedin", label: "LinkedIn", href: "https://www.linkedin.com/company/heycybercorp/" },
+  { key: "discord", label: "Discord", href: "https://discord.gg/Rn2paUNdy" },
 ];
 
 /** True once a link has a real destination (not the "#" placeholder). */
@@ -33,3 +33,6 @@ export const SITE_URL = (
 ).replace(/\/$/, "");
 
 export const SITE_NAME = "heycybercorp";
+
+/** Public contact email — shown on /contact, /entreprise and the legal pages. */
+export const CONTACT_EMAIL = "rainono27@gmail.com";

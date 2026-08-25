@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
 import BuyPackageButton from "@/components/BuyPackageButton";
+import CheckoutResultBanner from "@/components/CheckoutResultBanner";
 import { formatCoursePrice, formatDuration, type Region } from "@/lib/format";
 
 function levelBadge(level: string) {
@@ -19,8 +19,6 @@ function levelBadge(level: string) {
 /** Course landing page: overview, lesson list, price card + Stripe buy flow. */
 export default function CourseDetail({ slug }: { slug: string }) {
   const detail = useQuery(api.courses.detail, { slug });
-  const searchParams = useSearchParams();
-  const paiement = searchParams.get("paiement");
 
   if (detail === undefined) {
     return (
@@ -60,35 +58,9 @@ export default function CourseDetail({ slug }: { slug: string }) {
 
   return (
     <>
-      {/* Payment result banners (Stripe redirects back with ?paiement=…) */}
-      {paiement === "succes" && (
-        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-primary/40 flex items-center gap-3">
-          <Icon name="check_circle" className="text-primary" fill />
-          <p className="text-on-surface">
-            <span className="font-bold text-primary">Paiement confirmé.</span>{" "}
-            Votre accès s&apos;active en quelques secondes — cette page se mettra à jour toute
-            seule.
-          </p>
-        </div>
-      )}
-      {paiement === "annule" && (
-        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-outline-variant/40 flex items-center gap-3">
-          <Icon name="info" className="text-secondary" />
-          <p className="text-on-surface-variant">
-            Paiement annulé. Votre carte n&apos;a pas été débitée.
-          </p>
-        </div>
-      )}
-      {paiement === "simulation" && (
-        <div className="glass-panel rounded-xl px-6 py-4 mb-8 border-secondary/50 flex items-center gap-3">
-          <Icon name="science" className="text-secondary" fill />
-          <p className="text-on-surface">
-            <span className="font-bold text-secondary">Achat simulé (mode test).</span>{" "}
-            Stripe n&apos;est pas encore configuré — aucun paiement réel n&apos;a été traité,
-            mais votre accès est bien actif pour tester la plateforme.
-          </p>
-        </div>
-      )}
+      {/* Stripe redirects the buyer back here — the banner re-checks
+          the payment with Stripe before claiming anything. */}
+      <CheckoutResultBanner surface="glass-panel" spacing="mb-8" />
 
       <Link
         href="/formations"
@@ -262,8 +234,8 @@ export default function CourseDetail({ slug }: { slug: string }) {
                     Stripe
                   </p>
                   <p className="flex items-center gap-2">
-                    <Icon name="credit_card" className="text-sm text-primary" /> Carte · PayPal ·
-                    SEPA · Revolut Pay
+                    <Icon name="credit_card" className="text-sm text-primary" /> Carte bancaire
+                    et autres moyens proposés par Stripe
                   </p>
                   {region === "AFRIQUE" && (
                     <p className="flex items-start gap-2">

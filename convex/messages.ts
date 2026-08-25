@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./users";
+import { internal } from "./_generated/api";
 
 const HOUR_MS = 60 * 60 * 1000;
 const MAX_PER_HOUR = 5;
@@ -47,6 +48,18 @@ export const submit = mutation({
       subject: subject?.trim() || undefined,
       body: body.trim(),
       status: "new",
+    });
+
+    // Notify by email, but only after the row is safely committed and without
+    // blocking the visitor on Gmail's latency. If the mail fails the message
+    // is still in /admin/messages — the inbox is the record, email is the
+    // convenience.
+    await ctx.scheduler.runAfter(0, internal.email.sendContactNotification, {
+      kind,
+      name: name.trim(),
+      email: cleanEmail,
+      subject: subject?.trim() || undefined,
+      body: body.trim(),
     });
   },
 });

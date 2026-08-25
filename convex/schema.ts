@@ -87,6 +87,12 @@ export default defineSchema({
     userId: v.id("users"),
     packageId: v.optional(v.id("packages")), // current model
     courseId: v.optional(v.id("courses")), // legacy
+    // "stripe" is the only provider a buyer can trigger. "manual" is an admin
+    // grant; pawapay/paydunya are reserved for Phase 7 mobile money.
+    // "simulation" is DEAD — the fake-payment mode was removed and no code
+    // path can produce it; the literal only stays so the three legacy test
+    // rows on the DEV deployment keep validating (prod has none). Drop the
+    // literal once those rows are purged.
     provider: v.union(
       v.literal("stripe"),
       v.literal("pawapay"),

@@ -7,6 +7,7 @@ import LiveForm from "@/components/LiveForm";
 import FreeContent from "@/components/FreeContent";
 import Socials from "@/components/Socials";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
+import { CONTACT_EMAIL } from "@/lib/site";
 
 const COURSES = [
   {
@@ -193,7 +194,7 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="text-white font-medium">Email Direct</div>
-                  <div className="text-on-surface-variant text-sm">contact@heycybercorp.com</div>
+                  <div className="text-on-surface-variant text-sm">{CONTACT_EMAIL}</div>
                 </div>
               </div>
               <div className="flex items-start gap-4">

@@ -240,7 +240,7 @@ export default function AdminCourses() {
                     </div>
                     <div>
                       <label className="font-label-mono text-[10px] uppercase text-on-surface-variant">URL vidéo (YouTube / Vimeo / mp4)</label>
-                      <input value={lesson.videoUrl} onChange={(e) => patchLesson(i, { videoUrl: e.target.value })} className={inputClass} placeholder="https://…" type="url" />
+                      <input value={lesson.videoUrl} onChange={(e) => patchLesson(i, { videoUrl: e.target.value })} className={inputClass} placeholder="YouTube · Vimeo · Bunny Stream · .mp4" type="url" />
                     </div>
                     <div>
                       <label className="font-label-mono text-[10px] uppercase text-on-surface-variant">Durée (min)</label>

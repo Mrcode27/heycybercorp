@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import PublicShell from "@/components/PublicShell";
 import Icon from "@/components/Icon";
 import LiveForm from "@/components/LiveForm";
+import { CONTACT_EMAIL } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -12,30 +14,22 @@ export const metadata: Metadata = pageMetadata({
   path: "/entreprise",
 });
 
-const TEAM = [
+type TeamMember = {
+  name: string;
+  role: string;
+  bio: string;
+  icon: string;
+  photo?: string;
+};
+
+const TEAM: TeamMember[] = [
   {
-    name: "Alexandre V.",
-    role: "Lead Pentester",
-    bio: "Expert en compromission Active Directory et Red Teaming.",
+    // TODO: replace with the founder's real name & bio.
+    name: "Fondateur",
+    role: "Founder & CEO",
+    bio: "À l'origine de heycybercorp : expert en cybersécurité offensive et formation des équipes techniques.",
     icon: "swords",
-  },
-  {
-    name: "Sarah K.",
-    role: "DFIR Analyst",
-    bio: "Spécialiste en réponse aux incidents et analyse forensique.",
-    icon: "biotech",
-  },
-  {
-    name: "Marc-André D.",
-    role: "Cloud Sec Architect",
-    bio: "Ancien RSSI, expert en sécurisation d'environnements AWS & Azure.",
-    icon: "cloud",
-  },
-  {
-    name: "Jérôme L.",
-    role: "Exploit Dev",
-    bio: "Chercheur spécialisé en reverse engineering et kernel hacking.",
-    icon: "memory",
+    photo: "/founder.jpeg",
   },
 ];
 
@@ -114,7 +108,14 @@ export default function EntreprisePage() {
           </div>
 
           <div className="relative">
-            <div className="aspect-square glass-card rounded-xl overflow-hidden relative flex items-end p-8 cyber-grid">
+            <div className="aspect-square glass-card rounded-xl overflow-hidden relative group flex items-end p-8">
+              <Image
+                src="/histoire-valeurs.jpg"
+                alt="Salle de contrôle heycybercorp : écrans de supervision et terminaux chiffrés"
+                fill
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
               <div className="relative w-full p-6 bg-surface-container/90 backdrop-blur-md border border-outline-variant/30">
                 <div className="font-code-sm text-code-sm text-primary mb-2 flex items-center gap-2">
@@ -142,12 +143,22 @@ export default function EntreprisePage() {
               environnements critiques.
             </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          <div className={TEAM.length === 1 ? "flex justify-center" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"}>
             {TEAM.map((member) => (
-              <div key={member.name} className="text-center group">
+              <div key={member.name} className="text-center group max-w-xs">
                 <div className="hexagon-frame mx-auto w-48 h-48 mb-6 group-hover:shadow-[0_0_30px_rgba(0,145,80,0.3)] transition-all duration-500">
-                  <div className="hexagon-inner w-full h-full bg-surface-container-highest flex items-center justify-center">
-                    <Icon name={member.icon} className="text-primary text-5xl" />
+                  <div className="hexagon-inner w-full h-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
+                    {member.photo ? (
+                      <Image
+                        src={member.photo}
+                        alt={member.name}
+                        width={192}
+                        height={192}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <Icon name={member.icon} className="text-primary text-5xl" />
+                    )}
                   </div>
                 </div>
                 <h3 className="font-headline-lg-mobile text-headline-lg-mobile text-primary">
@@ -181,7 +192,7 @@ export default function EntreprisePage() {
                 </div>
                 <div>
                   <div className="font-label-mono text-label-mono text-primary uppercase">Email</div>
-                  <div className="text-on-surface">corporate@heycybercorp.io</div>
+                  <div className="text-on-surface">{CONTACT_EMAIL}</div>
                 </div>
               </div>
               <div className="flex items-start gap-4">

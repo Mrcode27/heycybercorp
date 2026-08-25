@@ -13,6 +13,7 @@ import type * as audit from "../audit.js";
 import type * as catalog from "../catalog.js";
 import type * as certificates from "../certificates.js";
 import type * as courses from "../courses.js";
+import type * as email from "../email.js";
 import type * as entitlements from "../entitlements.js";
 import type * as freeVideos from "../freeVideos.js";
 import type * as http from "../http.js";
@@ -37,6 +38,7 @@ declare const fullApi: ApiFromModules<{
   catalog: typeof catalog;
   certificates: typeof certificates;
   courses: typeof courses;
+  email: typeof email;
   entitlements: typeof entitlements;
   freeVideos: typeof freeVideos;
   http: typeof http;

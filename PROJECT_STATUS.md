@@ -29,7 +29,7 @@ A premium, dark-themed **cyber-security academy** where:
 | Authentication (Clerk) | ✅ working (development instance) |
 | Database & backend (Convex) | ✅ working (dev deployment) |
 | Live catalogue + course detail pages | ✅ wired to Convex |
-| Stripe checkout + webhook → entitlement | 🟡 **code complete — purchases are SIMULATED until you set the 3 Stripe env vars** |
+| Stripe checkout + webhook → entitlement | ✅ **live in test mode** — real Stripe Checkout, signed webhook, no simulation path left |
 | Lessons: admin manager + student player | ✅ built (URL-based videos; Azure SAS pending) |
 | Progress tracking + auto certificates | ✅ live (public verify page + printable diploma) |
 | Contact & quote forms → admin inbox | ✅ live |
@@ -38,7 +38,7 @@ A premium, dark-themed **cyber-security academy** where:
 | Student dashboard (progress bars, certifications) | ✅ live |
 | Deployment (Vercel) | 🟡 configuring env vars |
 | Video hosting (Azure Blob + SAS) | ⏳ needs your Azure account (stub ready) |
-| Email (receipts, notifications) | ⏳ needs a provider key |
+| Email (contact notifications) | ✅ Gmail SMTP wired — fill SMTP_USER/SMTP_PASSWORD in `.env.local`, then `npm run mail:sync` |
 | Labs (real VMs) | ⏳ not started (template page) |
 
 **Roughly: the shop window, the accounts, the back-office, the product delivery (lessons → progress → certificates) and the entire payment pipeline are built. What's missing is only what requires external accounts: Stripe keys, Azure storage, an email provider — plus production Clerk/Convex on your custom domain.**
@@ -67,7 +67,7 @@ A premium, dark-themed **cyber-security academy** where:
 - Dashboard with **real progress bars** per owned course (Commencer / Continuer / Revoir).
 - **Course player** `/dashboard/formations/[slug]`: lesson sidebar with completion ticks, mp4/YouTube/Vimeo playback, watch-time tracking, mark-as-done, prev/next, deep-linkable lessons.
 - **Certificates**: auto-issued at 100% completion → printable diploma + public verify code. Certifications page shows real tracks.
-- **Buy a course**: full checkout flow (needs Stripe keys to go live).
+- **Buy a course**: real Stripe Checkout — hosted payment page, signed webhook, plus a return-page re-check against the Stripe API.
 - Purchase history `/dashboard/achats` (live — includes admin-granted "manual" orders).
 - Paramètres: profile, region, **persisted notification preferences**.
 - Suspended accounts see a banner and lose lesson/purchase access (server-enforced).
@@ -88,7 +88,7 @@ A premium, dark-themed **cyber-security academy** where:
 - **Journal** (`/admin/journal`): audit trail — every course/lesson/role/access action is logged.
 
 **Still to do ⏳**
-- ⏳ Refunds (Stripe refund → status "refunded") — order management beyond status display.
+- ✅ Refunds: a full refund in Stripe fires `charge.refunded` → order marked "refunded" **and the entitlement revoked automatically**. Partial refunds keep access on purpose.
 - ⏳ Cohort-level analytics once volume justifies it.
 
 ### 3.4 ⚙️ System & Integrations
@@ -102,14 +102,16 @@ A premium, dark-themed **cyber-security academy** where:
 - Audit logging infrastructure (`convex/lib/audit.ts`).
 
 **Waiting on your accounts 🟡**
-- 🟡 **Stripe**: add the 3 env vars in the Convex dashboard + create the webhook endpoint → payments go live (steps in `IMPLEMENTATION_GUIDE.md` §8.1).
+- ✅ **Stripe (test)**: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET` and `SITE_URL` are set on the Convex deployment and the webhook endpoint is registered. Going live = swap in the live key + a live-mode webhook secret, no code change.
+- 🟡 **Stripe payment methods**: only card/Link/Klarna/Bancontact/EPS/MB WAY/Amazon Pay/Satispay are enabled on the account. **PayPal, SEPA and Revolut Pay are advertised on /tarifs but not switched on** — enable them in Stripe → Settings → Payment methods.
 - 🟡 **Vercel**: finish Production env vars → site live.
 
 **Still to do ⏳**
 - ⏳ **Azure Blob + SAS**: swap the `kind: "azure"` stub in `convex/lessons.ts → playback` for a SAS-minting action (guide §8.2).
-- ⏳ **Email** provider (contact notifications, receipts).
+- 🟡 **Email**: Gmail SMTP is wired and SMTP egress from Convex is verified. Needs your Gmail address + a Google **App Password** in `.env.local`, then `npm run mail:sync` (add `-- --prod` for production). Receipts are still not sent — only contact/devis notifications.
 - ⏳ Production Clerk + Convex instances (needs custom domain).
-- ⏳ Strict CSP (after production domains are final — see guide §10.8).
+- ✅ **Legal pages**: `/mentions-legales` (LCEN) & `/confidentialite` (RGPD) are live, linked from the footer and listed in the sitemap. Remaining placeholders to fill: forme juridique, SIREN, adresse du siège, n° TVA et directeur de la publication.
+- ✅ **CSP**: **enforced in production** since 2026-08 (`CSP_ENFORCE = NODE_ENV === "production"` in `next.config.ts`) after a Report-Only validation period. Development stays Report-Only with `'unsafe-eval'` granted (React's dev build requires it). `'unsafe-inline'` in script-src remains (Next hydration bootstrap); removing it needs nonce plumbing in the middleware.
 - ⏳ African mobile-money PSP (Phase 7).
 
 ---
@@ -139,9 +141,9 @@ A premium, dark-themed **cyber-security academy** where:
 | **2** | Convex data + live consoles | ✅ done |
 | **Deploy** | Vercel (env vars, production build) | 🟡 in progress |
 | **3** | Video — lesson pages, player, progress ✅ · Azure SAS storage ⏳ | 🟡 mostly done |
-| **4** | Payments — live catalogue, detail page, checkout, webhook | 🟡 **code done — needs keys** |
+| **4** | Payments — live catalogue, detail page, checkout, webhook | ✅ done (test mode) |
 | **5** | Student polish — progress, certifications, notifications | ✅ done (labs/exams excluded) |
-| **6** | Hardening — headers ✅, rate limit ✅, audit ✅ · CSP + prod instances ⏳ | 🟡 partial |
+| **6** | Hardening — headers ✅, rate limit ✅, audit ✅, CSP report-only ✅ · CSP enforce ⏳ | 🟡 partial |
 | **7** | African mobile-money payments | ⏳ deferred |
 
 ---
@@ -149,10 +151,10 @@ A premium, dark-themed **cyber-security academy** where:
 ## 6. What to do next (recommended order)
 
 1. **Finish Vercel deploy** (env vars on Production) → site live.
-2. **Activate Stripe** — 3 env vars + 1 webhook, zero code (guide §8.1) → revenue possible immediately.
+2. **Switch Stripe to live** — live key + live-mode webhook secret on the production Convex deployment, and enable PayPal/SEPA/Revolut Pay in the dashboard. Zero code changes.
 3. **Seed real content** — add lessons (YouTube/mp4 URLs work today) via the lesson manager; test the full flow with a manual grant (guide §9).
 4. **Azure storage** when videos are produced → implement the one SAS action (guide §8.2).
-5. **Email provider** → receipts + contact notifications.
+5. **Fill the mail credentials** → `.env.local` + `npm run mail:sync` (see §Email).
 6. **Production Clerk/Convex + custom domain + CSP**, then **Phase 7** African PSP.
 
 ---
@@ -160,9 +162,13 @@ A premium, dark-themed **cyber-security academy** where:
 ## 7. Known limitations / honest notes
 
 - Still on **development** Clerk + Convex instances — fine for testing, not for real customers.
-- **No money moves until you add Stripe keys** — until then the buy button *simulates* a successful purchase (orders tagged `simulation`, access granted) so the platform is fully testable. Never launch publicly in this state: courses would be free.
-- Azure playback is stubbed: lessons with only a `blobPath` show "upload in progress" in the player; URL-based lessons play fine.
+- **Payments are on Stripe TEST keys** — real card numbers are declined; use `4242 4242 4242 4242`. Nothing grants access except a Stripe-verified payment: the old simulation bypass is gone.
+- **Three legacy `simulation` orders** remain in the `orders` table from that bypass, and the entitlements they granted are still active. Purge them before treating `/admin/ventes` as revenue.
+- **Refunds revoke access automatically** on a full refund. A partial refund deliberately does not.
+- Azure playback is stubbed: lessons with only a `blobPath` show "upload in progress". The player now accepts YouTube, Vimeo, **Bunny Stream** embeds and direct .mp4 via `videoUrl` — if Bunny becomes the host, the Azure/`blobPath` branch is dead code to delete.
+- **Iframe lessons (YouTube/Vimeo/Bunny) have no automatic progress tracking** — only direct `<video>` files report watch time. Students mark those lessons done by hand.
+- The contact page still shows `contact@heycybercorp.com` and `corporate@heycybercorp.io`, but the site is `heycybercorp.fr` — three different domains.
 - Certificates are **completion-based** (all lessons done), not exam-based.
 - Labs page is still a visual template — real labs need VM infrastructure (own project).
-- Messages are stored, not emailed — admins must check `/admin/messages` until an email provider is wired.
+- Messages are stored **and** emailed to MAIL_TO once the SMTP credentials are set; `/admin/messages` remains the system of record if mail fails.
 - The analytics queries do full table scans — fine now, revisit past ~10k rows/table.

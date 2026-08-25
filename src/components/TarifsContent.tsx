@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { useQuery } from "convex/react";
-import { useSearchParams } from "next/navigation";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
 import BuyPackageButton from "@/components/BuyPackageButton";
+import CheckoutResultBanner from "@/components/CheckoutResultBanner";
 import { formatCoursePrice, type Region } from "@/lib/format";
 
 const TABLE_ROWS = [
@@ -27,7 +27,7 @@ const FAQ = [
   },
   {
     q: "Quel est le mode de paiement accepté ?",
-    a: "Cartes bancaires (Visa, Mastercard), PayPal, SEPA et Revolut Pay via Stripe. Le Mobile Money (Orange, MTN, Wave) arrive prochainement pour l'Afrique.",
+    a: "Carte bancaire (Visa, Mastercard) et les autres moyens proposés par Stripe selon votre pays — la liste s'affiche au moment du paiement. Le Mobile Money (Orange, MTN, Wave) arrive prochainement pour l'Afrique.",
   },
 ];
 
@@ -44,41 +44,14 @@ export default function TarifsContent() {
   const [regionOverride, setRegionOverride] = useState<Region | null>(null);
   const region: Region = regionOverride ?? me?.region ?? "AFRIQUE";
 
-  const searchParams = useSearchParams();
-  const paiement = searchParams.get("paiement");
-
   return (
     <>
       {/* Hero + plans */}
       <main className="relative pt-32 pb-20 overflow-hidden cyber-grid">
         <div className="relative z-10 max-w-container-max mx-auto px-margin-mobile md:px-margin-desktop text-center">
-          {/* Payment result banners (checkout redirects back here) */}
-          {paiement === "succes" && (
-            <div className="glass-card rounded-xl px-6 py-4 mb-10 border-primary/50 flex items-center gap-3 text-left">
-              <Icon name="check_circle" className="text-primary" fill />
-              <p className="text-on-surface">
-                <span className="font-bold text-primary">Paiement confirmé.</span>{" "}
-                Votre accès s&apos;active en quelques secondes — retrouvez vos formations dans
-                votre espace.
-              </p>
-            </div>
-          )}
-          {paiement === "simulation" && (
-            <div className="glass-card rounded-xl px-6 py-4 mb-10 border-secondary/50 flex items-center gap-3 text-left">
-              <Icon name="science" className="text-secondary" fill />
-              <p className="text-on-surface">
-                <span className="font-bold text-secondary">Achat simulé (mode test).</span>{" "}
-                Stripe n&apos;est pas encore configuré — aucun paiement réel, mais votre accès
-                est actif pour tester.
-              </p>
-            </div>
-          )}
-          {paiement === "annule" && (
-            <div className="glass-card rounded-xl px-6 py-4 mb-10 border-outline-variant/40 flex items-center gap-3 text-left">
-              <Icon name="info" className="text-secondary" />
-              <p className="text-on-surface-variant">Paiement annulé. Vous n&apos;avez pas été débité.</p>
-            </div>
-          )}
+          {/* Stripe redirects the buyer back here — the banner re-checks
+              the payment with Stripe before claiming anything. */}
+          <CheckoutResultBanner />
 
           <div className="inline-flex items-center bg-surface-container border border-outline-variant/50 rounded-full px-4 py-1 mb-6">
             <Icon name="security" className="text-primary text-sm mr-2" fill />
