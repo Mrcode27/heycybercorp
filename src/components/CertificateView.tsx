@@ -119,7 +119,7 @@ export default function CertificateView({ code }: { code: string }) {
           </div>
 
           <p className="mt-8 font-code-sm text-code-sm text-on-surface-variant print:text-gray-500">
-            Authenticité vérifiable sur heycybercorp.com/certificat/{cert.code}
+            Authenticité vérifiable sur heycybercorp.fr/certificat/{cert.code}
           </p>
         </div>
       </div>

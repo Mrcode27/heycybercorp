@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import PublicShell from "@/components/PublicShell";
-import { CONTACT_EMAIL } from "@/lib/site";
+import { CONTACT_EMAIL, LEGAL } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
@@ -31,7 +31,9 @@ export default function ConfidentialitePage() {
         <div className="max-w-3xl space-y-2 pb-24">
           <h2 className={h2}>1. Responsable du traitement</h2>
           <p className={p}>
-            heycybercorp [forme juridique et adresse à compléter], joignable à{" "}
+            {LEGAL.companyName}
+            {LEGAL.legalForm.trim() && ` (${LEGAL.legalForm})`}
+            {LEGAL.address.trim() && `, ${LEGAL.address}`}, joignable à{" "}
             <a href={`mailto:${CONTACT_EMAIL}`} className={mail}>
               {CONTACT_EMAIL}
             </a>
@@ -131,19 +133,23 @@ export default function ConfidentialitePage() {
           <h2 className={h2}>6. Durées de conservation</h2>
           <ul className="space-y-2">
             <li className={li}>
-              Compte et accès aux formations : durée du compte, puis suppression après 3 ans
-              d&apos;inactivité.
+              Compte et accès aux formations : pendant toute la durée de vie du compte, puis
+              suppression sur votre demande ou lors de nos revues périodiques des comptes inactifs.
             </li>
-            <li className={li}>Commandes / pièces comptables : 10 ans (obligations comptables).</li>
-            <li className={li}>Messages de contact non convertis : 3 ans après le dernier contact.</li>
-            <li className={li}>Journal d&apos;audit : 12 mois.</li>
+            <li className={li}>Commandes / pièces comptables : 10 ans (obligation légale).</li>
+            <li className={li}>
+              Messages de contact non convertis : 3 ans au plus après le dernier échange.
+            </li>
+            <li className={li}>Journal d&apos;audit : 12 mois au plus.</li>
           </ul>
 
           <h2 className={h2}>7. Vos droits</h2>
           <p className={p}>
             Conformément au Règlement (UE) 2016/679 (RGPD) et à la loi Informatique et Libertés,
             vous disposez des droits d&apos;accès, de rectification, d&apos;effacement, de
-            portabilité, d&apos;opposition et de limitation du traitement de vos données.
+            portabilité, d&apos;opposition et de limitation du traitement de vos données. Lorsque
+            un traitement repose sur votre consentement, vous pouvez le retirer à tout moment,
+            sans que cela remette en cause la licéité du traitement déjà effectué.
           </p>
           <p className={p}>
             Pour exercer ces droits, écrivez à{" "}

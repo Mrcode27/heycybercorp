@@ -34,5 +34,69 @@ export const SITE_URL = (
 
 export const SITE_NAME = "heycybercorp";
 
-/** Public contact email — shown on /contact, /entreprise and the legal pages. */
+/**
+ * Public contact email — shown on /contact, /entreprise and the legal pages.
+ * 👉 Point this at a mailbox on your own domain (e.g. contact@heycybercorp.fr)
+ * as soon as one exists: it is also the address for GDPR requests and for
+ * reporting illegal content, and a personal Gmail reads badly there.
+ */
 export const CONTACT_EMAIL = "rainono27@gmail.com";
+
+type LegalIdentity = {
+  /** Registered name, if it differs from the brand. */
+  companyName: string;
+  /** SAS, SASU, EURL, SARL, micro-entreprise… */
+  legalForm: string;
+  /** Share capital, e.g. "1 000 €". Companies only — leave empty otherwise. */
+  capital: string;
+  /** 9 digits. */
+  siren: string;
+  /** Registry city of the RCS entry, e.g. "Paris". */
+  rcsCity: string;
+  /** "FR" followed by 11 characters. */
+  vatNumber: string;
+  /** Full registered address, one line. */
+  address: string;
+  /** Legally the company's representative. */
+  publicationDirector: string;
+  /**
+   * Consumer mediator. Subscribing to one is mandatory for B2C sellers in
+   * France (art. L612-1 Code de la consommation).
+   */
+  mediator: { name: string; url: string };
+};
+
+/**
+ * ┌────────────────────────────────────────────────────────────────────┐
+ * │  👉 FILL THIS IN ONCE                                               │
+ * │                                                                     │
+ * │  /mentions-legales and /confidentialite both read from here, so    │
+ * │  there is exactly one place to edit. A field left empty is simply   │
+ * │  not displayed, and appears the moment you fill it — so the notice  │
+ * │  never advertises what is missing. Once the company is registered   │
+ * │  these fields ARE legally required (LCEN art. 6-III, Code de        │
+ * │  commerce art. R.123-237): run `npm run legal:fetch -- <SIREN>`     │
+ * │  and they fill themselves from the public registry.                 │
+ * └────────────────────────────────────────────────────────────────────┘
+ */
+export const LEGAL: LegalIdentity = {
+  companyName: "heycybercorp",
+  legalForm: "",
+  capital: "",
+  siren: "",
+  rcsCity: "",
+  vatNumber: "",
+  address: "",
+  publicationDirector: "",
+  mediator: { name: "", url: "" },
+};
+
+/**
+ * Host of the site, published because the LCEN requires naming it. Kept to one
+ * line: it is a legal obligation, not a section anyone came to read.
+ */
+export const HOST = {
+  name: "Vercel Inc.",
+  address: "440 N Barranca Ave #4133, Covina, CA 91723, États-Unis",
+  url: "https://vercel.com",
+};
