@@ -17,6 +17,7 @@ import type * as email from "../email.js";
 import type * as entitlements from "../entitlements.js";
 import type * as freeVideos from "../freeVideos.js";
 import type * as http from "../http.js";
+import type * as labs from "../labs.js";
 import type * as lessons from "../lessons.js";
 import type * as lib_audit from "../lib/audit.js";
 import type * as messages from "../messages.js";
@@ -43,6 +44,7 @@ declare const fullApi: ApiFromModules<{
   entitlements: typeof entitlements;
   freeVideos: typeof freeVideos;
   http: typeof http;
+  labs: typeof labs;
   lessons: typeof lessons;
   "lib/audit": typeof lib_audit;
   messages: typeof messages;

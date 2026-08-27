@@ -142,6 +142,46 @@ export default defineSchema({
     .index("by_code", ["code"])
     .index("by_user_course", ["userId", "courseId"]),
 
+  /**
+   * Hands-on challenges. A lab is a brief plus a flag the student has to find;
+   * `flag` NEVER leaves the server — `labs.listForStudent` strips it, and
+   * `labs.submit` compares it in a mutation.
+   */
+  labs: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    summary: v.string(),
+    /** Full brief. Newlines are rendered; no markdown parsing. */
+    brief: v.string(),
+    hint: v.optional(v.string()),
+    level: v.union(
+      v.literal("Débutant"),
+      v.literal("Intermédiaire"),
+      v.literal("Avancé"),
+    ),
+    category: v.string(),
+    icon: v.string(),
+    flag: v.string(),
+    points: v.number(),
+    /** Free labs are playable without owning the matching pack. */
+    isFree: v.boolean(),
+    published: v.boolean(),
+    order: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_order", ["order"]),
+
+  /** One row per student per lab: attempt count, and when it was solved. */
+  labSolves: defineTable({
+    userId: v.id("users"),
+    labId: v.id("labs"),
+    attempts: v.number(),
+    solvedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_lab", ["userId", "labId"])
+    .index("by_lab", ["labId"]),
+
   messages: defineTable({
     kind: v.union(v.literal("contact"), v.literal("devis")),
     name: v.string(),
