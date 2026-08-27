@@ -58,16 +58,6 @@ export default function ContactPage() {
                 </div>
               </div>
             ))}
-            <div className="p-6 glass-card rounded-sm border-dashed border-primary/40">
-              <div className="font-code-sm text-code-sm text-on-surface-variant mb-2">
-                heycybercorp_cli --ping
-              </div>
-              <div className="font-code-sm text-code-sm text-primary">
-                [OK] Support en ligne <br />
-                [OK] Temps de réponse moyen : 4h <br />
-                <span className="cursor-blink">_</span>
-              </div>
-            </div>
           </div>
 
           {/* Form */}

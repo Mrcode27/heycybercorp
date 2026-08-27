@@ -50,10 +50,6 @@ export default function Home() {
       <section className="relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid">
         <div className="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-primary/10 border border-primary/30 rounded-full text-primary font-label-mono text-label-mono">
-              <Icon name="shield" className="text-[14px]" />
-              STATUS: SECURE_ENVIRONMENT_ALPHA
-            </div>
             <h1 className="font-headline-xl text-headline-xl lg:text-[64px] leading-tight text-on-surface">
               Maîtrisez l&apos;Art de la <span className="text-primary italic">Cyberdéfense</span>
             </h1>
