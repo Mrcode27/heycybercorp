@@ -83,6 +83,14 @@ export default defineSchema({
     .index("by_user_package", ["userId", "packageId"])
     .index("by_package", ["packageId"]),
 
+  /**
+   * Site-wide settings — exactly one row. `theme` drives the public look and
+   * is switched from /admin/apparence.
+   */
+  siteSettings: defineTable({
+    theme: v.union(v.literal("dark"), v.literal("light")),
+  }),
+
   orders: defineTable({
     userId: v.id("users"),
     packageId: v.optional(v.id("packages")), // current model

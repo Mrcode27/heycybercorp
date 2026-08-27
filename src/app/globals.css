@@ -266,3 +266,152 @@ body {
 .material-symbols-outlined.fill {
   font-variation-settings: "FILL" 1;
 }
+
+/* ============================================================
+   LIGHT THEME  —  html[data-theme="light"]
+   ------------------------------------------------------------
+   Switched from /admin/apparence, stored in Convex, applied to
+   every visitor. Because every Tailwind v4 utility compiles to
+   var(--color-…), re-declaring the tokens here repaints the whole
+   site without touching a single component.
+
+   Palette taken from the logo: its yellow is #f8f800. Pure yellow
+   is unreadable as text on white (about 1.1:1), so `primary` is a
+   dark gold that passes contrast both as text AND as a button
+   background, while the pure logo yellow lives in the *-container
+   and *-fixed tokens where it sits behind dark ink.
+   ============================================================ */
+html[data-theme="light"] {
+  /* Neutrals */
+  --color-background: #fbfbf6;
+  --color-on-background: #1a1a12;
+  --color-surface: #ffffff;
+  --color-on-surface: #1a1a12;
+  --color-on-surface-variant: #4b4b3e;
+  --color-surface-dim: #f2f2ea;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #fafaf3;
+  --color-surface-container: #f5f5ec;
+  --color-surface-container-high: #eeeee3;
+  --color-surface-container-highest: #e7e7da;
+  --color-surface-variant: #e7e7da;
+  --color-outline: #7a7a69;
+  --color-outline-variant: #cfcfbe;
+  --color-inverse-surface: #2f2f27;
+  --color-inverse-on-surface: #f3f3ea;
+
+  /* Primary — dark gold for text/buttons, logo yellow for fills */
+  --color-primary: #6e6200;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #f8f800;
+  --color-on-primary-container: #1a1a00;
+  --color-primary-fixed: #f8f800;
+  --color-primary-fixed-dim: #e0e000;
+  --color-on-primary-fixed: #1a1a00;
+  --color-on-primary-fixed-variant: #514800;
+  --color-inverse-primary: #f8f800;
+  --color-surface-tint: #6e6200;
+
+  /* Secondary — deep teal, the readable counterpart of the dark theme's cyan */
+  --color-secondary: #1c5b68;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #bfe9f2;
+  --color-on-secondary-container: #05323b;
+  --color-secondary-fixed: #bfe9f2;
+  --color-secondary-fixed-dim: #8fd6e6;
+  --color-on-secondary-fixed: #05323b;
+  --color-on-secondary-fixed-variant: #124954;
+
+  /* Tertiary */
+  --color-tertiary: #3c6a50;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #beebd1;
+  --color-on-tertiary-container: #04220f;
+  --color-tertiary-fixed: #beebd1;
+  --color-tertiary-fixed-dim: #a3d7b8;
+  --color-on-tertiary-fixed: #04220f;
+  --color-on-tertiary-fixed-variant: #2a5340;
+
+  /* Error — light-surface Material defaults */
+  --color-error: #b3261e;
+  --color-on-error: #ffffff;
+  --color-error-container: #f9dedc;
+  --color-on-error-container: #410e0b;
+
+  /* Brand accents, retinted so gradients and glows stay in key */
+  --color-brand-green: #6e6200;
+  --color-brand-teal: #1c5b68;
+  --color-brand-forest: #cfcfbe;
+  --color-brand-dark: #e7e7da;
+  --color-brand-deepest: #f5f5ec;
+  --color-brand-pure: #ffffff;
+}
+
+/* The base rules below hard-code dark values, so each needs its own override. */
+html[data-theme="light"] body {
+  background-color: #fbfbf6;
+  color: #1a1a12;
+}
+
+html[data-theme="light"] .cyber-grid {
+  background-image:
+    linear-gradient(to right, #e6e6d6 1px, transparent 1px),
+    linear-gradient(to bottom, #e6e6d6 1px, transparent 1px);
+}
+
+html[data-theme="light"] .cyber-grid-dots {
+  background-image: radial-gradient(circle at 2px 2px, #e0e0cf 1px, transparent 0);
+}
+
+/* "Glass" over a light page reads as a plain raised card. */
+html[data-theme="light"] .glass-panel {
+  background: rgba(255, 255, 255, 0.82);
+  border: 1px solid #dcdcc9;
+}
+
+html[data-theme="light"] .glass-card {
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid #e2e2d1;
+}
+
+html[data-theme="light"] .glass-card:hover {
+  border-color: #c9b400;
+  box-shadow: 0 6px 18px rgba(26, 26, 18, 0.08);
+}
+
+/* Neon glows are a dark-background effect; on white they turn to haze.
+   Kept as soft elevation instead of switched off, so buttons keep their lift. */
+html[data-theme="light"] .glow-primary,
+html[data-theme="light"] .cyber-glow-primary {
+  box-shadow: 0 4px 14px rgba(110, 98, 0, 0.22);
+}
+
+html[data-theme="light"] .cyber-glow-secondary {
+  box-shadow: 0 4px 14px rgba(28, 91, 104, 0.18);
+}
+
+html[data-theme="light"] .glow-text-primary {
+  text-shadow: none;
+}
+
+html[data-theme="light"] .cyber-glow-border::after {
+  background: linear-gradient(45deg, #e0e000, transparent, #1c5b68);
+  opacity: 0.25;
+}
+
+html[data-theme="light"] .active-filter {
+  background-color: #f8f800;
+  color: #1a1a00;
+  box-shadow: 0 2px 8px rgba(110, 98, 0, 0.25);
+}
+
+html[data-theme="light"] .hexagon-frame {
+  background: #d8d8c4;
+}
+
+/* A terminal stays a terminal: the hero console keeps its dark chrome in both
+   themes, which is the one place the brand's black actually belongs. */
+html[data-theme="light"] .terminal-container {
+  border-top-color: #6e6200;
+}

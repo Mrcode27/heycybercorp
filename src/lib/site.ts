@@ -40,7 +40,7 @@ export const SITE_NAME = "heycybercorp";
  * as soon as one exists: it is also the address for GDPR requests and for
  * reporting illegal content, and a personal Gmail reads badly there.
  */
-export const CONTACT_EMAIL = "rainono27@gmail.com";
+export const CONTACT_EMAIL = "heycyberpro@gmail.com";
 
 type LegalIdentity = {
   /** Registered name, if it differs from the brand. */

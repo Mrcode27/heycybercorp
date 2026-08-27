@@ -70,67 +70,6 @@ export default function EntreprisePage() {
         </div>
       </section>
 
-      {/* Histoire & Valeurs */}
-      <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div>
-            <h2 className="font-headline-lg text-headline-lg text-primary mb-8">
-              Notre Histoire &amp; Valeurs
-            </h2>
-            <div className="space-y-6 font-body-md text-body-md text-on-surface-variant">
-              <p>
-                Né au cœur des enjeux de souveraineté numérique,{" "}
-                <span className="text-primary font-bold">heycybercorp</span> a été fondé par un
-                collectif d&apos;anciens analystes SOC et chercheurs en vulnérabilités. Notre
-                mission : combler le fossé entre la théorie académique et la réalité brutale des
-                cyberattaques modernes.
-              </p>
-              <p>
-                Nous croyons que la défense n&apos;est pas qu&apos;une question d&apos;outils, mais
-                de réflexes. Nos valeurs sont ancrées dans la rigueur technique, le partage de
-                connaissance et l&apos;éthique offensive au service de la protection.
-              </p>
-            </div>
-            <div className="mt-12 grid grid-cols-2 gap-6">
-              <div className="p-6 bg-surface-container-low border-l-4 border-primary">
-                <div className="text-headline-lg font-bold text-primary mb-1">98%</div>
-                <div className="text-label-mono font-label-mono uppercase text-on-surface-variant">
-                  Taux de réussite
-                </div>
-              </div>
-              <div className="p-6 bg-surface-container-low border-l-4 border-secondary">
-                <div className="text-headline-lg font-bold text-secondary mb-1">500+</div>
-                <div className="text-label-mono font-label-mono uppercase text-on-surface-variant">
-                  Entreprises formées
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="relative">
-            <div className="aspect-square glass-card rounded-xl overflow-hidden relative group flex items-end p-8">
-              <Image
-                src="/histoire-valeurs.jpg"
-                alt="Salle de contrôle heycybercorp : écrans de supervision et terminaux chiffrés"
-                fill
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                className="object-cover opacity-60 group-hover:scale-105 transition-transform duration-700"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
-              <div className="relative w-full p-6 bg-surface-container/90 backdrop-blur-md border border-outline-variant/30">
-                <div className="font-code-sm text-code-sm text-primary mb-2 flex items-center gap-2">
-                  <span className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                  SYSTEM_CORE_VALUES.EXE
-                </div>
-                <div className="font-label-mono text-label-mono text-on-surface">
-                  &gt; Intégrité. Excellence. Résilience.
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Team */}
       <section className="py-24 bg-surface-container-lowest">
         <div className="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
@@ -205,16 +144,6 @@ export default function EntreprisePage() {
                   </div>
                   <div className="text-on-surface">Station F, Paris, France</div>
                 </div>
-              </div>
-            </div>
-            <div className="mt-12 p-6 glass-card rounded-sm border-dashed border-primary/40">
-              <div className="font-code-sm text-code-sm text-on-surface-variant mb-2">
-                heycybercorp_cli --status
-              </div>
-              <div className="font-code-sm text-code-sm text-primary">
-                [OK] Systèmes opérationnels <br />
-                [OK] Experts disponibles pour consultation <br />
-                <span className="cursor-blink">_</span>
               </div>
             </div>
           </div>

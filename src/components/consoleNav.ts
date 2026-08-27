@@ -19,4 +19,5 @@ export const ADMIN_NAV: SidebarItem[] = [
   { icon: "mail", label: "Messages", href: "/admin/messages" },
   { icon: "assessment", label: "Rapports", href: "/admin/rapports" },
   { icon: "history", label: "Journal", href: "/admin/journal" },
+  { icon: "palette", label: "Apparence", href: "/admin/apparence" },
 ];

@@ -1,9 +1,7 @@
-import { ClerkProvider } from "@clerk/nextjs";
-import { dark } from "@clerk/themes";
 import type { Metadata } from "next";
 import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import ConvexClientProvider from "@/components/ConvexClientProvider";
+import AppProviders from "@/components/AppProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 const inter = Inter({
@@ -75,6 +73,19 @@ export default function RootLayout({
       className={`dark ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >
       <head>
+        {/*
+          Paint the admin-chosen theme before first paint, from the value the
+          previous visit cached. Without this the page would render in the
+          default dark palette and snap to light once Convex answers. Runs
+          before <body> exists, hence documentElement. Convex still has the
+          final word a moment later — see ThemeSync.
+        */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var t=localStorage.getItem('hcc-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}",
+          }}
+        />
         {/* Material Symbols icon font (icon fonts can't be self-hosted via next/font) */}
         <link
           rel="stylesheet"
@@ -82,21 +93,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-body-md text-on-surface antialiased selection:bg-primary/30 selection:text-primary" suppressHydrationWarning>
-        <ClerkProvider
-          signInUrl="/connexion"
-          signUpUrl="/inscription"
-          signInFallbackRedirectUrl="/dashboard"
-          signUpFallbackRedirectUrl="/dashboard"
-          appearance={{
-            theme: dark,
-            variables: {
-              colorPrimary: "#009150",
-              colorBackground: "#121a17",
-            },
-          }}
-        >
-          <ConvexClientProvider>{children}</ConvexClientProvider>
-        </ClerkProvider>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );

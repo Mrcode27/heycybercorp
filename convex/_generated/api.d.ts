@@ -23,6 +23,7 @@ import type * as messages from "../messages.js";
 import type * as orders from "../orders.js";
 import type * as packages from "../packages.js";
 import type * as progress from "../progress.js";
+import type * as settings from "../settings.js";
 import type * as stripe from "../stripe.js";
 import type * as users from "../users.js";
 
@@ -48,6 +49,7 @@ declare const fullApi: ApiFromModules<{
   orders: typeof orders;
   packages: typeof packages;
   progress: typeof progress;
+  settings: typeof settings;
   stripe: typeof stripe;
   users: typeof users;
 }>;
