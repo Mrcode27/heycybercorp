@@ -305,23 +305,23 @@ html[data-theme="light"] {
   --shadow-glow-strong: 0 8px 24px rgba(0, 98, 11, 0.26);
 
   /* Neutrals */
-  --color-background: #fbfbf6;
-  --color-on-background: #1a1a12;
+  --color-background: #f6faf6;
+  --color-on-background: #131c15;
   --color-surface: #ffffff;
-  --color-on-surface: #1a1a12;
-  --color-on-surface-variant: #4b4b3e;
-  --color-surface-dim: #f2f2ea;
+  --color-on-surface: #131c15;
+  --color-on-surface-variant: #3e4a41;
+  --color-surface-dim: #e8efe9;
   --color-surface-bright: #ffffff;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #fafaf3;
-  --color-surface-container: #f5f5ec;
-  --color-surface-container-high: #eeeee3;
-  --color-surface-container-highest: #e7e7da;
-  --color-surface-variant: #e7e7da;
-  --color-outline: #7a7a69;
-  --color-outline-variant: #cfcfbe;
-  --color-inverse-surface: #2f2f27;
-  --color-inverse-on-surface: #f3f3ea;
+  --color-surface-container-low: #f2f8f2;
+  --color-surface-container: #ecf3ec;
+  --color-surface-container-high: #e4ede5;
+  --color-surface-container-highest: #dce7de;
+  --color-surface-variant: #dce7de;
+  --color-outline: #6d7a70;
+  --color-outline-variant: #c1cec4;
+  --color-inverse-surface: #253028;
+  --color-inverse-on-surface: #eef4ef;
 
   /* Primary — dark gold for text/buttons, logo yellow for fills */
   --color-primary: #00620b;
@@ -348,7 +348,7 @@ html[data-theme="light"] {
   /* Tertiary */
   --color-tertiary: #2f6b4f;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #beebd1;
+  --color-tertiary-container: #c3ecd3;
   --color-on-tertiary-container: #04220f;
   --color-tertiary-fixed: #beebd1;
   --color-tertiary-fixed-dim: #a3d7b8;
@@ -364,42 +364,42 @@ html[data-theme="light"] {
   /* Brand accents, retinted so gradients and glows stay in key */
   --color-brand-green: #00620b;
   --color-brand-teal: #6b5d00;
-  --color-brand-forest: #cfcfbe;
-  --color-brand-dark: #e7e7da;
-  --color-brand-deepest: #f5f5ec;
+  --color-brand-forest: #c1cec4;
+  --color-brand-dark: #dce7de;
+  --color-brand-deepest: #ecf3ec;
   --color-brand-pure: #ffffff;
 }
 
 /* The base rules below hard-code dark values, so each needs its own override. */
 html[data-theme="light"] body {
-  background-color: #fbfbf6;
-  color: #1a1a12;
+  background-color: #f6faf6;
+  color: #131c15;
 }
 
 html[data-theme="light"] .cyber-grid {
   background-image:
-    linear-gradient(to right, #e6e6d6 1px, transparent 1px),
-    linear-gradient(to bottom, #e6e6d6 1px, transparent 1px);
+    linear-gradient(to right, #dbe7dd 1px, transparent 1px),
+    linear-gradient(to bottom, #dbe7dd 1px, transparent 1px);
 }
 
 html[data-theme="light"] .cyber-grid-dots {
-  background-image: radial-gradient(circle at 2px 2px, #e0e0cf 1px, transparent 0);
+  background-image: radial-gradient(circle at 2px 2px, #d3e2d6 1px, transparent 0);
 }
 
 /* "Glass" over a light page reads as a plain raised card. */
 html[data-theme="light"] .glass-panel {
   background: rgba(255, 255, 255, 0.82);
-  border: 1px solid #dcdcc9;
+  border: 1px solid #cadbcd;
 }
 
 html[data-theme="light"] .glass-card {
   background: rgba(255, 255, 255, 0.9);
-  border: 1px solid #e2e2d1;
+  border: 1px solid #d5e3d8;
 }
 
 html[data-theme="light"] .glass-card:hover {
   border-color: #00620b;
-  box-shadow: 0 6px 18px rgba(26, 26, 18, 0.08);
+  box-shadow: 0 6px 18px rgba(19, 28, 21, 0.08);
 }
 
 /* Neon glows are a dark-background effect; on white they turn to haze.
