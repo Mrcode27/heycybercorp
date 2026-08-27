@@ -93,7 +93,7 @@ export default function AdminReports() {
               <Icon name={k.icon} className={`${k.color} text-3xl`} fill />
               <span className="font-code-sm text-code-sm text-primary">{k.delta}</span>
             </div>
-            <div className="text-headline-lg-mobile font-bold text-white tabular-nums">
+            <div className="text-headline-lg-mobile font-bold text-on-surface tabular-nums">
               {k.value}
             </div>
             {k.sub && (
@@ -141,7 +141,7 @@ export default function AdminReports() {
                     : ""}
                 </div>
                 <div
-                  className="w-full rounded-t bg-gradient-to-t from-primary/30 to-primary shadow-[0_0_12px_rgba(0,145,80,0.3)] min-h-[2px]"
+                  className="w-full rounded-t bg-gradient-to-t from-primary/30 to-primary shadow-glow-primary min-h-[2px]"
                   style={{ height: `${(chartValues[i] / chartMax) * 100}%` }}
                 />
                 <div className="font-label-mono text-xs text-on-surface-variant">{m.label}</div>

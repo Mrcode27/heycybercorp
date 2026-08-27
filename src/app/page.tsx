@@ -54,7 +54,7 @@ export default function Home() {
               <Icon name="shield" className="text-[14px]" />
               STATUS: SECURE_ENVIRONMENT_ALPHA
             </div>
-            <h1 className="font-headline-xl text-headline-xl lg:text-[64px] leading-tight text-white">
+            <h1 className="font-headline-xl text-headline-xl lg:text-[64px] leading-tight text-on-surface">
               Maîtrisez l&apos;Art de la <span className="text-primary italic">Cyberdéfense</span>
             </h1>
             <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
@@ -114,7 +114,7 @@ export default function Home() {
               <span className="h-px w-8 bg-primary" />
               CATALOGUE DE FORMATIONS
             </div>
-            <h2 className="font-headline-lg text-headline-xl text-white">
+            <h2 className="font-headline-lg text-headline-xl text-on-surface">
               Préparez-vous aux Menaces de Demain
             </h2>
           </div>
@@ -136,13 +136,13 @@ export default function Home() {
                 >
                   <Icon name={c.icon} />
                 </div>
-                <h3 className="font-headline-lg text-white mb-4">{c.title}</h3>
+                <h3 className="font-headline-lg text-on-surface mb-4">{c.title}</h3>
                 <p className="text-on-surface-variant mb-8 flex-1">{c.desc}</p>
                 <div className="flex items-center justify-between mt-auto">
                   <span className={`font-label-mono ${c.accent}`}>{c.meta}</span>
                   <Link
                     href="/formations"
-                    className={`text-white transition-colors flex items-center gap-2 ${c.hoverText}`}
+                    className={`text-on-surface transition-colors flex items-center gap-2 ${c.hoverText}`}
                   >
                     Détails <Icon name="east" className="text-sm" />
                   </Link>
@@ -166,7 +166,7 @@ export default function Home() {
             <span className="h-px w-8 bg-secondary" />
             COMMUNAUTÉ
           </div>
-          <h2 className="font-headline-lg text-headline-xl text-white mb-4 text-balance">
+          <h2 className="font-headline-lg text-headline-xl text-on-surface mb-4 text-balance">
             Rejoignez la communauté
           </h2>
           <p className="text-on-surface-variant max-w-xl mx-auto mb-10">
@@ -180,7 +180,7 @@ export default function Home() {
       <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
         <div className="glass-panel rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
           <div className="p-12 lg:p-16 bg-primary/5 border-r border-outline-variant/30">
-            <h2 className="font-headline-xl text-white mb-6">
+            <h2 className="font-headline-xl text-on-surface mb-6">
               Besoin d&apos;un programme spécifique ?
             </h2>
             <p className="text-on-surface-variant mb-12">
@@ -193,7 +193,7 @@ export default function Home() {
                   <Icon name="mail" className="text-sm" />
                 </div>
                 <div>
-                  <div className="text-white font-medium">Email Direct</div>
+                  <div className="text-on-surface font-medium">Email Direct</div>
                   <div className="text-on-surface-variant text-sm">{CONTACT_EMAIL}</div>
                 </div>
               </div>
@@ -202,8 +202,8 @@ export default function Home() {
                   <Icon name="location_on" className="text-sm" />
                 </div>
                 <div>
-                  <div className="text-white font-medium">Bureaux</div>
-                  <div className="text-on-surface-variant text-sm">Paris, Dakar, Casablanca</div>
+                  <div className="text-on-surface font-medium">Bureaux</div>
+                  <div className="text-on-surface-variant text-sm">Paris · Douala</div>
                 </div>
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function Home() {
                   </label>
                   <input
                     name="nom"
-                    className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
+                    className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="Jean Dupont"
                     type="text"
                     required
@@ -235,7 +235,7 @@ export default function Home() {
                   </label>
                   <input
                     name="email"
-                    className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
+                    className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="jean@entreprise.com"
                     type="email"
                     required
@@ -248,7 +248,7 @@ export default function Home() {
                 </label>
                 <select
                   name="type"
-                  className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
+                  className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                 >
                   <option>Audit &amp; Pentesting</option>
                   <option>Sécurité Cloud</option>
@@ -262,7 +262,7 @@ export default function Home() {
                 </label>
                 <textarea
                   name="message"
-                  className="w-full bg-[#000202] border border-outline-variant text-white focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
+                  className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                   placeholder="Décrivez votre projet..."
                   rows={4}
                   required

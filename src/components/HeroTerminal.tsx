@@ -154,13 +154,13 @@ export default function HeroTerminal() {
 
   return (
     <div className="terminal-container rounded-lg p-1 shadow-2xl overflow-hidden border border-outline-variant">
-      <div className="bg-surface-container-high px-4 py-2 flex items-center gap-2 border-b border-outline-variant">
+      <div className="bg-console-bar px-4 py-2 flex items-center gap-2 border-b border-outline-variant/40">
         <div className="flex gap-1.5">
           <div className="w-3 h-3 rounded-full bg-error" />
           <div className="w-3 h-3 rounded-full bg-secondary" />
           <div className="w-3 h-3 rounded-full bg-primary" />
         </div>
-        <div className="flex-1 text-center font-label-mono text-xs opacity-60">
+        <div className="flex-1 text-center font-label-mono text-xs text-on-console opacity-70">
           heycybercorp_terminal -- v2.0.4
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function HeroTerminal() {
       <div
         ref={scrollRef}
         onClick={() => inputRef.current?.focus()}
-        className="p-6 font-code-sm text-code-sm text-primary-fixed-dim bg-[#000202] h-[340px] overflow-y-auto no-scrollbar cursor-text"
+        className="p-6 font-code-sm text-code-sm text-primary-fixed-dim bg-console h-[340px] overflow-y-auto no-scrollbar cursor-text"
       >
         {history.map((line, i) => {
           if (line.type === "input") {

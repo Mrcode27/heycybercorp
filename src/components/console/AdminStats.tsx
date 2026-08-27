@@ -24,7 +24,7 @@ export default function AdminStats() {
       {KPIS.map((k) => (
         <div key={k.label} className="glass-card rounded-xl p-6">
           <Icon name={k.icon} className={`${k.color} text-3xl mb-3`} fill />
-          <div className="text-headline-lg-mobile font-bold text-white tabular-nums">
+          <div className="text-headline-lg-mobile font-bold text-on-surface tabular-nums">
             {k.value ?? "—"}
           </div>
           <div className="font-label-mono text-label-mono text-on-surface-variant uppercase text-xs">

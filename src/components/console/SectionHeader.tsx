@@ -19,7 +19,7 @@ export default function SectionHeader({
           <Icon name={icon} fill />
         </div>
         <div>
-          <h1 className="font-headline-lg text-headline-lg-mobile text-white leading-tight">
+          <h1 className="font-headline-lg text-headline-lg-mobile text-on-surface leading-tight">
             {title}
           </h1>
           {subtitle && <p className="text-on-surface-variant text-sm mt-0.5">{subtitle}</p>}

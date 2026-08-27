@@ -120,6 +120,23 @@
   --color-brand-dark: #121a17;
   --color-brand-deepest: #080c0a;
   --color-brand-pure: #000202;
+
+  /* Input background. Its own token because forms must invert with the theme,
+     while the brand blacks above stay black. */
+  --color-field: #000202;
+
+  /* Console surfaces — the hero terminal and video letterboxing. These stay
+     dark in BOTH themes: a terminal that turns white stops reading as a
+     terminal, and video bars want black regardless. In the light theme this
+     renders yellow-on-black, which is the logo's own combination. */
+  --color-console: #000202;
+  --color-console-bar: #242c28;
+  --color-on-console: #dce5df;
+
+  /* Glows as tokens, so the light theme can swap neon for elevation. A green
+     halo reads as light bloom on black and as smudge on white. */
+  --shadow-glow-primary: 0 0 15px rgba(106, 221, 147, 0.4);
+  --shadow-glow-strong: 0 0 30px rgba(0, 145, 80, 0.3);
 }
 
 /* ============================================================
@@ -282,6 +299,10 @@ body {
    and *-fixed tokens where it sits behind dark ink.
    ============================================================ */
 html[data-theme="light"] {
+  --color-field: #ffffff;
+  --shadow-glow-primary: 0 4px 14px rgba(110, 98, 0, 0.22);
+  --shadow-glow-strong: 0 8px 24px rgba(110, 98, 0, 0.26);
+
   /* Neutrals */
   --color-background: #fbfbf6;
   --color-on-background: #1a1a12;

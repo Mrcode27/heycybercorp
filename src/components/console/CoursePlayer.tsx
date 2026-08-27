@@ -205,7 +205,7 @@ export default function CoursePlayer({ slug }: { slug: string }) {
           ) : (
             <>
               {/* Player */}
-              <div className="rounded-xl overflow-hidden border border-outline-variant/30 bg-[#000202] aspect-video mb-6">
+              <div className="rounded-xl overflow-hidden border border-outline-variant/30 bg-console aspect-video mb-6">
                 {playback === undefined ? (
                   <div className="w-full h-full flex items-center justify-center text-on-surface-variant font-code-sm">
                     Vérification de l&apos;accès…

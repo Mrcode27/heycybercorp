@@ -24,8 +24,7 @@ type TeamMember = {
 
 const TEAM: TeamMember[] = [
   {
-    // TODO: replace with the founder's real name & bio.
-    name: "Fondateur",
+    name: "Nono Raissa",
     role: "Founder & CEO",
     bio: "À l'origine de heycybercorp : expert en cybersécurité offensive et formation des équipes techniques.",
     icon: "swords",
@@ -56,7 +55,7 @@ export default function EntreprisePage() {
           <div className="flex flex-col md:flex-row gap-4 justify-center">
             <Link
               href="/tarifs"
-              className="bg-primary text-on-primary px-8 py-4 rounded-sm font-bold text-lg hover:shadow-[0_0_15px_rgba(106,221,147,0.4)] transition-all"
+              className="bg-primary text-on-primary px-8 py-4 rounded-sm font-bold text-lg hover:shadow-glow-primary transition-all"
             >
               Consulter nos offres
             </Link>
@@ -85,7 +84,7 @@ export default function EntreprisePage() {
           <div className={TEAM.length === 1 ? "flex justify-center" : "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12"}>
             {TEAM.map((member) => (
               <div key={member.name} className="text-center group max-w-xs">
-                <div className="hexagon-frame mx-auto w-48 h-48 mb-6 group-hover:shadow-[0_0_30px_rgba(0,145,80,0.3)] transition-all duration-500">
+                <div className="hexagon-frame mx-auto w-48 h-48 mb-6 group-hover:shadow-glow-strong transition-all duration-500">
                   <div className="hexagon-inner w-full h-full bg-surface-container-highest flex items-center justify-center overflow-hidden">
                     {member.photo ? (
                       <Image
@@ -142,7 +141,7 @@ export default function EntreprisePage() {
                   <div className="font-label-mono text-label-mono text-secondary uppercase">
                     Siège
                   </div>
-                  <div className="text-on-surface">Station F, Paris, France</div>
+                  <div className="text-on-surface">Paris, France · Douala, Cameroun</div>
                 </div>
               </div>
             </div>
@@ -154,7 +153,7 @@ export default function EntreprisePage() {
               className="glass-card p-8 md:p-12 rounded-sm space-y-6"
               submitLabel="Envoyer la requête"
               submitIcon="send"
-              submitClassName="w-full bg-primary text-on-primary font-bold py-4 rounded-sm hover:shadow-[0_0_20px_rgba(106,221,147,0.3)] transition-all flex items-center justify-center gap-2"
+              submitClassName="w-full bg-primary text-on-primary font-bold py-4 rounded-sm hover:shadow-glow-primary transition-all flex items-center justify-center gap-2"
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">

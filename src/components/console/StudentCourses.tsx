@@ -83,7 +83,7 @@ export default function StudentCourses() {
             </div>
             <div className="w-full bg-surface-variant h-1.5 rounded-full overflow-hidden">
               <div
-                className="h-full bg-primary shadow-[0_0_10px_rgba(106,221,147,0.5)]"
+                className="h-full bg-primary shadow-glow-primary"
                 style={{ width: `${c.pct}%` }}
               />
             </div>

@@ -109,7 +109,7 @@ export default function AdminMessages() {
 
               {open && (
                 <div className="px-6 pb-5">
-                  <div className="bg-[#000202] border border-outline-variant/40 rounded-lg p-4 mb-3">
+                  <div className="bg-field border border-outline-variant/40 rounded-lg p-4 mb-3">
                     <p className="text-on-surface whitespace-pre-wrap text-sm">{m.body}</p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">

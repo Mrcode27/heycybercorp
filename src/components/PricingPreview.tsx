@@ -16,7 +16,7 @@ export default function PricingPreview() {
 
   return (
     <div className="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center">
-      <h2 className="font-headline-xl text-headline-xl text-white mb-6">
+      <h2 className="font-headline-xl text-headline-xl text-on-surface mb-6">
         Investissez dans votre Futur
       </h2>
       <p className="text-on-surface-variant mb-12 max-w-2xl mx-auto">
@@ -87,7 +87,7 @@ export default function PricingPreview() {
               <div className="text-on-surface-variant text-sm mb-4">{pkg.tagline}</div>
             )}
             <div className="flex items-baseline gap-1 mb-8">
-              <span className="font-headline-xl text-headline-xl text-white">
+              <span className="font-headline-xl text-headline-xl text-on-surface">
                 {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
               </span>
               <span className="text-on-surface-variant text-sm">· à vie</span>
@@ -106,7 +106,7 @@ export default function PricingPreview() {
               className={
                 pkg.featured
                   ? "w-full py-4 rounded-lg bg-primary text-on-primary font-bold hover:brightness-110 cyber-glow-primary transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60"
-                  : "w-full py-3 rounded-lg border border-outline text-white hover:bg-surface-variant transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60"
+                  : "w-full py-3 rounded-lg border border-outline text-on-surface hover:bg-surface-variant transition-all inline-flex items-center justify-center gap-2 disabled:opacity-60"
               }
             />
           </div>

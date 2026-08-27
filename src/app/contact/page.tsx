@@ -13,13 +13,13 @@ export const metadata: Metadata = pageMetadata({
 });
 
 const inputClass =
-  "w-full bg-[#000202] border border-outline-variant text-on-surface px-4 py-3 rounded-sm focus:ring-1 focus:ring-secondary focus:border-secondary transition-all outline-none";
+  "w-full bg-field border border-outline-variant text-on-surface px-4 py-3 rounded-sm focus:ring-1 focus:ring-secondary focus:border-secondary transition-all outline-none";
 const labelClass = "font-label-mono text-label-mono text-on-surface-variant uppercase";
 
 const CHANNELS = [
   { icon: "mail", color: "text-primary", label: "Email", value: CONTACT_EMAIL },
   { icon: "call", color: "text-secondary", label: "Téléphone", value: "+33 1 84 80 00 00" },
-  { icon: "location_on", color: "text-primary", label: "Bureaux", value: "Paris · Dakar · Casablanca" },
+  { icon: "location_on", color: "text-primary", label: "Bureaux", value: "Paris · Douala" },
 ];
 
 export default function ContactPage() {

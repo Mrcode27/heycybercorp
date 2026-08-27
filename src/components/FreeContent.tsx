@@ -22,7 +22,7 @@ export default function FreeContent() {
           <span className="h-px w-8 bg-primary" />
           CONTENU GRATUIT
         </div>
-        <h2 className="font-headline-lg text-headline-xl text-white mb-4 text-balance">
+        <h2 className="font-headline-lg text-headline-xl text-on-surface mb-4 text-balance">
           Apprenez gratuitement, puis allez plus loin
         </h2>
         <p className="text-on-surface-variant max-w-2xl mx-auto">
@@ -37,7 +37,7 @@ export default function FreeContent() {
           const watch = youtubeWatchUrl(v.youtubeUrl) ?? v.youtubeUrl;
           return (
             <div key={v._id} className="glass-panel rounded-xl overflow-hidden flex flex-col">
-              <div className="relative aspect-video bg-[#000202]">
+              <div className="relative aspect-video bg-console">
                 {embed ? (
                   <iframe
                     src={embed}

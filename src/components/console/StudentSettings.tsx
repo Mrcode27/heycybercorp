@@ -6,7 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import Icon from "../Icon";
 
 const fieldClass =
-  "w-full bg-[#000202] border border-outline-variant text-on-surface px-3 py-2.5 rounded text-sm";
+  "w-full bg-field border border-outline-variant text-on-surface px-3 py-2.5 rounded text-sm";
 
 const PREFS = [
   {

@@ -9,7 +9,7 @@ import Icon from "../Icon";
 import { formatDuration } from "@/lib/format";
 
 const inputClass =
-  "w-full bg-[#000202] border border-outline-variant text-on-surface px-3 py-2 rounded focus:border-primary focus:ring-0 outline-none transition-colors text-sm";
+  "w-full bg-field border border-outline-variant text-on-surface px-3 py-2 rounded focus:border-primary focus:ring-0 outline-none transition-colors text-sm";
 
 const EMPTY = {
   title: "",
@@ -113,7 +113,7 @@ export default function AdminLessons({ courseId }: { courseId: string }) {
             <Icon name="arrow_back" />
           </Link>
           <div>
-            <h1 className="font-headline-lg text-headline-lg-mobile text-white leading-tight">
+            <h1 className="font-headline-lg text-headline-lg-mobile text-on-surface leading-tight">
               {course.title}
             </h1>
             <p className="text-on-surface-variant text-sm mt-0.5">

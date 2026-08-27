@@ -115,7 +115,7 @@ function UserManagePanel({
                 <select
                   value={packageToGrant}
                   onChange={(e) => setPackageToGrant(e.target.value)}
-                  className="flex-grow bg-[#000202] border border-outline-variant text-on-surface px-2 py-1.5 rounded text-xs outline-none focus:border-primary"
+                  className="flex-grow bg-field border border-outline-variant text-on-surface px-2 py-1.5 rounded text-xs outline-none focus:border-primary"
                 >
                   <option value="">Choisir un pack…</option>
                   {grantable.map((p) => (

@@ -13,7 +13,7 @@ const LEVELS = ["Débutant", "Intermédiaire", "Avancé"] as const;
 type Level = (typeof LEVELS)[number];
 
 const inputClass =
-  "w-full bg-[#000202] border border-outline-variant text-on-surface px-3 py-2 rounded focus:border-primary focus:ring-0 outline-none transition-colors text-sm";
+  "w-full bg-field border border-outline-variant text-on-surface px-3 py-2 rounded focus:border-primary focus:ring-0 outline-none transition-colors text-sm";
 
 function slugify(title: string) {
   return title
@@ -216,7 +216,7 @@ export default function AdminCourses() {
                   max="30"
                   value={lessonForms.length || ""}
                   onChange={(e) => setLessonCount(e.target.value)}
-                  className="w-24 bg-[#000202] border border-outline-variant text-on-surface px-3 py-1.5 rounded text-sm outline-none focus:border-primary"
+                  className="w-24 bg-field border border-outline-variant text-on-surface px-3 py-1.5 rounded text-sm outline-none focus:border-primary"
                   placeholder="0"
                 />
                 <span className="text-on-surface-variant text-xs">
