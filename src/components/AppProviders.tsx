@@ -52,8 +52,8 @@ export default function AppProviders({ children }: { children: ReactNode }) {
       appearance={
         theme === "light"
           ? {
-              // Clerk's default (light) base, tinted with the logo's gold.
-              variables: { colorPrimary: "#6e6200", colorBackground: "#ffffff" },
+              // Clerk's default (light) base, tinted with the logo's green.
+              variables: { colorPrimary: "#00620b", colorBackground: "#ffffff" },
             }
           : {
               theme: dark,

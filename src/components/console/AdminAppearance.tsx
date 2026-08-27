@@ -27,8 +27,8 @@ const THEMES: {
     key: "light",
     name: "Signal",
     tag: "Nouveau design",
-    desc: "Fond clair et or profond repris du logo. Plus lisible en plein jour, et sur mobile.",
-    swatch: ["#fbfbf6", "#ffffff", "#f8f800", "#1a1a12"],
+    desc: "Fond clair, vert et jaune repris du logo. Plus lisible en plein jour, et sur mobile.",
+    swatch: ["#fbfbf6", "#ffffff", "#00620b", "#ffff00"],
   },
 ];
 
