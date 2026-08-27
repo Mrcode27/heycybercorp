@@ -68,11 +68,21 @@ export default function Home() {
                   className="group-hover:translate-x-1 transition-transform"
                 />
               </Link>
+              {/* btn-sweep fills from the left and runs a light across on hover;
+                  the text flips to on-secondary as the fill arrives. */}
               <Link
                 href="/tarifs"
-                className="px-8 py-4 border border-brand-teal text-brand-teal rounded-lg font-bold hover:bg-brand-teal/10 transition-all"
+                className="btn-sweep group px-8 py-4 border-2 border-secondary text-secondary hover:text-on-secondary rounded-lg font-bold transition-colors duration-300 flex items-center gap-2 hover:shadow-glow-primary hover:-translate-y-0.5"
               >
+                <Icon
+                  name="sell"
+                  className="text-[18px] group-hover:rotate-[-12deg] transition-transform duration-300"
+                />
                 Voir les tarifs
+                <Icon
+                  name="arrow_forward"
+                  className="text-[18px] opacity-0 -ml-4 group-hover:opacity-100 group-hover:ml-0 transition-all duration-300"
+                />
               </Link>
             </div>
             <div className="flex items-center gap-6 pt-8">

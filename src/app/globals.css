@@ -125,13 +125,17 @@
      while the brand blacks above stay black. */
   --color-field: #000202;
 
-  /* Console surfaces — the hero terminal and video letterboxing. These stay
-     dark in BOTH themes: a terminal that turns white stops reading as a
-     terminal, and video bars want black regardless. In the light theme this
-     renders yellow-on-black, which is the logo's own combination. */
+  /* Video letterboxing. Black in both themes — bars behind a picture should
+     disappear, not take on a hue. */
   --color-console: #000202;
-  --color-console-bar: #242c28;
-  --color-on-console: #dce5df;
+
+  /* The hero shell. Also dark in both themes (a terminal that turns white
+     stops reading as a terminal), but a deep green rather than black, so the
+     console belongs to the brand instead of merely sitting on top of it. In
+     the light theme the prompt renders yellow-on-green — the logo's pairing. */
+  --color-terminal: #04150b;
+  --color-terminal-bar: #0b2a15;
+  --color-on-terminal: #cfe8d5;
 
   /* Glows as tokens, so the light theme can swap neon for elevation. A green
      halo reads as light bloom on black and as smudge on white. */
@@ -199,7 +203,7 @@ body {
 }
 
 .terminal-container {
-  background: #000202;
+  background: #04150b;
   border-top: 2px solid #009150;
 }
 
@@ -436,4 +440,97 @@ html[data-theme="light"] .hexagon-frame {
    themes, which is the one place the brand's black actually belongs. */
 html[data-theme="light"] .terminal-container {
   border-top-color: #00620b;
+}
+
+
+/* ============================================================
+   Hero terminal chrome + the sweep button
+   ============================================================ */
+
+/* Faint scanlines over the console, the way a CRT shell reads. Pointer events
+   are off so this never swallows a click meant for the input below it. */
+.terminal-scanlines::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 0, 0, 0.18) 3px,
+    rgba(0, 0, 0, 0) 4px
+  );
+  opacity: 0.4;
+}
+
+/* A slow green wash drifting down, so the shell never looks frozen. */
+.terminal-sweep::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 90px;
+  pointer-events: none;
+  z-index: 1;
+  background: linear-gradient(to bottom, transparent, rgba(0, 145, 80, 0.09), transparent);
+  animation: terminal-scan 7s linear infinite;
+}
+
+@keyframes terminal-scan {
+  0% { transform: translateY(-120px); }
+  100% { transform: translateY(440px); }
+}
+
+/* Outline button that fills from the left, with a light sweeping across it. */
+.btn-sweep {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+.btn-sweep::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--color-secondary);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.btn-sweep:hover::before,
+.btn-sweep:focus-visible::before {
+  transform: scaleX(1);
+}
+.btn-sweep::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 55%;
+  z-index: -1;
+  background: linear-gradient(
+    100deg,
+    transparent,
+    color-mix(in srgb, var(--color-on-secondary) 40%, transparent),
+    transparent
+  );
+  transform: translateX(-160%);
+}
+.btn-sweep:hover::after {
+  animation: btn-shine 0.9s ease-out;
+}
+@keyframes btn-shine {
+  to { transform: translateX(260%); }
+}
+
+/* Respect a reduced-motion preference: keep the colour, drop the movement. */
+@media (prefers-reduced-motion: reduce) {
+  .terminal-sweep::before,
+  .btn-sweep::after {
+    animation: none;
+  }
+  .btn-sweep::before {
+    transition: none;
+  }
 }
