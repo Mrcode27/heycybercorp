@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Icon from "../Icon";
 import Terminal from "../shell/Terminal";
+import WebOS, { type WebOSConfig } from "./WebOS";
 import type { ShellConfig } from "@/lib/shell";
 
 /**
@@ -17,7 +18,7 @@ import type { ShellConfig } from "@/lib/shell";
 
 export type Artifact = {
   _id: string;
-  kind: "email" | "log" | "terminal" | "file" | "table" | "http" | "image";
+  kind: "email" | "log" | "terminal" | "file" | "table" | "http" | "image" | "webos";
   label: string;
   content: string;
 };
@@ -30,6 +31,7 @@ const KIND_ICON: Record<Artifact["kind"], string> = {
   table: "table_rows",
   http: "http",
   image: "image",
+  webos: "desktop_windows",
 };
 
 /** Artifacts whose content is JSON. A malformed body must not blank the case. */
@@ -80,6 +82,8 @@ function Body({ artifact }: { artifact: Artifact }) {
       return <FileBody content={artifact.content} />;
     case "image":
       return <ImageBody content={artifact.content} label={artifact.label} />;
+    case "webos":
+      return <WebOSBody content={artifact.content} />;
     case "http":
     default:
       return (
@@ -205,6 +209,24 @@ function TerminalBody({ content }: { content: string }) {
       />
     </div>
   );
+}
+
+/**
+ * The full simulated desktop. Content is the same JSON as a `terminal`
+ * artifact, plus optional `apps` and `openOnStart`.
+ */
+function WebOSBody({ content }: { content: string }) {
+  const parsed = parseJson<Partial<WebOSConfig>>(content, {});
+  const cfg: WebOSConfig = {
+    files: parsed.files ?? {},
+    user: parsed.user ?? "analyste",
+    host: parsed.host ?? "poste-soc",
+    cwd: parsed.cwd ?? "/home/analyste",
+    allowed: parsed.allowed,
+    apps: parsed.apps,
+    openOnStart: parsed.openOnStart,
+  };
+  return <WebOS config={cfg} />;
 }
 
 /** A sortable table. Content is JSON: `{ columns: string[], rows: string[][] }`. */

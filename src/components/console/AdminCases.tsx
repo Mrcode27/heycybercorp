@@ -13,7 +13,8 @@ const input =
 const label = "font-label-mono text-label-mono uppercase tracking-wider text-on-surface-variant";
 
 type Level = "Débutant" | "Intermédiaire" | "Avancé";
-type ArtifactKind = "email" | "log" | "terminal" | "file" | "table" | "http" | "image";
+type ArtifactKind =
+  | "email" | "log" | "terminal" | "file" | "table" | "http" | "image" | "webos";
 
 type ArtifactDraft = { kind: ArtifactKind; label: string; content: string };
 type StepDraft = {
@@ -21,6 +22,8 @@ type StepDraft = {
   kind: "text" | "choice";
   choices: string[];
   answer: string;
+  accept: string;
+  match: "exact" | "contains" | "keywords";
   hint: string;
   reveal: string;
   points: number;
@@ -59,6 +62,8 @@ const NEW_STEP: StepDraft = {
   kind: "text",
   choices: [],
   answer: "",
+  accept: "",
+  match: "exact",
   hint: "",
   reveal: "",
   points: 25,
@@ -88,6 +93,19 @@ const ARTIFACT_TEMPLATE: Record<ArtifactKind, string> = {
   ),
   http: "HTTP/1.1 200 OK\nServer: nginx/1.18.0\nX-Powered-By: PHP/7.4.3",
   image: "/cases/exemple.png",
+  webos: JSON.stringify(
+    {
+      user: "analyste",
+      host: "srv-app",
+      cwd: "/var/log",
+      apps: ["terminal", "files", "monitor"],
+      openOnStart: ["question.txt"],
+      allowed: ["ls", "cat", "grep", "wc", "head", "tail", "whoami", "pwd", "tree"],
+      files: { "question.txt": "Votre mission…", "auth.log": "…" },
+    },
+    null,
+    2,
+  ),
 };
 
 /**
@@ -142,6 +160,11 @@ export default function AdminCases() {
           kind: s.kind,
           choices: s.kind === "choice" ? s.choices.filter((c) => c.trim()) : [],
           answer: s.answer,
+          accept: s.accept
+            .split("\n")
+            .map((x) => x.trim())
+            .filter(Boolean),
+          match: s.match,
           hint: s.hint.trim() || undefined,
           reveal: s.reveal.trim() || undefined,
           points: s.points,
@@ -294,7 +317,9 @@ export default function AdminCases() {
               className="bg-field border border-outline-variant text-on-surface px-3 py-1.5 rounded text-sm"
             >
               <option value="">+ Ajouter une pièce…</option>
-              {(["email", "log", "terminal", "file", "table", "http", "image"] as ArtifactKind[]).map(
+              {(
+                ["webos", "email", "log", "terminal", "file", "table", "http", "image"] as ArtifactKind[]
+              ).map(
                 (k) => (
                   <option key={k} value={k}>
                     {k}
@@ -430,17 +455,47 @@ export default function AdminCases() {
               )}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <input
-                  value={s.answer}
-                  onChange={(e) => {
-                    const next = [...draft.steps];
-                    next[i] = { ...s, answer: e.target.value };
-                    set("steps", next);
-                  }}
-                  className={`${input} font-code-sm`}
-                  placeholder="Réponse attendue (jamais envoyée au navigateur)"
-                  required
-                />
+                <div className="space-y-2">
+                  <input
+                    value={s.answer}
+                    onChange={(e) => {
+                      const next = [...draft.steps];
+                      next[i] = { ...s, answer: e.target.value };
+                      set("steps", next);
+                    }}
+                    className={`${input} font-code-sm`}
+                    placeholder="Réponse attendue (jamais envoyée au navigateur)"
+                    required
+                  />
+                  <select
+                    value={s.match}
+                    onChange={(e) => {
+                      const next = [...draft.steps];
+                      next[i] = { ...s, match: e.target.value as StepDraft["match"] };
+                      set("steps", next);
+                    }}
+                    className={input}
+                  >
+                    <option value="exact">Exact — valeur précise (IP, heure) · tolère une faute de frappe</option>
+                    <option value="keywords">Mots-clés — chaque ligne doit apparaître · pour une phrase</option>
+                    <option value="contains">Contient — la réponse inclut la valeur attendue</option>
+                  </select>
+                  <textarea
+                    value={s.accept}
+                    onChange={(e) => {
+                      const next = [...draft.steps];
+                      next[i] = { ...s, accept: e.target.value };
+                      set("steps", next);
+                    }}
+                    rows={2}
+                    className={`${input} font-code-sm`}
+                    placeholder={
+                      s.match === "keywords"
+                        ? "Mots-clés supplémentaires requis, un par ligne (des racines suffisent : partag)"
+                        : "Autres formulations acceptées, une par ligne"
+                    }
+                  />
+                </div>
                 <input
                   value={s.hint}
                   onChange={(e) => {
@@ -577,6 +632,8 @@ export default function AdminCases() {
                                 kind: s.kind,
                                 choices: s.choices,
                                 answer: s.answer,
+                                accept: (s.accept ?? []).join("\n"),
+                                match: s.match ?? "exact",
                                 hint: s.hint ?? "",
                                 reveal: s.reveal ?? "",
                                 points: s.points,

@@ -219,6 +219,7 @@ export default defineSchema({
       v.literal("table"),
       v.literal("http"),
       v.literal("image"),
+      v.literal("webos"),
     ),
     label: v.string(),
     content: v.string(),
@@ -231,7 +232,22 @@ export default defineSchema({
     prompt: v.string(),
     kind: v.union(v.literal("text"), v.literal("choice")),
     choices: v.array(v.string()),
+    /** The canonical answer, shown to admins as "the" answer. */
     answer: v.string(),
+    /**
+     * Other wordings that are equally right. A student who understood the case
+     * should not fail on a synonym.
+     */
+    accept: v.optional(v.array(v.string())),
+    /**
+     * How `answer`/`accept` are compared — see `matches()` in cases.ts.
+     *  exact    : normalised equality, with a small typo tolerance
+     *  contains : the entry appears somewhere in the reply
+     *  keywords : every entry must appear (stems work: "partag")
+     */
+    match: v.optional(
+      v.union(v.literal("exact"), v.literal("contains"), v.literal("keywords")),
+    ),
     hint: v.optional(v.string()),
     /** Consequence revealed once the step is answered. */
     reveal: v.optional(v.string()),

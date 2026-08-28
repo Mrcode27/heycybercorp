@@ -34,6 +34,7 @@ const artifactKind = v.union(
   v.literal("table"),
   v.literal("http"),
   v.literal("image"),
+  v.literal("webos"),
 );
 
 /**
@@ -48,9 +49,80 @@ const artifactKind = v.union(
  */
 const MAX_ATTEMPTS = { choice: 3, text: 40 } as const;
 
-/** Trimmed, case-insensitive, whitespace-collapsed: a stray space is not a wrong answer. */
+/**
+ * Fold a reply down to what it actually says: lowercase, no accents, no
+ * punctuation, single spaces. "Ne le partagez, avec personne !" and "ne le
+ * partagez avec personne" become the same string.
+ */
 function normalise(s: string): string {
-  return s.trim().toLowerCase().replace(/\s+/g, " ");
+  return s
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s@._:/-]/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Levenshtein distance, capped work — inputs here are short answers. */
+function distance(a: string, b: string): number {
+  if (a === b) return 0;
+  if (!a.length || !b.length) return Math.max(a.length, b.length);
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const row = [i];
+    for (let j = 1; j <= b.length; j++) {
+      row[j] = Math.min(
+        prev[j] + 1,
+        row[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      );
+    }
+    prev = row;
+  }
+  return prev[b.length];
+}
+
+/**
+ * Is this reply right?
+ *
+ * Grading a security exercise on spelling teaches spelling. A student who
+ * identified the attacker's IP should not fail on a trailing full stop, and one
+ * who wrote "ne partagez le code avec personne" understood the SMS exactly as
+ * well as one who copied it verbatim. So:
+ *
+ *  - every mode compares normalised text (see above);
+ *  - `exact` additionally forgives one typo per ~8 characters;
+ *  - `keywords` asks only that the meaningful words are present, in any order
+ *    and any phrasing — the mode to reach for whenever the answer is a
+ *    sentence rather than a value;
+ *  - `contains` accepts a reply that includes the expected value amid
+ *    surrounding words.
+ *
+ * Strictness is still available where it belongs: an IP address or a timestamp
+ * stays `exact`, because there getting it almost right is getting it wrong.
+ */
+function matches(given: string, step: Doc<"caseSteps">): boolean {
+  const reply = normalise(given);
+  if (!reply) return false;
+  const candidates = [step.answer, ...(step.accept ?? [])].map(normalise).filter(Boolean);
+  const mode = step.match ?? "exact";
+
+  if (mode === "keywords") {
+    // Each candidate is a required token or stem.
+    return candidates.length > 0 && candidates.every((k) => reply.includes(k));
+  }
+  if (mode === "contains") {
+    // One direction only. Also accepting "candidate contains reply" would pass
+    // a truncated answer — "45.146.83.1" for "45.146.83.12" — which is wrong.
+    // Shorter equivalents belong in `accept`, where they are deliberate.
+    return candidates.some((c) => reply.includes(c));
+  }
+  return candidates.some((c) => {
+    if (reply === c) return true;
+    const tolerance = Math.floor(c.length / 8);
+    return tolerance > 0 && distance(reply, c) <= tolerance;
+  });
 }
 
 type Ctx = GenericQueryCtx<DataModel>;
@@ -246,7 +318,7 @@ export const submitStep = mutation({
       throw new Error("Trop de tentatives sur cette étape. Relisez le dossier, ou passez à la suite.");
     }
 
-    const correct = normalise(answer) === normalise(step.answer);
+    const correct = matches(answer, step);
 
     if (existing) {
       await ctx.db.patch(existing._id, {
@@ -335,6 +407,10 @@ export const adminSave = mutation({
         kind: v.union(v.literal("text"), v.literal("choice")),
         choices: v.array(v.string()),
         answer: v.string(),
+        accept: v.optional(v.array(v.string())),
+        match: v.optional(
+          v.union(v.literal("exact"), v.literal("contains"), v.literal("keywords")),
+        ),
         hint: v.optional(v.string()),
         reveal: v.optional(v.string()),
         points: v.number(),

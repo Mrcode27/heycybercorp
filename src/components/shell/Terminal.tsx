@@ -28,12 +28,10 @@ export default function Terminal({
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // The working copy of the case's filesystem. A ref, not a memo: commands
-  // that write must persist across renders, and useMemo makes no such promise
-  // — React may discard a memo at any time.
-  const filesRef = useRef<Record<string, string> | null>(null);
-  filesRef.current ??= { ...config.files };
-  const files = filesRef.current;
+  // The working copy of the case's filesystem. Lazy state, not a memo: commands
+  // that write must persist across renders, and React may discard a memo at any
+  // time. Never reassigned — the object is mutated in place by the shell.
+  const [files] = useState(() => ({ ...config.files }));
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
