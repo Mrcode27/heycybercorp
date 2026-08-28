@@ -71,6 +71,7 @@ export default function CaseRunner({ slug }: { slug: string }) {
   const total = data.steps.length;
   const done = total > 0 && solved === total;
   const pct = total === 0 ? 0 : Math.round((solved / total) * 100);
+  const hasWebOS = data.artifacts.some((artifact) => artifact.kind === "webos");
 
   return (
     <div className="space-y-6">
@@ -127,24 +128,43 @@ export default function CaseRunner({ slug }: { slug: string }) {
       {/* Evidence */}
       {data.artifacts.length > 0 && (
         <div className="space-y-4">
-          <h2 className="font-label-mono text-label-mono uppercase tracking-widest text-primary">
-            Pièces du dossier
+          <h2 className="font-label-mono text-label-mono uppercase tracking-widest text-primary flex items-center gap-2">
+            <Icon name={hasWebOS ? "desktop_windows" : "inventory_2"} className="text-lg" />
+            {hasWebOS ? "Environnement pratique" : "Pièces du dossier"}
           </h2>
           {data.artifacts.map((a) => (
-            <CaseArtifact key={a._id} artifact={a} />
+            <CaseArtifact
+              key={a._id}
+              artifact={a}
+              dossier={{ title: data.title, steps: data.steps, signedIn: data.signedIn }}
+            />
           ))}
         </div>
       )}
 
-      {/* Questions */}
-      <div className="space-y-4">
-        <h2 className="font-label-mono text-label-mono uppercase tracking-widest text-primary">
-          Investigation
-        </h2>
-        {data.steps.map((step, i) => (
-          <StepCard key={step._id} step={step} index={i} total={total} />
-        ))}
-      </div>
+      {/* A webOS case is deliberately self-contained: duplicating its questions
+          below the full-screen machine made the simulation feel ornamental. */}
+      {hasWebOS ? (
+        <div className="glass-card rounded-xl px-5 py-4 flex items-start gap-3 border-primary/20">
+          <Icon name="info" className="text-primary text-xl shrink-0" />
+          <div>
+            <p className="text-on-surface text-sm font-semibold">L’enquête se déroule dans le poste Linux.</p>
+            <p className="text-on-surface-variant text-sm mt-1">
+              Démarrez l’environnement ci-dessus. Les pièces, le terminal et le centre
+              d’investigation y restent accessibles jusqu’à votre décision finale.
+            </p>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h2 className="font-label-mono text-label-mono uppercase tracking-widest text-primary">
+            Investigation
+          </h2>
+          {data.steps.map((step, i) => (
+            <StepCard key={step._id} step={step} index={i} total={total} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

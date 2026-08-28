@@ -3,8 +3,7 @@ import ConsoleSidebar from "@/components/ConsoleSidebar";
 import { ADMIN_NAV } from "@/components/consoleNav";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
-import AdminLabs from "@/components/console/AdminLabs";
-import AdminCases from "@/components/console/AdminCases";
+import AdminLabsWorkspace from "@/components/console/AdminLabsWorkspace";
 
 export const dynamic = "force-dynamic";
 
@@ -15,20 +14,11 @@ export default function Page() {
     <ConsoleSidebar title="Labs" subtitle="Console SOC" items={ADMIN_NAV}>
       <AdminGate>
         <SectionHeader
-          icon="folder_open"
-          title="Cas pratiques"
-          subtitle="Une mise en situation, des pièces, des étapes vérifiées côté serveur."
+          icon="science"
+          title="Laboratoires"
+          subtitle="Gérez, testez et publiez les cas pratiques et les challenges depuis un seul espace."
         />
-        <AdminCases />
-
-        <div className="mt-14">
-          <SectionHeader
-            icon="flag"
-            title="Challenges à flag"
-            subtitle="Épreuves courtes : un brief, un flag."
-          />
-          <AdminLabs />
-        </div>
+        <AdminLabsWorkspace />
       </AdminGate>
     </ConsoleSidebar>
   );

@@ -1,35 +1,31 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import Icon from "../Icon";
 import Terminal from "../shell/Terminal";
+import DossierApp, { type DossierData } from "./DossierApp";
 import type { ShellConfig } from "@/lib/shell";
+import styles from "./WebOS.module.css";
 
-/**
- * The case environment: a simulated Linux workstation that boots, logs in and
- * hands the student a desktop.
- *
- * Nothing is emulated. It is React, CSS and the shell from `@/lib/shell` — no
- * kernel, no VM, no WebAssembly image to download, and no server cost per
- * student. What it buys is the framing: an analyst does not meet a case as a
- * text box on a web page, they meet it on a machine.
- *
- * The briefing lives inside the environment as `question.txt`, opened at login
- * and re-readable with `cat question.txt` or from the file manager, so the
- * assignment never scrolls away.
- *
- * SECURITY: the terminal is the same registry-driven shell used everywhere
- * else. It evaluates nothing and performs no network request; the file manager
- * renders file bodies as text.
- */
-
+/** Safe, client-side Linux workstation simulation for scenario labs. */
 export type WebOSConfig = ShellConfig & {
   apps?: AppId[];
-  /** Files opened automatically once the session starts. */
   openOnStart?: string[];
+  dossier?: DossierData;
+  incident?: string;
 };
 
-type AppId = "terminal" | "files" | "monitor";
+type AppId = "dossier" | "terminal" | "files" | "monitor";
 type Phase = "idle" | "boot" | "login" | "desktop";
 
 type Win = {
@@ -47,485 +43,595 @@ type Win = {
   max: boolean;
 };
 
-const APP_META: Record<AppId, { title: string; icon: string; w: number; h: number }> = {
-  terminal: { title: "Terminal", icon: "terminal", w: 720, h: 440 },
-  files: { title: "Fichiers", icon: "folder", w: 520, h: 380 },
-  monitor: { title: "Moniteur système", icon: "monitoring", w: 420, h: 300 },
+const APP_META: Record<AppId, { title: string; icon: string; w: number; h: number; tone: string }> = {
+  dossier: { title: "Centre d’investigation", icon: "folder_shared", w: 660, h: 590, tone: "#4ade80" },
+  terminal: { title: "Terminal", icon: "terminal", w: 760, h: 470, tone: "#22d3ee" },
+  files: { title: "Fichiers", icon: "folder", w: 690, h: 470, tone: "#fbbf24" },
+  monitor: { title: "Télémétrie système", icon: "monitoring", w: 510, h: 420, tone: "#c084fc" },
 };
 
-/**
- * The boot log. Deliberately the real shape of a systemd start-up — an analyst
- * recognises these lines, and recognition is the point of the whole exercise.
- */
-const BOOT_LINES: { text: string; ok?: boolean; delay: number }[] = [
-  { text: "HeyOS 6.8.0-hcc — amorçage depuis le disque local", delay: 120 },
-  { text: "[    0.000000] Linux version 6.8.0-hcc (build@heycybercorp)", delay: 90 },
-  { text: "[    0.104882] Command line: ro quiet splash", delay: 70 },
-  { text: "[    0.412331] Memory: 8192MB available", delay: 70 },
-  { text: "[    0.998210] Loading initial ramdisk…", delay: 140 },
-  { text: "Started Journal Service", ok: true, delay: 110 },
-  { text: "Mounted /var/log", ok: true, delay: 90 },
-  { text: "Started udev Kernel Device Manager", ok: true, delay: 90 },
-  { text: "Started Network Manager", ok: true, delay: 110 },
-  { text: "Reached target Network", ok: true, delay: 90 },
-  { text: "Started OpenSSH Daemon", ok: true, delay: 100 },
-  { text: "Started SIEM Collector", ok: true, delay: 110 },
-  { text: "Started Intrusion Detection Sensor", ok: true, delay: 110 },
-  { text: "Reached target Multi-User System", ok: true, delay: 130 },
-  { text: "Démarrage du gestionnaire de session…", delay: 260 },
+const BOOT_LINES: { text: string; status?: "ok" | "info"; delay: number }[] = [
+  { text: "HCC Secure Workstation 24.08 LTS", status: "info", delay: 130 },
+  { text: "Linux 6.8.0-hcc-amd64 · x86_64 · Secure Boot active", delay: 100 },
+  { text: "Chargement de l’image analyste en mémoire", status: "ok", delay: 120 },
+  { text: "Montage de /evidence en lecture seule", status: "ok", delay: 110 },
+  { text: "Initialisation de systemd-journald", status: "ok", delay: 90 },
+  { text: "Activation de NetworkManager", status: "ok", delay: 105 },
+  { text: "Démarrage du collecteur SIEM", status: "ok", delay: 120 },
+  { text: "Démarrage de la sonde de détection", status: "ok", delay: 110 },
+  { text: "Vérification de l’intégrité des pièces", status: "ok", delay: 135 },
+  { text: "Chargement de l’espace de travail du dossier", status: "ok", delay: 130 },
+  { text: "Isolation réseau du laboratoire confirmée", status: "ok", delay: 125 },
+  { text: "Ouverture du gestionnaire de session", status: "ok", delay: 250 },
 ];
+
+const DEFAULT_APPS: AppId[] = ["terminal", "files", "monitor"];
+
+function normaliseApps(config: WebOSConfig): AppId[] {
+  const declared = config.apps?.filter((app): app is AppId => app in APP_META) ?? DEFAULT_APPS;
+  const apps = [...new Set(declared)];
+  // Older case JSON predates the Dossier app. Dossier data is authoritative.
+  if (config.dossier && !apps.includes("dossier")) apps.unshift("dossier");
+  return apps;
+}
 
 export default function WebOS({ config }: { config: WebOSConfig }) {
   const [phase, setPhase] = useState<Phase>("idle");
-  return phase === "idle" ? (
-    <LaunchCard config={config} onLaunch={() => setPhase("boot")} />
-  ) : (
-    <Session config={config} phase={phase} setPhase={setPhase} />
-  );
-}
+  const rootRef = useRef<HTMLDivElement>(null);
+  const enteredFullscreen = useRef(false);
 
-/** What the case shows before the machine is started. */
-function LaunchCard({ config, onLaunch }: { config: WebOSConfig; onLaunch: () => void }) {
-  const fileCount = Object.keys(config.files).length;
-  return (
-    <div className="p-8 md:p-10 text-center">
-      <div className="w-16 h-16 rounded-xl bg-surface-variant flex items-center justify-center mx-auto mb-5">
-        <Icon name="dns" className="text-primary text-3xl" fill />
-      </div>
-      <h3 className="font-headline-lg-mobile text-on-surface mb-2">
-        Poste d&apos;analyse — {config.host}
-      </h3>
-      <p className="text-on-surface-variant max-w-md mx-auto mb-2">
-        Une station HeyOS avec terminal, gestionnaire de fichiers et moniteur.
-        Le dossier de la nuit vous attend dans <code className="text-primary">question.txt</code>.
-      </p>
-      <p className="font-code-sm text-code-sm text-on-surface-variant mb-7">
-        {config.user}@{config.host} · {fileCount} fichier{fileCount > 1 ? "s" : ""} · lecture seule
-      </p>
-      <button
-        type="button"
-        onClick={onLaunch}
-        className="px-7 py-3.5 rounded-lg font-bold bg-primary text-on-primary hover:brightness-110 transition-all inline-flex items-center gap-2 glow-primary"
-      >
-        <Icon name="play_arrow" className="text-lg" fill />
-        Lancer l&apos;environnement
-      </button>
-      <p className="font-code-sm text-code-sm text-on-surface-variant/70 mt-4">
-        S&apos;ouvre en plein écran · clavier requis
-      </p>
-    </div>
-  );
-}
+  const quit = useCallback(async () => {
+    enteredFullscreen.current = false;
+    if (document.fullscreenElement) {
+      try {
+        await document.exitFullscreen();
+      } catch {
+        // The browser may already be leaving fullscreen after Escape.
+      }
+    }
+    setPhase("idle");
+  }, []);
 
-function Session({
-  config,
-  phase,
-  setPhase,
-}: {
-  config: WebOSConfig;
-  phase: Phase;
-  setPhase: (p: Phase) => void;
-}) {
-  // The page behind must not scroll while the desktop owns the screen.
+  async function launch() {
+    setPhase("boot");
+    const el = rootRef.current;
+    if (el?.requestFullscreen) {
+      try {
+        await el.requestFullscreen();
+        enteredFullscreen.current = true;
+      } catch {
+        // Fixed positioning is the supported embedded-browser fallback.
+      }
+    }
+  }
+
   useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.overflow = prev;
+    const handleFullscreen = () => {
+      if (enteredFullscreen.current && !document.fullscreenElement) {
+        enteredFullscreen.current = false;
+        setPhase("idle");
+      }
     };
+    document.addEventListener("fullscreenchange", handleFullscreen);
+    return () => document.removeEventListener("fullscreenchange", handleFullscreen);
   }, []);
 
   return (
-    <div className="fixed inset-0 z-[200] bg-[#0a0f0c] text-white overflow-hidden">
-      {phase === "boot" && <BootScreen onDone={() => setPhase("login")} />}
-      {phase === "login" && (
-        <LoginScreen user={config.user} host={config.host} onEnter={() => setPhase("desktop")} />
+    <div ref={rootRef} className={phase === "idle" ? styles.host : styles.fullscreenHost}>
+      {phase === "idle" ? (
+        <LaunchCard config={config} onLaunch={launch} />
+      ) : (
+        <Session config={config} phase={phase} setPhase={setPhase} onQuit={quit} />
       )}
-      {phase === "desktop" && <Desktop config={config} onQuit={() => setPhase("idle")} />}
     </div>
   );
 }
 
-function BootScreen({ onDone }: { onDone: () => void }) {
-  const [shown, setShown] = useState(0);
-  const endRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (shown >= BOOT_LINES.length) {
-      const t = setTimeout(onDone, 420);
-      return () => clearTimeout(t);
-    }
-    const t = setTimeout(() => setShown((n) => n + 1), BOOT_LINES[shown].delay);
-    return () => clearTimeout(t);
-  }, [shown, onDone]);
-
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ block: "end" });
-  }, [shown]);
-
+function LaunchCard({ config, onLaunch }: { config: WebOSConfig; onLaunch: () => void }) {
+  const [guideOpen, setGuideOpen] = useState(false);
+  const fileCount = Object.keys(config.files).length;
+  const caseTitle = config.dossier?.title ?? config.incident ?? "Environnement d’analyse";
   return (
-    <div className="h-full w-full bg-black p-6 md:p-10 overflow-hidden font-code-sm text-code-sm">
-      <div className="max-w-4xl">
-        {BOOT_LINES.slice(0, shown).map((l, i) => (
-          <p key={i} className="mb-0.5 text-[#c9d5cc] whitespace-pre-wrap">
-            {l.ok && <span className="text-[#3ddc84]">[  OK  ] </span>}
-            {l.text}
-          </p>
-        ))}
-        <div ref={endRef} />
-        {shown < BOOT_LINES.length && (
-          <span className="inline-block w-2 h-4 bg-[#3ddc84] align-middle animate-pulse" />
-        )}
-      </div>
-      <button
-        type="button"
-        onClick={onDone}
-        className="fixed bottom-6 right-8 font-code-sm text-code-sm text-white/30 hover:text-white/70 transition-colors"
-      >
-        passer ▸
-      </button>
-    </div>
-  );
-}
+    <section className={styles.launchCard} aria-label="Lancer le poste Linux simulé">
+      <div className={styles.launchGlow} />
+      <div className={styles.launchContent}>
+        <div className={styles.launchEyebrow}>
+          <span className={styles.liveDot} /> LAB ENVIRONMENT · READY
+        </div>
+        <div className={styles.launchMark}><Icon name="deployed_code" className="text-[34px]" fill /></div>
+        <p className={styles.launchKicker}>HCC SECURE WORKSTATION</p>
+        <h3 className={styles.launchTitle}>{caseTitle}</h3>
+        <p className={styles.launchCopy}>
+          Un poste Linux isolé, préparé pour l’investigation. Analysez les pièces,
+          interrogez les journaux et rendez votre décision depuis la machine.
+        </p>
 
-/** A GDM-style greeter: clock, avatar, one action. */
-function LoginScreen({
-  user,
-  host,
-  onEnter,
-}: {
-  user: string;
-  host: string;
-  onEnter: () => void;
-}) {
-  const clock = useClock();
+        <div className={styles.specGrid}>
+          <Spec icon="dns" label="Hôte" value={config.host} />
+          <Spec icon="person" label="Session" value={config.user} />
+          <Spec icon="inventory_2" label="Pièces" value={String(fileCount).padStart(2, "0")} />
+          <Spec icon="shield_lock" label="Réseau" value="ISOLÉ" positive />
+        </div>
 
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Enter" || e.key === " ") onEnter();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onEnter]);
-
-  return (
-    <button
-      type="button"
-      onClick={onEnter}
-      aria-label="Ouvrir la session"
-      className="h-full w-full flex flex-col items-center justify-center cursor-default"
-      style={{ background: WALLPAPER }}
-    >
-      <div className="text-[84px] leading-none font-light tracking-tight">{clock.time}</div>
-      <div className="text-lg text-white/70 mt-2 mb-16 capitalize">{clock.date}</div>
-
-      <div className="w-24 h-24 rounded-full bg-white/10 border border-white/20 flex items-center justify-center mb-4 backdrop-blur">
-        <Icon name="person" className="text-white/80 text-5xl" fill />
-      </div>
-      <div className="text-xl mb-1">{user}</div>
-      <div className="font-code-sm text-code-sm text-white/50 mb-10">{host}</div>
-
-      <div className="px-5 py-2.5 rounded-lg bg-white/10 border border-white/20 backdrop-blur text-sm">
-        Cliquez ou appuyez sur Entrée pour ouvrir la session
-      </div>
-    </button>
-  );
-}
-
-const WALLPAPER =
-  "radial-gradient(circle at 25% 20%, rgba(0,145,80,0.35), transparent 55%)," +
-  "radial-gradient(circle at 78% 78%, rgba(0,110,70,0.28), transparent 52%)," +
-  "linear-gradient(160deg, #08130d 0%, #0a1a12 45%, #050b08 100%)";
-
-function useClock() {
-  const [v, setV] = useState({ time: "--:--", date: "" });
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date();
-      setV({
-        time: d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
-        date: d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }),
-      });
-    };
-    tick();
-    const id = setInterval(tick, 20_000);
-    return () => clearInterval(id);
-  }, []);
-  return v;
-}
-
-function Desktop({ config, onQuit }: { config: WebOSConfig; onQuit: () => void }) {
-  const apps = config.apps ?? ["terminal", "files", "monitor"];
-  const clock = useClock();
-  const surfaceRef = useRef<HTMLDivElement>(null);
-
-  // One filesystem behind every app, so a file written in the terminal shows up
-  // in the file manager. Lazy state: it must survive re-renders untouched.
-  const [files] = useState(() => ({ ...config.files }));
-
-  const [wins, setWins] = useState<Win[]>(() => {
-    const initial: Win[] = [];
-    let z = 10;
-    if (apps.includes("terminal")) {
-      initial.push({
-        id: "terminal",
-        app: "terminal",
-        ...APP_META.terminal,
-        x: 96,
-        y: 96,
-        z: z++,
-        min: false,
-        max: false,
-      });
-    }
-    for (const [i, name] of (config.openOnStart ?? []).entries()) {
-      if (!(name in config.files)) continue;
-      initial.push({
-        id: `text:${name}`,
-        app: "text",
-        title: name,
-        icon: "description",
-        file: name,
-        x: 860 + i * 30,
-        y: 150 + i * 30,
-        w: 460,
-        h: 420,
-        z: z++,
-        min: false,
-        max: false,
-      });
-    }
-    return initial;
-  });
-  const [top, setTop] = useState(30);
-  const [overview, setOverview] = useState(false);
-
-  function focus(id: string) {
-    setTop((t) => t + 1);
-    setWins((w) => w.map((x) => (x.id === id ? { ...x, z: top + 1, min: false } : x)));
-  }
-
-  function open(app: AppId | "text", file?: string) {
-    setOverview(false);
-    const id = app === "text" ? `text:${file}` : app;
-    if (wins.some((w) => w.id === id)) return focus(id);
-    const meta =
-      app === "text"
-        ? { title: file ?? "Fichier", icon: "description", w: 480, h: 400 }
-        : APP_META[app];
-    setTop((t) => t + 1);
-    setWins((w) => [
-      ...w,
-      {
-        id,
-        app,
-        file,
-        title: meta.title,
-        icon: meta.icon,
-        x: 150 + (w.length % 6) * 34,
-        y: 110 + (w.length % 6) * 30,
-        w: meta.w,
-        h: meta.h,
-        z: top + 1,
-        min: false,
-        max: false,
-      },
-    ]);
-  }
-
-  const patch = (id: string, p: Partial<Win>) =>
-    setWins((w) => w.map((x) => (x.id === id ? { ...x, ...p } : x)));
-
-  return (
-    <div ref={surfaceRef} className="h-full w-full relative" style={{ background: WALLPAPER }}>
-      {/* ---- Top bar (GNOME shell) ---- */}
-      <div className="absolute inset-x-0 top-0 h-8 z-[400] bg-black/45 backdrop-blur-md flex items-center px-3 text-[13px]">
-        <button
-          type="button"
-          onClick={() => setOverview((o) => !o)}
-          className={`px-2.5 py-0.5 rounded transition-colors ${
-            overview ? "bg-white/20" : "hover:bg-white/10"
-          }`}
-        >
-          Activités
+        <button type="button" onClick={() => setGuideOpen(true)} className={styles.launchButton}>
+          <span className={styles.launchButtonIcon}><Icon name="menu_book" className="text-[20px]" /></span>
+          <span><strong>Lire le manuel et démarrer</strong><small>Prise en main · puis plein écran</small></span>
+          <Icon name="arrow_forward" className="ml-auto text-[18px]" />
         </button>
-        <div className="flex-1" />
-        <button type="button" className="px-3 py-0.5 rounded hover:bg-white/10 tabular-nums">
-          {clock.time} · <span className="capitalize">{clock.date}</span>
-        </button>
-        <div className="flex-1" />
-        <div className="flex items-center gap-2.5 text-white/80">
-          <Icon name="network_wifi" className="text-[17px]" />
-          <Icon name="volume_up" className="text-[17px]" />
-          <Icon name="battery_full" className="text-[17px]" />
-          <button
-            type="button"
-            onClick={onQuit}
-            title="Fermer la session"
-            className="ml-1 px-2 py-0.5 rounded hover:bg-error/30 flex items-center gap-1"
-          >
-            <Icon name="power_settings_new" className="text-[17px]" />
-          </button>
+        <p className={styles.launchFootnote}>
+          Simulation locale sécurisée · aucune commande n’est exécutée sur votre appareil
+        </p>
+      </div>
+
+      <div className={styles.launchPreview} aria-hidden="true">
+        <div className={styles.previewTopbar}>
+          <span>Activités</span><span>03:14</span><span className={styles.previewStatus}>● ● ●</span>
+        </div>
+        <div className={styles.previewWallpaper}>
+          <div className={styles.previewBadge}>HCC / SOC</div>
+          <div className={styles.previewWindow}>
+            <div className={styles.previewWindowBar}>
+              <span className={styles.previewWindowIcon}>›_</span>
+              analyste@{config.host}
+              <span>— □ ×</span>
+            </div>
+            <div className={styles.previewTerminal}>
+              <span className={styles.previewGreen}>analyste@{config.host}</span>:~$ grep Accepted auth.log<br />
+              <span>Mar 12 03:12:48 sshd[2240]: Accepted password...</span><br />
+              <span className={styles.previewGreen}>analyste@{config.host}</span>:~$ <i />
+            </div>
+          </div>
+          <div className={styles.previewDock}>
+            {normaliseApps(config).map((app) => (
+              <span key={app} style={{ "--app-tone": APP_META[app].tone } as CSSProperties}>
+                <Icon name={APP_META[app].icon} className="text-[17px]" />
+              </span>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* ---- Desktop icons ---- */}
-      <div className="absolute top-14 left-28 z-[100] space-y-1">
-        {Object.keys(files)
-          .slice(0, 8)
-          .map((name) => (
-            <button
-              key={name}
-              type="button"
-              onDoubleClick={() => open("text", name)}
-              onClick={() => open("text", name)}
-              className="w-28 p-2 rounded-lg flex flex-col items-center gap-1 hover:bg-white/10 transition-colors"
-            >
-              <Icon
-                name={name.endsWith(".log") ? "receipt_long" : "description"}
-                className="text-[34px] text-white/85"
-              />
-              <span className="text-[11px] text-white/85 text-center leading-tight break-all">
-                {name}
-              </span>
-            </button>
-          ))}
+      {guideOpen && (
+        <WorkstationGuide
+          caseTitle={caseTitle}
+          host={config.host}
+          onBack={() => setGuideOpen(false)}
+          onContinue={onLaunch}
+        />
+      )}
+    </section>
+  );
+}
+
+function WorkstationGuide({ caseTitle, host, onBack, onContinue, inSession = false }: {
+  caseTitle: string;
+  host: string;
+  onBack: () => void;
+  onContinue?: () => void;
+  inSession?: boolean;
+}) {
+  return (
+    <div className={`${styles.guideOverlay} ${inSession ? styles.guideInSession : ""}`} role="dialog" aria-modal="true" aria-label="Manuel du poste WebOS">
+      <div className={styles.guidePanel}>
+        <header className={styles.guideHeader}>
+          <div className={styles.guideBrand}><Icon name="shield_lock" fill /><span>HCC LAB OPERATIONS</span></div>
+          <span className={styles.guideEdition}>GUIDE / 01</span>
+        </header>
+
+        <div className={styles.guideIntro}>
+          <div className={styles.guideIcon}><Icon name="menu_book" /></div>
+          <div><p>MANUEL DE PRISE EN MAIN</p><h2>Avant d’ouvrir le poste</h2><span>{caseTitle} · {host}</span></div>
+        </div>
+
+        <div className={styles.guideSteps}>
+          <GuideStep number="01" icon="folder_shared" title="Commencez par le Dossier">
+            Lisez la mission et les objectifs. Chaque réponse validée y fait avancer votre score sans quitter le bureau.
+          </GuideStep>
+          <GuideStep number="02" icon="terminal" title="Analysez les pièces">
+            Les applications Fichiers et Terminal consultent les mêmes preuves. Utilisez <kbd>ls</kbd>, <kbd>cat</kbd> et <kbd>grep</kbd> pour enquêter.
+          </GuideStep>
+          <GuideStep number="03" icon="mouse" title="Travaillez comme sur Linux">
+            Double-cliquez sur une pièce pour l’ouvrir. Déplacez les fenêtres par leur barre et faites un clic droit sur le bureau pour les actions rapides.
+          </GuideStep>
+        </div>
+
+        <div className={styles.guideControls}>
+          <div><kbd>CLIC</kbd><span>sélectionner</span></div>
+          <div><kbd>2× CLIC</kbd><span>ouvrir</span></div>
+          <div><kbd>CLIC DROIT</kbd><span>menu d’actions</span></div>
+          <div><kbd>ESC</kbd><span>quitter le poste</span></div>
+        </div>
+
+        <div className={styles.guideSafety}><Icon name="verified_user" /><span><strong>Simulation sécurisée</strong> Toutes les commandes et toutes les preuves restent dans ce laboratoire en lecture seule.</span></div>
+
+        <footer className={styles.guideActions}>
+          {!inSession && <button type="button" onClick={onBack}><Icon name="arrow_back" /> Retour</button>}
+          <button type="button" onClick={onContinue ?? onBack} className={styles.guideContinue}>
+            {inSession ? "Retourner au bureau" : "J’ai compris · démarrer"}<Icon name={inSession ? "desktop_windows" : "power_settings_new"} />
+          </button>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+function GuideStep({ number, icon, title, children }: { number: string; icon: string; title: string; children: ReactNode }) {
+  return (
+    <article className={styles.guideStep}>
+      <span className={styles.guideNumber}>{number}</span>
+      <div className={styles.guideStepIcon}><Icon name={icon} /></div>
+      <div><h3>{title}</h3><p>{children}</p></div>
+    </article>
+  );
+}
+
+function Spec({ icon, label, value, positive = false }: { icon: string; label: string; value: string; positive?: boolean }) {
+  return (
+    <div className={styles.spec}>
+      <Icon name={icon} className={styles.specIcon} />
+      <span><small>{label}</small><strong className={positive ? styles.positive : ""}>{value}</strong></span>
+    </div>
+  );
+}
+
+function Session({ config, phase, setPhase, onQuit }: {
+  config: WebOSConfig;
+  phase: Phase;
+  setPhase: (phase: Phase) => void;
+  onQuit: () => void;
+}) {
+  useEffect(() => {
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = previous; };
+  }, []);
+
+  useEffect(() => {
+    if (phase === "desktop") return;
+    const handleKey = (event: KeyboardEvent) => { if (event.key === "Escape") onQuit(); };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onQuit, phase]);
+
+  return (
+    <div className={styles.session}>
+      {phase === "boot" && <BootScreen host={config.host} onDone={() => setPhase("login")} />}
+      {phase === "login" && <LoginScreen user={config.user} host={config.host} onEnter={() => setPhase("desktop")} />}
+      {phase === "desktop" && <Desktop config={config} onQuit={onQuit} />}
+    </div>
+  );
+}
+
+function BootScreen({ host, onDone }: { host: string; onDone: () => void }) {
+  const [shown, setShown] = useState(0);
+  const completed = Math.min(shown, BOOT_LINES.length);
+  const percent = Math.round((completed / BOOT_LINES.length) * 100);
+
+  useEffect(() => {
+    if (shown >= BOOT_LINES.length) {
+      const timer = window.setTimeout(onDone, 520);
+      return () => window.clearTimeout(timer);
+    }
+    const timer = window.setTimeout(() => setShown((value) => value + 1), BOOT_LINES[shown].delay);
+    return () => window.clearTimeout(timer);
+  }, [onDone, shown]);
+
+  return (
+    <div className={styles.bootScreen}>
+      <div className={styles.bootNoise} />
+      <div className={styles.bootShell}>
+        <div className={styles.bootHeader}>
+          <div className={styles.bootLogo}><Icon name="shield_lock" className="text-[24px]" fill /></div>
+          <div><strong>heycybercorp</strong><span>Secure Lab Runtime</span></div>
+          <div className={styles.bootMeta}><span>NODE</span><strong>{host.toUpperCase()}</strong></div>
+        </div>
+
+        <div className={styles.bootBody}>
+          <div className={styles.bootConsole}>
+            <div className={styles.bootConsoleTop}><span>INITIALISATION</span><span>{String(completed).padStart(2, "0")}/{BOOT_LINES.length}</span></div>
+            <div className={styles.bootLines} aria-live="polite">
+              {BOOT_LINES.slice(0, shown).map((line, index) => (
+                <div key={`${line.text}-${index}`} className={styles.bootLine}>
+                  <span className={line.status === "ok" ? styles.bootOk : styles.bootTime}>
+                    {line.status === "ok" ? "[  OK  ]" : `[${String(index).padStart(2, "0")}.0${index}]`}
+                  </span>
+                  <span>{line.text}</span>
+                </div>
+              ))}
+              {shown < BOOT_LINES.length && <span className={styles.bootCursor} />}
+            </div>
+          </div>
+
+          <aside className={styles.bootAside}>
+            <div className={styles.bootRing} style={{ "--progress": `${percent * 3.6}deg` } as CSSProperties}>
+              <div><strong>{percent}%</strong><span>prêt</span></div>
+            </div>
+            <div className={styles.bootChecks}>
+              <p><Icon name="verified_user" /> Environnement isolé</p>
+              <p><Icon name="lock" /> Pièces en lecture seule</p>
+              <p><Icon name="lan" /> Réseau simulé</p>
+            </div>
+          </aside>
+        </div>
+
+        <div className={styles.bootProgress}><span style={{ width: `${percent}%` }} /></div>
+        <div className={styles.bootFooter}>
+          <span>ESC · quitter</span>
+          <button type="button" onClick={onDone}>Passer l’initialisation <Icon name="arrow_forward" /></button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LoginScreen({ user, host, onEnter }: { user: string; host: string; onEnter: () => void }) {
+  const clock = useClock();
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => { if (event.key === "Enter" || event.key === " ") onEnter(); };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [onEnter]);
+
+  return (
+    <div className={styles.loginScreen}>
+      <WallpaperDecor />
+      <div className={styles.loginTop}>
+        <div className={styles.osBrand}><Icon name="shield_lock" fill /> HCC Workstation</div>
+        <div className={styles.loginIndicators}><Icon name="network_wifi" /><Icon name="volume_up" /><Icon name="battery_full" /></div>
+      </div>
+      <div className={styles.loginClock}><strong>{clock.time}</strong><span>{clock.longDate}</span></div>
+      <button type="button" onClick={onEnter} className={styles.loginCard} aria-label="Ouvrir la session analyste">
+        <div className={styles.avatar}><Icon name="person" fill /></div>
+        <div className={styles.loginIdentity}><strong>{user}</strong><span>{user}@{host}</span></div>
+        <div className={styles.loginAction}><Icon name="arrow_forward" /></div>
+        <p><span className={styles.liveDot} /> Session d’investigation prête</p>
+      </button>
+      <p className={styles.loginHint}>Cliquez sur le profil ou appuyez sur Entrée</p>
+      <div className={styles.loginBottom}>LAB-SEGMENT-04 · environnement surveillé</div>
+    </div>
+  );
+}
+
+function useClock() {
+  const [value, setValue] = useState({ time: "--:--", shortDate: "", longDate: "" });
+  useEffect(() => {
+    const tick = () => {
+      const now = new Date();
+      setValue({
+        time: now.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" }),
+        shortDate: now.toLocaleDateString("fr-FR", { day: "2-digit", month: "short" }),
+        longDate: now.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" }),
+      });
+    };
+    tick();
+    const timer = window.setInterval(tick, 20_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  return value;
+}
+
+function WallpaperDecor() {
+  return (
+    <div className={styles.wallpaperDecor} aria-hidden="true">
+      <div className={styles.orbitOne} /><div className={styles.orbitTwo} />
+      <div className={styles.wallpaperGrid} /><div className={styles.wallpaperMonogram}>HCC</div>
+    </div>
+  );
+}
+
+function Desktop({ config, onQuit }: { config: WebOSConfig; onQuit: () => void }) {
+  const apps = useMemo(() => normaliseApps(config), [config]);
+  const clock = useClock();
+  const surfaceRef = useRef<HTMLDivElement>(null);
+  const [files] = useState(() => ({ ...config.files }));
+  const nextZ = useRef(40);
+  const [overview, setOverview] = useState(false);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; file?: string } | null>(null);
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const [wins, setWins] = useState<Win[]>(() => {
+    const initial: Win[] = [];
+    let z = 20;
+    if (config.dossier) initial.push({ id: "dossier", app: "dossier", ...APP_META.dossier, x: 118, y: 74, z: z++, min: false, max: false });
+    if (apps.includes("terminal")) initial.push({ id: "terminal", app: "terminal", ...APP_META.terminal, x: 570, y: 145, z: z++, min: false, max: false });
+    if (!config.dossier) {
+      for (const [index, name] of (config.openOnStart ?? []).entries()) {
+        if (!(name in config.files)) continue;
+        initial.push({ id: `text:${name}`, app: "text", title: name, icon: "description", file: name, x: 150 + index * 34, y: 100 + index * 30, w: 620, h: 470, z: z++, min: false, max: false });
+      }
+    }
+    return initial;
+  });
+
+  const solved = config.dossier?.steps.filter((step) => step.solved).length ?? 0;
+  const total = config.dossier?.steps.length ?? 0;
+
+  const focus = useCallback((id: string) => {
+    const z = ++nextZ.current;
+    setWins((current) => current.map((win) => win.id === id ? { ...win, z, min: false } : win));
+  }, []);
+
+  const open = useCallback((app: AppId | "text", file?: string) => {
+    setContextMenu(null);
+    setOverview(false);
+    const id = app === "text" ? `text:${file}` : app;
+    const current = wins.find((win) => win.id === id);
+    if (current) { focus(id); return; }
+    const meta = app === "text" ? { title: file ?? "Document", icon: "description", w: 650, h: 500 } : APP_META[app];
+    const z = ++nextZ.current;
+    setWins((items) => [
+      ...items,
+      { id, app, file, title: meta.title, icon: meta.icon, x: 132 + (items.length % 5) * 38, y: 76 + (items.length % 5) * 32, w: meta.w, h: meta.h, z, min: false, max: false },
+    ]);
+  }, [focus, wins]);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        if (contextMenu) { setContextMenu(null); return; }
+        if (guideOpen) { setGuideOpen(false); return; }
+        if (exitOpen) { setExitOpen(false); return; }
+        setOverview(false);
+        setExitOpen(true);
+      }
+    };
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [contextMenu, exitOpen, guideOpen]);
+
+  const showContextMenu = useCallback((event: ReactMouseEvent, file?: string) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const bounds = surfaceRef.current?.getBoundingClientRect();
+    const rawX = event.clientX - (bounds?.left ?? 0);
+    const rawY = event.clientY - (bounds?.top ?? 0);
+    setContextMenu({
+      x: Math.max(10, Math.min(rawX, (bounds?.width ?? window.innerWidth) - 252)),
+      y: Math.max(44, Math.min(rawY, (bounds?.height ?? window.innerHeight) - 310)),
+      file,
+    });
+  }, []);
+
+  const patch = (id: string, change: Partial<Win>) =>
+    setWins((items) => items.map((win) => win.id === id ? { ...win, ...change } : win));
+
+  return (
+    <div
+      ref={surfaceRef}
+      className={styles.desktop}
+      onContextMenu={(event) => showContextMenu(event)}
+      onPointerDown={(event) => {
+        if (contextMenu && !(event.target as HTMLElement).closest("[data-context-menu]")) setContextMenu(null);
+      }}
+    >
+      <WallpaperDecor />
+      <header className={styles.topbar}>
+        <button type="button" onClick={() => setOverview((value) => !value)} className={overview ? styles.topbarActive : ""}>
+          <span className={styles.brandGlyph}><Icon name="shield_lock" fill /></span> Activités
+        </button>
+        <div className={styles.workspaceLabel}><span /> INCIDENT WORKSPACE</div>
+        <button type="button" className={styles.topClock}>{clock.time}<span>{clock.shortDate}</span></button>
+        <div className={styles.topStatus}>
+          <span className={styles.securePill}><Icon name="shield_lock" /> ISOLÉ</span>
+          <Icon name="network_wifi" /><Icon name="volume_up" /><Icon name="battery_full" />
+          <button type="button" onClick={() => setExitOpen(true)} aria-label="Quitter le poste"><Icon name="power_settings_new" /></button>
+        </div>
+      </header>
+
+      <aside className={styles.caseWidget}>
+        <div className={styles.caseWidgetTop}><span className={styles.liveDot} /> DOSSIER ACTIF</div>
+        <strong>{config.dossier?.title ?? config.incident ?? "Session d’analyse"}</strong>
+        <p>{config.host} · {Object.keys(files).length} pièces montées</p>
+        {total > 0 && <><div className={styles.widgetProgress}><span style={{ width: `${Math.round((solved / total) * 100)}%` }} /></div><small>{solved}/{total} objectifs validés</small></>}
+      </aside>
+
+      <div className={styles.desktopFiles}>
+        {Object.keys(files).slice(0, 7).map((name) => (
+          <button key={name} type="button" onClick={() => setSelectedFile(name)} onDoubleClick={() => open("text", name)} onContextMenu={(event) => { setSelectedFile(name); showContextMenu(event, name); }} className={selectedFile === name ? styles.desktopFileSelected : ""}>
+            <span className={styles.fileIcon}><Icon name={name.endsWith(".log") ? "receipt_long" : name.endsWith(".csv") ? "table_view" : "description"} /></span>
+            <span>{name}</span>
+          </button>
+        ))}
       </div>
 
-      {/* ---- Dash (left dock) ---- */}
-      <div className="absolute left-2 top-1/2 -translate-y-1/2 z-[400] flex flex-col gap-2 p-2 rounded-2xl bg-black/45 backdrop-blur-md border border-white/10">
-        {apps.map((a) => {
-          const running = wins.some((w) => w.id === a);
+      <nav className={styles.dock} aria-label="Applications">
+        <div className={styles.dockBrand}><Icon name="deployed_code" fill /></div><div className={styles.dockDivider} />
+        {apps.map((app) => {
+          const running = wins.some((win) => win.id === app);
           return (
-            <button
-              key={a}
-              type="button"
-              onClick={() => open(a)}
-              title={APP_META[a].title}
-              className="relative w-12 h-12 rounded-xl bg-white/10 hover:bg-primary/40 flex items-center justify-center transition-colors"
-            >
-              <Icon name={APP_META[a].icon} className="text-white text-[22px]" />
-              {running && (
-                <span className="absolute -left-1 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-primary" />
-              )}
+            <button key={app} type="button" onClick={() => open(app)} title={APP_META[app].title} style={{ "--app-tone": APP_META[app].tone } as CSSProperties} className={running ? styles.dockRunning : ""}>
+              <Icon name={APP_META[app].icon} /><span className={styles.dockTooltip}>{APP_META[app].title}</span>
             </button>
           );
         })}
-        <div className="h-px bg-white/15 mx-1 my-1" />
-        <button
-          type="button"
-          onClick={() => setOverview((o) => !o)}
-          title="Applications"
-          className="w-12 h-12 rounded-xl bg-white/10 hover:bg-primary/40 flex items-center justify-center transition-colors"
-        >
-          <Icon name="apps" className="text-white text-[22px]" />
-        </button>
-      </div>
+        <div className={styles.dockDivider} />
+        <button type="button" onClick={() => setOverview((value) => !value)} title="Toutes les fenêtres"><Icon name="grid_view" /><span className={styles.dockTooltip}>Toutes les fenêtres</span></button>
+      </nav>
 
-      {/* ---- Windows ---- */}
-      {wins
-        .filter((w) => !w.min)
-        .map((w) => (
-          <Window
-            key={w.id}
-            win={w}
-            bounds={surfaceRef}
-            onFocus={() => focus(w.id)}
-            onClose={() => setWins((s) => s.filter((x) => x.id !== w.id))}
-            onMinimise={() => patch(w.id, { min: true })}
-            onToggleMax={() => patch(w.id, { max: !w.max })}
-            onMove={(x, y) => patch(w.id, { x, y })}
-          >
-            {w.app === "terminal" && (
-              <Terminal
-                config={{ ...config, files }}
-                height="h-full"
-                className="h-full border-0 shadow-none rounded-none p-0"
-                title={`${config.user}@${config.host}`}
-                motd={[
-                  { type: "system", text: "Session ouverte. 'help' liste les commandes." },
-                  { type: "system", text: "Le dossier : cat question.txt" },
-                ]}
-              />
-            )}
-            {w.app === "files" && <FilesApp files={files} onOpen={(f) => open("text", f)} />}
-            {w.app === "text" && (
-              <pre className="p-5 h-full overflow-auto no-scrollbar font-code-sm text-code-sm text-[#d3e2d6] whitespace-pre-wrap break-words bg-[#0d1a12]">
-                {w.file ? (files[w.file] ?? "(fichier vide)") : ""}
-              </pre>
-            )}
-            {w.app === "monitor" && <MonitorApp host={config.host} />}
-          </Window>
-        ))}
+      {wins.filter((win) => !win.min).map((win) => (
+        <Window key={win.id} win={win} bounds={surfaceRef} onFocus={() => focus(win.id)} onClose={() => setWins((items) => items.filter((item) => item.id !== win.id))} onMinimise={() => patch(win.id, { min: true })} onToggleMax={() => patch(win.id, { max: !win.max })} onMove={(x, y) => patch(win.id, { x, y })}>
+          {win.app === "terminal" && (
+            <Terminal config={{ ...config, files }} filesystem={files} height="h-full" className="h-full border-0 shadow-none rounded-none p-0" title={`${config.user}@${config.host} — hccsh`} motd={[
+              { type: "system", text: `HCC Secure Shell · session isolée sur ${config.host}` },
+              { type: "system", text: "Tapez 'help' pour les commandes autorisées. Le dossier se trouve dans l’application verte." },
+            ]} />
+          )}
+          {win.app === "files" && <FilesApp files={files} onOpen={(file) => open("text", file)} />}
+          {win.app === "text" && <TextApp file={win.file} body={win.file ? files[win.file] ?? "" : ""} />}
+          {win.app === "monitor" && <MonitorApp host={config.host} />}
+          {win.app === "dossier" && config.dossier && <DossierApp dossier={config.dossier} />}
+        </Window>
+      ))}
 
-      {/* ---- Activities overview ---- */}
       {overview && (
-        <div
-          className="absolute inset-0 top-8 z-[350] bg-black/70 backdrop-blur-lg p-10 overflow-auto"
-          onClick={() => setOverview(false)}
-        >
-          <p className="text-center text-white/60 text-sm mb-8">
-            Fenêtres ouvertes — cliquez pour revenir
-          </p>
-          <div className="flex flex-wrap justify-center gap-6">
-            {wins.length === 0 && (
-              <p className="text-white/50 text-sm">Aucune fenêtre ouverte.</p>
-            )}
-            {wins.map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  focus(w.id);
-                  setOverview(false);
-                }}
-                className="w-56 rounded-xl bg-white/10 border border-white/15 hover:border-primary/60 p-4 text-left transition-colors"
-              >
-                <Icon name={w.icon} className="text-white/85 text-2xl mb-2" />
-                <div className="text-sm text-white truncate">{w.title}</div>
-                <div className="text-[11px] text-white/50">{w.min ? "réduite" : "ouverte"}</div>
+        <div className={styles.overview} onClick={() => setOverview(false)}>
+          <div className={styles.overviewHeader}><span>Vue d’ensemble</span><small>{wins.length} fenêtre{wins.length > 1 ? "s" : ""} · cliquez pour reprendre</small></div>
+          <div className={styles.overviewGrid}>
+            {wins.map((win) => (
+              <button key={win.id} type="button" onClick={(event) => { event.stopPropagation(); focus(win.id); setOverview(false); }}>
+                <span className={styles.overviewPreview} style={{ "--app-tone": win.app === "text" ? "#fbbf24" : APP_META[win.app].tone } as CSSProperties}><Icon name={win.icon} /><i /><i /><i /></span>
+                <strong>{win.title}</strong><small>{win.min ? "Réduite" : "Ouverte"}</small>
               </button>
             ))}
+            {wins.length === 0 && <p>Aucune fenêtre ouverte. Utilisez le dock à gauche.</p>}
           </div>
         </div>
       )}
 
-      {/* ---- Minimised windows, bottom centre ---- */}
-      {wins.some((w) => w.min) && (
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] flex gap-2 p-1.5 rounded-xl bg-black/45 backdrop-blur-md border border-white/10">
-          {wins
-            .filter((w) => w.min)
-            .map((w) => (
-              <button
-                key={w.id}
-                type="button"
-                onClick={() => focus(w.id)}
-                className="px-3 py-1.5 rounded-lg hover:bg-white/15 flex items-center gap-2 text-[12px] text-white/85 transition-colors"
-              >
-                <Icon name={w.icon} className="text-[15px]" />
-                <span className="max-w-32 truncate">{w.title}</span>
-              </button>
-            ))}
+      {wins.some((win) => win.min) && (
+        <div className={styles.minimisedTray}>{wins.filter((win) => win.min).map((win) => <button key={win.id} type="button" onClick={() => focus(win.id)}><Icon name={win.icon} /><span>{win.title}</span></button>)}</div>
+      )}
+      <div className={styles.escapeHint}><kbd>CLIC DROIT</kbd><span>actions</span><i /><kbd>ESC</kbd><span>quitter</span></div>
+
+      {contextMenu && (
+        <div data-context-menu className={styles.contextMenu} style={{ left: contextMenu.x, top: contextMenu.y }} role="menu" aria-label={contextMenu.file ? `Actions pour ${contextMenu.file}` : "Actions du bureau"}>
+          <div className={styles.contextHeader}><span>{contextMenu.file ? "PIÈCE SÉLECTIONNÉE" : "HCC WORKSTATION"}</span><small>{contextMenu.file ?? config.host}</small></div>
+          {contextMenu.file ? (
+            <>
+              <button type="button" role="menuitem" onClick={() => open("text", contextMenu.file)}><Icon name="open_in_new" /><span><strong>Ouvrir</strong><small>Visionneuse sécurisée</small></span></button>
+              {apps.includes("files") && <button type="button" role="menuitem" onClick={() => open("files")}><Icon name="folder" /><span><strong>Afficher dans Fichiers</strong><small>/evidence</small></span></button>}
+              <button type="button" role="menuitem" onClick={() => { void navigator.clipboard?.writeText(contextMenu.file ?? ""); setContextMenu(null); }}><Icon name="content_copy" /><span><strong>Copier le nom</strong><small>{contextMenu.file}</small></span></button>
+            </>
+          ) : (
+            <>
+              {config.dossier && <button type="button" role="menuitem" onClick={() => open("dossier")}><Icon name="folder_shared" /><span><strong>Ouvrir le Dossier</strong><small>Mission et objectifs</small></span></button>}
+              {apps.includes("terminal") && <button type="button" role="menuitem" onClick={() => open("terminal")}><Icon name="terminal" /><span><strong>Nouveau terminal</strong><small>HCC Secure Shell</small></span></button>}
+              {apps.includes("files") && <button type="button" role="menuitem" onClick={() => open("files")}><Icon name="folder" /><span><strong>Ouvrir Fichiers</strong><small>/evidence</small></span></button>}
+              {apps.includes("monitor") && <button type="button" role="menuitem" onClick={() => open("monitor")}><Icon name="monitoring" /><span><strong>Télémétrie système</strong><small>État du laboratoire</small></span></button>}
+              <div className={styles.contextDivider} />
+              <button type="button" role="menuitem" onClick={() => { setSelectedFile(null); setContextMenu(null); }}><Icon name="refresh" /><span><strong>Actualiser le bureau</strong><small>Réinitialiser la sélection</small></span></button>
+            </>
+          )}
+          <div className={styles.contextDivider} />
+          <button type="button" role="menuitem" onClick={() => { setContextMenu(null); setGuideOpen(true); }}><Icon name="menu_book" /><span><strong>Manuel du poste</strong><small>Commandes et navigation</small></span></button>
+          <button type="button" role="menuitem" onClick={() => { setContextMenu(null); setExitOpen(true); }} className={styles.contextDanger}><Icon name="power_settings_new" /><span><strong>Quitter l’environnement</strong><small>Progression conservée</small></span></button>
+        </div>
+      )}
+
+      {guideOpen && <WorkstationGuide caseTitle={config.dossier?.title ?? config.incident ?? "Session d’analyse"} host={config.host} onBack={() => setGuideOpen(false)} inSession />}
+
+      {exitOpen && (
+        <div className={styles.exitOverlay} role="dialog" aria-modal="true" aria-label="Quitter le poste">
+          <div className={styles.exitCard}>
+            <div className={styles.exitIcon}><Icon name="power_settings_new" /></div>
+            <p>SESSION D’ANALYSE</p><h2>Quitter le poste sécurisé ?</h2>
+            <span>Votre progression validée est conservée. L’état des fenêtres sera réinitialisé.</span>
+            <div><button type="button" onClick={() => setExitOpen(false)}>Reprendre</button><button type="button" onClick={onQuit}>Quitter l’environnement</button></div>
+            <small>Appuyez de nouveau sur Échap pour reprendre</small>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-function Window({
-  win,
-  bounds,
-  children,
-  onFocus,
-  onClose,
-  onMinimise,
-  onToggleMax,
-  onMove,
-}: {
+function Window({ win, bounds, children, onFocus, onClose, onMinimise, onToggleMax, onMove }: {
   win: Win;
-  bounds: React.RefObject<HTMLDivElement | null>;
-  children: React.ReactNode;
+  bounds: RefObject<HTMLDivElement | null>;
+  children: ReactNode;
   onFocus: () => void;
   onClose: () => void;
   onMinimise: () => void;
@@ -533,136 +639,120 @@ function Window({
   onMove: (x: number, y: number) => void;
 }) {
   const drag = useRef<{ dx: number; dy: number } | null>(null);
-
-  function down(e: React.PointerEvent) {
+  function pointerDown(event: React.PointerEvent<HTMLDivElement>) {
+    if (win.max) return;
     onFocus();
-    drag.current = { dx: e.clientX - win.x, dy: e.clientY - win.y };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    drag.current = { dx: event.clientX - win.x, dy: event.clientY - win.y };
+    event.currentTarget.setPointerCapture(event.pointerId);
   }
-  function move(e: React.PointerEvent) {
-    if (!drag.current) return;
+  function pointerMove(event: React.PointerEvent<HTMLDivElement>) {
+    if (!drag.current || win.max) return;
     const box = bounds.current?.getBoundingClientRect();
     onMove(
-      Math.max(0, Math.min((box?.width ?? 1400) - 160, e.clientX - drag.current.dx)),
-      Math.max(32, Math.min((box?.height ?? 800) - 60, e.clientY - drag.current.dy)),
+      Math.max(76, Math.min((box?.width ?? 1440) - 220, event.clientX - drag.current.dx)),
+      Math.max(42, Math.min((box?.height ?? 900) - 100, event.clientY - drag.current.dy)),
     );
   }
-  function up(e: React.PointerEvent) {
+  function pointerUp(event: React.PointerEvent<HTMLDivElement>) {
     drag.current = null;
-    (e.target as HTMLElement).releasePointerCapture?.(e.pointerId);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
   }
-
-  const style: React.CSSProperties = win.max
-    ? { left: 76, top: 40, width: "calc(100% - 92px)", height: "calc(100% - 56px)", zIndex: win.z }
-    : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
+  const style: CSSProperties = win.max
+    ? { left: 86, top: 46, width: "calc(100% - 104px)", height: "calc(100% - 64px)", zIndex: win.z }
+    : { left: win.x, top: win.y, width: `min(${win.w}px, calc(100vw - 112px))`, height: `min(${win.h}px, calc(100vh - 94px))`, zIndex: win.z };
 
   return (
-    <div
-      className="absolute rounded-xl overflow-hidden border border-white/15 bg-[#0d1a12] shadow-2xl flex flex-col"
-      style={style}
-      onMouseDown={onFocus}
-    >
-      {/* GNOME header bar: title centred, controls on the right. */}
-      <div
-        onPointerDown={down}
-        onPointerMove={move}
-        onPointerUp={up}
-        onPointerCancel={up}
-        onDoubleClick={onToggleMax}
-        className="h-10 shrink-0 bg-[#16241b] flex items-center px-3 gap-2 cursor-grab active:cursor-grabbing border-b border-white/10"
-      >
-        <Icon name={win.icon} className="text-white/60 text-[17px]" />
-        <span className="flex-1 text-center text-[13px] text-white/85 truncate font-medium">
-          {win.title}
-        </span>
-        <button
-          type="button"
-          aria-label="Réduire"
-          onClick={onMinimise}
-          className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
-        >
-          <Icon name="remove" className="text-[15px] text-white/80" />
-        </button>
-        <button
-          type="button"
-          aria-label="Agrandir"
-          onClick={onToggleMax}
-          className="w-6 h-6 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center"
-        >
-          <Icon name={win.max ? "close_fullscreen" : "open_in_full"} className="text-[13px] text-white/80" />
-        </button>
-        <button
-          type="button"
-          aria-label="Fermer"
-          onClick={onClose}
-          className="w-6 h-6 rounded-full bg-white/10 hover:bg-error flex items-center justify-center"
-        >
-          <Icon name="close" className="text-[15px] text-white/80" />
-        </button>
+    <section className={styles.window} style={style} onMouseDown={onFocus} aria-label={win.title}>
+      <div className={styles.windowBar} onPointerDown={pointerDown} onPointerMove={pointerMove} onPointerUp={pointerUp} onPointerCancel={pointerUp} onDoubleClick={onToggleMax}>
+        <div className={styles.windowAppIcon}><Icon name={win.icon} /></div>
+        <div className={styles.windowTitle}><strong>{win.title}</strong><span>{win.app === "terminal" ? "session isolée" : "HCC Workstation"}</span></div>
+        <div className={styles.windowControls} onPointerDown={(event) => event.stopPropagation()}>
+          <button type="button" onClick={onMinimise} aria-label="Réduire"><Icon name="remove" /></button>
+          <button type="button" onClick={onToggleMax} aria-label={win.max ? "Restaurer" : "Agrandir"}><Icon name={win.max ? "filter_none" : "crop_square"} /></button>
+          <button type="button" onClick={onClose} aria-label="Fermer" className={styles.closeButton}><Icon name="close" /></button>
+        </div>
       </div>
-      <div className="flex-1 min-h-0">{children}</div>
-    </div>
+      <div className={styles.windowBody}>{children}</div>
+    </section>
   );
 }
 
-function FilesApp({
-  files,
-  onOpen,
-}: {
-  files: Record<string, string>;
-  onOpen: (name: string) => void;
-}) {
+function FilesApp({ files, onOpen }: { files: Record<string, string>; onOpen: (name: string) => void }) {
   const names = Object.keys(files);
+  const [selected, setSelected] = useState(names[0] ?? null);
   return (
-    <div className="h-full overflow-auto no-scrollbar bg-[#0d1a12]">
-      <div className="px-4 py-2 border-b border-white/10 text-[12px] text-white/50 font-code-sm">
-        {names.length} élément{names.length > 1 ? "s" : ""}
-      </div>
-      <div className="p-2">
-        {names.map((n) => (
-          <button
-            key={n}
-            type="button"
-            onDoubleClick={() => onOpen(n)}
-            onClick={() => onOpen(n)}
-            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left hover:bg-white/10 transition-colors"
-          >
-            <Icon
-              name={n.endsWith(".log") ? "receipt_long" : "description"}
-              className="text-primary text-xl"
-            />
-            <span className="flex-1 truncate text-[13px] text-white/85">{n}</span>
-            <span className="text-[11px] text-white/40 font-code-sm">{files[n].length} o</span>
-          </button>
-        ))}
-      </div>
+    <div className={styles.filesApp}>
+      <aside>
+        <p>EMPLACEMENTS</p>
+        <button type="button" className={styles.fileNavActive}><Icon name="home" /> Dossier personnel</button>
+        <button type="button"><Icon name="folder_shared" /> Pièces du dossier</button>
+        <button type="button"><Icon name="schedule" /> Récents</button>
+        <p>VOLUMES</p><button type="button"><Icon name="lock" /> evidence-ro</button>
+        <div className={styles.storage}><span><i style={{ width: "31%" }} /></span><small>2,4 Go libres</small></div>
+      </aside>
+      <main>
+        <div className={styles.filesToolbar}>
+          <div><button type="button"><Icon name="arrow_back" /></button><button type="button"><Icon name="arrow_forward" /></button></div>
+          <span><Icon name="home" /> / home / analyste / dossier</span><button type="button"><Icon name="search" /></button>
+        </div>
+        <div className={styles.fileHeader}><span>Nom</span><span>Taille</span><span>Type</span></div>
+        <div className={styles.fileRows}>
+          {names.map((name) => (
+            <button key={name} type="button" onClick={() => setSelected(name)} onDoubleClick={() => onOpen(name)} className={selected === name ? styles.fileRowSelected : ""}>
+              <span><Icon name={name.endsWith(".log") ? "receipt_long" : name.endsWith(".csv") ? "table_view" : "description"} /> {name}</span>
+              <span>{files[name].length} o</span><span>{name.split(".").pop()?.toUpperCase() ?? "FICHIER"}</span>
+            </button>
+          ))}
+        </div>
+        <footer>{names.length} élément{names.length > 1 ? "s" : ""} · volume monté en lecture seule</footer>
+      </main>
     </div>
   );
 }
 
-/** Flavour only — a workstation with no telemetry looks like a mock-up. */
+function TextApp({ file, body }: { file?: string; body: string }) {
+  const lines = body.split("\n");
+  return (
+    <div className={styles.textApp}>
+      <div className={styles.textToolbar}>
+        <span><Icon name="lock" /> Lecture seule</span><strong>{file ?? "Document sans titre"}</strong>
+        <div><button type="button"><Icon name="search" /></button><button type="button"><Icon name="more_vert" /></button></div>
+      </div>
+      <div className={styles.textDocument}>
+        <div className={styles.lineNumbers}>{lines.map((_, index) => <span key={index}>{index + 1}</span>)}</div>
+        <pre>{body || "(fichier vide)"}</pre>
+      </div>
+      <footer>UTF-8 · LF · {lines.length} lignes</footer>
+    </div>
+  );
+}
+
 function MonitorApp({ host }: { host: string }) {
-  const bars = [
-    { label: "Processeur", value: 12 },
-    { label: "Mémoire", value: 41 },
-    { label: "Réseau", value: 8 },
-    { label: "Disque", value: 63 },
+  const metrics = [
+    { label: "Processeur", value: 18, icon: "memory", tone: "#22d3ee" },
+    { label: "Mémoire", value: 43, icon: "developer_board", tone: "#4ade80" },
+    { label: "Stockage", value: 31, icon: "hard_drive", tone: "#fbbf24" },
   ];
   return (
-    <div className="h-full p-5 space-y-3.5 bg-[#0d1a12] text-[12px] text-white/75">
-      <div className="text-white text-[13px]">{host}</div>
-      {bars.map((b) => (
-        <div key={b.label}>
-          <div className="flex justify-between mb-1">
-            <span>{b.label}</span>
-            <span className="tabular-nums">{b.value}%</span>
+    <div className={styles.monitorApp}>
+      <div className={styles.monitorHero}>
+        <div><span className={styles.liveDot} /> SYSTÈME NOMINAL</div><strong>{host}</strong>
+        <p>HeyOS 24.08 · noyau 6.8.0-hcc · uptime 00:18:42</p>
+      </div>
+      <div className={styles.metricGrid}>
+        {metrics.map((metric) => (
+          <div key={metric.label} style={{ "--metric": metric.tone } as CSSProperties}>
+            <Icon name={metric.icon} /><span>{metric.label}</span><strong>{metric.value}%</strong>
+            <i><b style={{ width: `${metric.value}%` }} /></i>
           </div>
-          <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
-            <div className="h-full bg-primary" style={{ width: `${b.value}%` }} />
-          </div>
-        </div>
-      ))}
-      <p className="pt-2 text-white/40">uptime 42 j · 1 session active</p>
+        ))}
+      </div>
+      <div className={styles.processTable}>
+        <div><span>PROCESSUS</span><span>PID</span><span>CPU</span></div>
+        <p><span>siem-collector</span><span>1042</span><span>3.2%</span></p>
+        <p><span>ids-sensor</span><span>1088</span><span>1.8%</span></p>
+        <p><span>hccsh</span><span>1337</span><span>0.4%</span></p>
+      </div>
     </div>
   );
 }

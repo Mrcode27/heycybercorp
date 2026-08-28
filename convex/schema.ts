@@ -154,6 +154,8 @@ export default defineSchema({
     /** Full brief. Newlines are rendered; no markdown parsing. */
     brief: v.string(),
     hint: v.optional(v.string()),
+    /** Admin-only walkthrough. Never included in student-facing queries. */
+    guide: v.optional(v.string()),
     level: v.union(
       v.literal("Débutant"),
       v.literal("Intermédiaire"),
@@ -196,6 +198,8 @@ export default defineSchema({
     summary: v.string(),
     /** The scene set before the first question. */
     setting: v.string(),
+    /** Admin-only walkthrough. Student guidance stays in step hints. */
+    guide: v.optional(v.string()),
     level: levelValidator,
     category: v.string(),
     icon: v.string(),

@@ -183,6 +183,7 @@ const labFields = {
   summary: v.string(),
   brief: v.string(),
   hint: v.optional(v.string()),
+  guide: v.optional(v.string()),
   level: levelValidator,
   category: v.string(),
   icon: v.string(),

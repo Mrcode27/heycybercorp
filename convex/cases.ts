@@ -392,6 +392,7 @@ export const adminSave = mutation({
     title: v.string(),
     summary: v.string(),
     setting: v.string(),
+    guide: v.optional(v.string()),
     level: levelValidator,
     category: v.string(),
     icon: v.string(),

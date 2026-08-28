@@ -1,7 +1,8 @@
 # heycybercorp — le webOS et les cas pratiques
 
-> **Ce document décrit ce qui existe.** Le moteur est construit, déployé et
-> alimenté par trois cas. Ce qui reste à faire est isolé au §11.
+> **Ce document décrit ce qui existe.** Le moteur est construit et déployé,
+> avec quatre cas publiés dont un cas Avancé réservé au pack Piratage Éthique.
+> Ce qui reste à faire est isolé au §11.
 >
 > Dernière mise à jour : août 2026.
 
@@ -35,12 +36,16 @@ machine.
 ## 2. L'expérience, écran par écran
 
 ```
-Carte de lancement  →  Démarrage  →  Écran de session  →  Bureau
-   (dans le cas)       (log noyau)      (façon GDM)      (plein écran)
+Carte de lancement  →  Manuel  →  Démarrage  →  Écran de session  →  Bureau
+   (dans le cas)      (obligatoire)  (log noyau)   (façon GDM)      (plein écran)
 ```
 
 **Carte de lancement.** Le nom de la machine, l'utilisateur, le nombre de
-fichiers, un bouton « Lancer l'environnement ».
+fichiers, un bouton « Lire le manuel et démarrer ».
+
+**Manuel.** Avant chaque lancement WebOS, trois cartes expliquent le Dossier,
+le Terminal, le gestionnaire de fichiers, le double-clic, le clic droit et la
+sortie par `Échap`. Il reste réouvrable depuis le menu contextuel du bureau.
 
 **Démarrage.** Un vrai log systemd : version du noyau, mémoire, initrd, puis
 des lignes `[  OK  ]` pour journald, NetworkManager, sshd, le collecteur SIEM,
@@ -56,13 +61,17 @@ exactement l'effet recherché. Un lien discret permet de passer.
 | Barre supérieure | Activités · horloge centrée · réseau, son, batterie, extinction |
 | Dash (gauche) | Lanceurs avec témoin d'application ouverte |
 | Icônes du bureau | Les fichiers du cas, double-clic pour ouvrir |
+| Clic droit sur le bureau | Ouvrir Dossier, Terminal, Fichiers, Télémétrie, manuel ou sortie |
+| Clic droit sur une pièce | Ouvrir, afficher dans Fichiers ou copier son nom |
 | Fenêtres | Barre de titre GNOME (titre centré, boutons à droite), déplaçables, réduire / agrandir / fermer |
 | Vue Activités | Toutes les fenêtres ouvertes, clic pour revenir |
 | Bac inférieur | Fenêtres réduites |
+| Sortie | `Échap` ouvre l'écran de sortie ; la progression validée est conservée |
 
-**Applications :** Terminal, Fichiers, Lecteur de texte, Moniteur système.
-Toutes partagent **un seul système de fichiers en mémoire** — un fichier écrit
-dans le terminal apparaît dans le gestionnaire de fichiers.
+**Applications :** Terminal, Fichiers, Lecteur de texte, Moniteur système et
+**Dossier** — l'application qui porte les questions du cas, pour répondre sans
+quitter le bureau. Toutes partagent **un seul système de fichiers en mémoire** —
+un fichier écrit dans le terminal apparaît dans le gestionnaire de fichiers.
 
 **Le dossier vit dans la machine**, sous la forme de `question.txt`, ouvert à
 la connexion et accessible depuis le bureau, Fichiers ou `cat question.txt`.
@@ -223,7 +232,7 @@ d'1 » donne le sentiment d'être rationné ; « vous avez les investigations
 complètes » se vend seul.
 
 Cible : **Gratuit 2 · Débutant 6 · Intermédiaire 7 · Avancé 7**.
-Trois sont écrits (marqués ✅).
+Quatre sont écrits (marqués ✅).
 
 ### Gratuit — la vitrine
 Aucun terminal, moins de trois minutes, doit produire un déclic.
@@ -267,7 +276,7 @@ Afrique, virement instantané en Europe, **même mécanisme**.
 | Handshake capturé | WPA2, faiblesse d'une PSK |
 | Chronologie d'une intrusion | Vecteur initial, temps de présence |
 | Le ransomware du vendredi soir | Payer / restaurer / négocier — **et notifier qui, sous quel délai** |
-| Exfiltration lente | Tunnel DNS, entropie |
+| **02h37 : exfiltration lente** | Tunnel DNS, entropie | ✅ |
 | L'insider | Malveillance ou coïncidence ? |
 | Le rapport à la direction | Synthèse pour un comité non technique |
 
@@ -298,13 +307,14 @@ Deux méritent une note :
 
 | Fichier | Rôle | Lignes |
 |---|---|---|
-| `src/components/console/WebOS.tsx` | Démarrage, session, bureau, fenêtres, applications | 668 |
-| `src/components/console/CaseRunner.tsx` | Enchaînement pièces → étapes | 307 |
-| `src/components/console/CaseArtifact.tsx` | Les huit visionneuses | 350 |
+| `src/components/console/WebOS.tsx` | Manuel, démarrage, session, bureau, fenêtres, menus et applications | 758 |
+| `src/components/console/DossierApp.tsx` | Dossier étudiant + coach raisonné et validation locale du test admin | 251 |
+| `src/components/console/CaseRunner.tsx` | Enchaînement pièces → étapes | 327 |
+| `src/components/console/CaseArtifact.tsx` | Les huit visionneuses | 359 |
 | `src/components/console/CasesCatalogue.tsx` | Le catalogue (reste mobile) | 207 |
 | `src/components/DesktopOnlyGate.tsx` | La barrière du §4 | 88 |
 | `src/lib/shell/index.ts` | Le shell : registre, exécution, complétion | 425 |
-| `src/components/shell/Terminal.tsx` | Rendu du terminal | 150 |
+| `src/components/shell/Terminal.tsx` | Rendu du terminal | 154 |
 | `src/app/dashboard/labs/page.tsx` | Catalogue | — |
 | `src/app/dashboard/labs/[slug]/page.tsx` | Un cas | 21 |
 
@@ -312,8 +322,21 @@ Deux méritent une note :
 
 | Fichier | Rôle | Lignes |
 |---|---|---|
-| `src/components/console/AdminCases.tsx` | Rédaction : métadonnées, pièces, étapes, prévisualisation | 675 |
-| `src/app/admin/labs/page.tsx` | Cas + challenges | 35 |
+| `src/components/console/AdminLabsWorkspace.tsx` | Session admin, onglets Pratiques / Challenges | 80 |
+| `src/components/console/AdminCases.tsx` | Liste principale + éditeur modal des cas | 718 |
+| `src/components/console/AdminLabs.tsx` | Liste principale + éditeur modal des challenges | 395 |
+| `src/components/console/AdminLabTester.tsx` | Tests isolés, mode réaliste et manuel d’investigation guidé | 274 |
+| `src/lib/adminLabTutorial.ts` | Playbooks pédagogiques : problème, hypothèses, commandes, observations et transfert | 425 |
+| `src/components/console/AdminModal.tsx` | Cadre modal accessible des éditeurs et tests | 50 |
+| `src/app/admin/labs/page.tsx` | Point d'entrée du centre de labs | 25 |
+| `convex/caseSeeds.ts` | Migration admin idempotente du premier cas Avancé webOS | — |
+
+Le mode guidé n’est pas une feuille de réponses. Il commence par cadrer le
+problème et les enjeux, installe un modèle mental d’analyste, puis déroule chaque
+objectif selon le cycle **hypothèse → action → commande → observation → preuve →
+réflexe réutilisable**. Les réponses restent repliées derrière une vérification
+finale. Pour les cas WebOS, le même coaching apparaît aussi dans l’application
+Dossier, à côté du Terminal où les commandes peuvent être reproduites.
 
 `src/proxy.ts` protège déjà `/dashboard(.*)` : rien à y changer.
 
@@ -326,6 +349,9 @@ Les charges utiles destinées à l'étudiant sont **construites champ par champ*
 jamais par étalement du document : ajouter une colonne au schéma ne peut donc
 pas provoquer de fuite. Un cas verrouillé renvoie `setting: null`, sans pièces
 ni étapes — le corps n'est pas envoyé puis masqué.
+Le champ optionnel `guide` et les réponses du mode tutoriel ne transitent que
+par les requêtes protégées par `requireAdmin()` ; les requêtes étudiantes les
+omettent explicitement.
 **Vérifié sur la fonction déployée :** zéro occurrence de `answer`, `accept` ou
 `match` dans la réponse.
 
@@ -382,23 +408,33 @@ CSP **appliquée** en production, HSTS, `X-Frame-Options: DENY`, `nosniff`,
 | Correction tolérante (3 modes) | ✅ |
 | Barrière desktop | ✅ |
 | Rédaction dans l'admin | ✅ |
-| 3 cas écrits | ✅ |
-| **19 cas restants** | à écrire |
-| Répondre depuis le bureau, sans le quitter | à décider |
+| Répondre depuis le bureau (application Dossier) | ✅ |
+| Manuel obligatoire avant chaque session WebOS | ✅ |
+| Menus contextuels du bureau et des pièces | ✅ |
+| Centre admin avec onglets Pratiques / Challenges | ✅ |
+| Création et modification dans des modales fermées par défaut | ✅ |
+| Test admin sans progression, avec ou sans guide complet | ✅ |
+| 4 cas écrits | ✅ |
+| Cas publiés sur le déploiement de développement | 4 |
+| Publication de « 02h37 : exfiltration lente » | ✅ |
+| **18 cas restants** | à écrire |
 | Sauvegarde de l'état du bureau entre deux visites | non prévu |
 
 ### Répondre sans quitter le bureau
-Aujourd'hui le bureau occupe l'écran, et le panneau « Investigation » est
-derrière : on ferme la session pour répondre. Une application « Dossier »
-intégrée au bureau permettrait de répondre sans en sortir. Le gestionnaire de
-fenêtres existe, donc le coût est faible — mais c'est un choix ergonomique, pas
-une nécessité.
+C'est fait. Une application **Dossier** vit dans le dash du bureau : elle
+affiche les étapes du cas, l'indice, le plafond de tentatives et révèle la
+conséquence après une bonne réponse — le tout sans fermer la session. La
+correction passe par la même mutation serveur que le panneau « Investigation »,
+donc les deux vues ne peuvent pas être en désaccord : elles partagent le
+contrat, pas les réponses.
 
 ---
 
 ## 12. Écrire un cas
 
-Tout se fait depuis `/admin/labs`, jamais dans le code.
+La rédaction courante se fait depuis `/admin/labs`. Le fichier
+`convex/caseSeeds.ts` sert uniquement à installer de façon idempotente le cas
+Avancé livré avec cette refonte ; son exécution exige un compte administrateur.
 
 1. **Métadonnées** — titre, catégorie, niveau, durée, gratuit, publié.
 2. **Résumé** — visible même verrouillé : donner envie sans rien dévoiler.
@@ -424,6 +460,6 @@ Ce n'est pas la technique — elle est faite.
 chose qui n'existe pas. Le moteur de simulation n'y remédie pas : il ajoute une
 seconde bibliothèque presque vide.
 
-La recommandation tient en une phrase : **mettre les trois cas devant de vrais
-étudiants, regarder s'ils les jouent jusqu'au bout**, et n'écrire les
-dix-neuf autres qu'ensuite.
+La recommandation tient en une phrase : **mettre les quatre cas devant de vrais
+étudiants et regarder s'ils les jouent jusqu'au bout**, avant d'écrire les
+dix-huit autres.

@@ -4,6 +4,7 @@ import { useState } from "react";
 import Icon from "../Icon";
 import Terminal from "../shell/Terminal";
 import WebOS, { type WebOSConfig } from "./WebOS";
+import type { DossierData } from "./DossierApp";
 import type { ShellConfig } from "@/lib/shell";
 
 /**
@@ -43,7 +44,14 @@ function parseJson<T>(raw: string, fallback: T): T {
   }
 }
 
-export default function CaseArtifact({ artifact }: { artifact: Artifact }) {
+export default function CaseArtifact({
+  artifact,
+  dossier,
+}: {
+  artifact: Artifact;
+  /** The case's questions — passed to the webOS so its Dossier app can answer. */
+  dossier?: DossierData;
+}) {
   const [open, setOpen] = useState(true);
 
   return (
@@ -63,12 +71,12 @@ export default function CaseArtifact({ artifact }: { artifact: Artifact }) {
           className="text-on-surface-variant text-lg"
         />
       </button>
-      {open && <Body artifact={artifact} />}
+      {open && <Body artifact={artifact} dossier={dossier} />}
     </div>
   );
 }
 
-function Body({ artifact }: { artifact: Artifact }) {
+function Body({ artifact, dossier }: { artifact: Artifact; dossier?: DossierData }) {
   switch (artifact.kind) {
     case "email":
       return <EmailBody content={artifact.content} />;
@@ -83,7 +91,7 @@ function Body({ artifact }: { artifact: Artifact }) {
     case "image":
       return <ImageBody content={artifact.content} label={artifact.label} />;
     case "webos":
-      return <WebOSBody content={artifact.content} />;
+      return <WebOSBody content={artifact.content} dossier={dossier} />;
     case "http":
     default:
       return (
@@ -215,7 +223,7 @@ function TerminalBody({ content }: { content: string }) {
  * The full simulated desktop. Content is the same JSON as a `terminal`
  * artifact, plus optional `apps` and `openOnStart`.
  */
-function WebOSBody({ content }: { content: string }) {
+function WebOSBody({ content, dossier }: { content: string; dossier?: DossierData }) {
   const parsed = parseJson<Partial<WebOSConfig>>(content, {});
   const cfg: WebOSConfig = {
     files: parsed.files ?? {},
@@ -225,6 +233,8 @@ function WebOSBody({ content }: { content: string }) {
     allowed: parsed.allowed,
     apps: parsed.apps,
     openOnStart: parsed.openOnStart,
+    incident: parsed.incident,
+    dossier,
   };
   return <WebOS config={cfg} />;
 }
@@ -341,8 +351,7 @@ function ImageBody({ content, label }: { content: string; label: string }) {
           Image externe refusée par la politique de sécurité du site. Hébergez-la dans /public.
         </p>
       ) : (
-        // eslint-disable-next-line @next/next/no-img-element -- author-supplied
-        // path or data URI; next/image would need a build-time known domain.
+        // eslint-disable-next-line @next/next/no-img-element -- author-supplied path or data URI; next/image needs a build-time known domain.
         <img src={src} alt={label} className="max-w-full rounded-lg border border-outline-variant/30" />
       )}
     </div>

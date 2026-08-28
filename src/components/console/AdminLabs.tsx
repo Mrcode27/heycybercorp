@@ -5,6 +5,8 @@ import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
+import AdminModal from "./AdminModal";
+import AdminLabTester, { type AdminChallengePreview } from "./AdminLabTester";
 import { cleanConvexError } from "@/lib/errors";
 
 const inputClass =
@@ -19,6 +21,7 @@ type Form = {
   summary: string;
   brief: string;
   hint: string;
+  guide: string;
   level: Level;
   category: string;
   icon: string;
@@ -33,6 +36,7 @@ const EMPTY: Form = {
   summary: "",
   brief: "",
   hint: "",
+  guide: "",
   level: "Débutant",
   category: "Web",
   icon: "science",
@@ -43,8 +47,9 @@ const EMPTY: Form = {
 };
 
 /** Create, edit, publish and delete labs. Admin only (page is behind AdminGate). */
-export default function AdminLabs() {
-  const labs = useQuery(api.labs.adminList, {});
+export default function AdminLabs({ previewLabs }: { previewLabs?: AdminChallengePreview[] } = {}) {
+  const queriedLabs = useQuery(api.labs.adminList, previewLabs ? "skip" : {});
+  const labs = previewLabs ?? queriedLabs;
   const create = useMutation(api.labs.create);
   const update = useMutation(api.labs.update);
   const remove = useMutation(api.labs.remove);
@@ -53,22 +58,32 @@ export default function AdminLabs() {
   const [editing, setEditing] = useState<Id<"labs"> | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [testing, setTesting] = useState<AdminChallengePreview | null>(null);
 
   function set<K extends keyof Form>(k: K, val: Form[K]) {
     setForm((f) => ({ ...f, [k]: val }));
   }
 
   function reset() {
-    setForm(EMPTY);
+    setForm({ ...EMPTY });
     setEditing(null);
     setError(null);
+    setEditorOpen(false);
+  }
+
+  function openCreate() {
+    setForm({ ...EMPTY });
+    setEditing(null);
+    setError(null);
+    setEditorOpen(true);
   }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
     setBusy(true);
     setError(null);
-    const payload = { ...form, hint: form.hint.trim() || undefined };
+    const payload = { ...form, hint: form.hint.trim() || undefined, guide: form.guide.trim() || undefined };
     try {
       if (editing) await update({ labId: editing, ...payload });
       else await create(payload);
@@ -83,7 +98,9 @@ export default function AdminLabs() {
   return (
     <div className="space-y-8">
       {/* Editor */}
-      <form onSubmit={save} className="glass-card rounded-xl p-6 space-y-5">
+      {editorOpen && (
+      <AdminModal title={editing ? "Modifier le challenge" : "Nouveau challenge"} eyebrow="Éditeur de challenge" icon={editing ? "edit" : "add_circle"} onClose={reset}>
+      <form onSubmit={save} className="p-6 md:p-8 space-y-5">
         <div className="flex items-center gap-3">
           <Icon name={editing ? "edit" : "add_circle"} className="text-primary" fill />
           <h3 className="font-headline-lg-mobile text-on-surface">
@@ -145,6 +162,18 @@ export default function AdminLabs() {
             className={inputClass}
             placeholder="Affiché seulement si l'étudiant le demande."
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className={labelClass}>Notes pédagogiques de l’instructeur (optionnel)</label>
+          <textarea
+            value={form.guide}
+            onChange={(e) => set("guide", e.target.value)}
+            rows={4}
+            className={inputClass}
+            placeholder="Ajoutez un piège fréquent, un contexte métier ou un conseil de débrief. Le tutoriel raisonné est généré automatiquement."
+          />
+          <p className="font-code-sm text-code-sm text-on-surface-variant">Cette note complète le parcours problème → hypothèse → outil → observation → conclusion. Elle reste privée.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -245,14 +274,17 @@ export default function AdminLabs() {
           )}
         </div>
       </form>
+      </AdminModal>
+      )}
+
+      {testing && <AdminLabTester target={{ kind: "challenge", item: testing }} onClose={() => setTesting(null)} />}
 
       {/* Existing labs */}
       <div className="glass-card rounded-xl overflow-hidden">
-        <div className="flex items-center gap-3 p-6 border-b border-outline-variant/30">
-          <Icon name="science" className="text-secondary" fill />
-          <h3 className="font-headline-lg-mobile text-on-surface">
-            Labs existants {labs ? `(${labs.length})` : ""}
-          </h3>
+        <div className="flex flex-wrap items-center gap-3 p-6 border-b border-outline-variant/30">
+          <div className="w-10 h-10 rounded-xl grid place-items-center bg-secondary/10 text-secondary"><Icon name="flag" fill /></div>
+          <div><h3 className="font-headline-lg-mobile text-on-surface">Challenges existants {labs ? `(${labs.length})` : ""}</h3><p className="font-code-sm text-code-sm text-on-surface-variant mt-0.5">Briefs courts à flag, testables sans créer de tentative étudiante.</p></div>
+          <button type="button" onClick={openCreate} className="ml-auto px-4 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold inline-flex items-center gap-2 hover:brightness-110"><Icon name="add" /> Nouveau challenge</button>
         </div>
 
         {labs === undefined ? (
@@ -300,6 +332,14 @@ export default function AdminLabs() {
                       <div className="flex gap-3 justify-end">
                         <button
                           type="button"
+                          aria-label={`Tester ${l.title}`}
+                          onClick={() => setTesting(l)}
+                          className="px-3 py-1.5 rounded-lg border border-secondary/25 text-secondary hover:bg-secondary/10 transition-colors inline-flex items-center gap-1.5 text-xs font-bold"
+                        >
+                          <Icon name="play_arrow" className="text-base" fill /> Tester
+                        </button>
+                        <button
+                          type="button"
                           aria-label={`Modifier ${l.title}`}
                           onClick={() => {
                             setEditing(l._id);
@@ -308,6 +348,7 @@ export default function AdminLabs() {
                               summary: l.summary,
                               brief: l.brief,
                               hint: l.hint ?? "",
+                              guide: l.guide ?? "",
                               level: l.level,
                               category: l.category,
                               icon: l.icon,
@@ -316,7 +357,7 @@ export default function AdminLabs() {
                               isFree: l.isFree,
                               published: l.published,
                             });
-                            window.scrollTo({ top: 0, behavior: "smooth" });
+                            setEditorOpen(true);
                           }}
                           className="text-on-surface-variant hover:text-primary transition-colors"
                         >

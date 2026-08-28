@@ -10,12 +10,15 @@ import { runCommand, complete, type Line, type ShellConfig } from "@/lib/shell";
  */
 export default function Terminal({
   config,
+  filesystem,
   motd = [],
   title,
   height = "h-[340px]",
   className = "",
 }: {
   config: ShellConfig;
+  /** Optional shared in-memory filesystem used by the webOS file manager. */
+  filesystem?: Record<string, string>;
   motd?: Line[];
   title?: string;
   height?: string;
@@ -31,7 +34,8 @@ export default function Terminal({
   // The working copy of the case's filesystem. Lazy state, not a memo: commands
   // that write must persist across renders, and React may discard a memo at any
   // time. Never reassigned — the object is mutated in place by the shell.
-  const [files] = useState(() => ({ ...config.files }));
+  const [localFiles] = useState(() => ({ ...config.files }));
+  const files = filesystem ?? localFiles;
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;

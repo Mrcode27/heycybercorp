@@ -6,6 +6,8 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
 import CaseArtifact from "./CaseArtifact";
+import AdminModal from "./AdminModal";
+import AdminLabTester, { type AdminCasePreview } from "./AdminLabTester";
 import { cleanConvexError } from "@/lib/errors";
 
 const input =
@@ -33,6 +35,7 @@ type Draft = {
   title: string;
   summary: string;
   setting: string;
+  guide: string;
   level: Level;
   category: string;
   icon: string;
@@ -47,6 +50,7 @@ const EMPTY: Draft = {
   title: "",
   summary: "",
   setting: "",
+  guide: "",
   level: "Débutant",
   category: "Phishing",
   icon: "mail",
@@ -98,7 +102,7 @@ const ARTIFACT_TEMPLATE: Record<ArtifactKind, string> = {
       user: "analyste",
       host: "srv-app",
       cwd: "/var/log",
-      apps: ["terminal", "files", "monitor"],
+      apps: ["dossier", "terminal", "files", "monitor"],
       openOnStart: ["question.txt"],
       allowed: ["ls", "cat", "grep", "wc", "head", "tail", "whoami", "pwd", "tree"],
       files: { "question.txt": "Votre mission…", "auth.log": "…" },
@@ -116,8 +120,9 @@ const ARTIFACT_TEMPLATE: Record<ArtifactKind, string> = {
  * student progress on it. That is deliberate: after rewording a question there
  * is no honest way to decide whether a previous answer still counts.
  */
-export default function AdminCases() {
-  const cases = useQuery(api.cases.adminList, {});
+export default function AdminCases({ previewCases }: { previewCases?: AdminCasePreview[] } = {}) {
+  const queriedCases = useQuery(api.cases.adminList, previewCases ? "skip" : {});
+  const cases = previewCases ?? queriedCases;
   const save = useMutation(api.cases.adminSave);
   const remove = useMutation(api.cases.adminRemove);
 
@@ -126,16 +131,27 @@ export default function AdminCases() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [preview, setPreview] = useState(false);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [testing, setTesting] = useState<AdminCasePreview | null>(null);
 
   function set<K extends keyof Draft>(k: K, v: Draft[K]) {
     setDraft((d) => ({ ...d, [k]: v }));
   }
 
   function reset() {
-    setDraft(EMPTY);
+    setDraft({ ...EMPTY, artifacts: [], steps: [] });
     setEditing(null);
     setError(null);
     setPreview(false);
+    setEditorOpen(false);
+  }
+
+  function openCreate() {
+    setDraft({ ...EMPTY, artifacts: [], steps: [] });
+    setEditing(null);
+    setError(null);
+    setPreview(false);
+    setEditorOpen(true);
   }
 
   async function submit(e: React.FormEvent) {
@@ -148,6 +164,7 @@ export default function AdminCases() {
         title: draft.title,
         summary: draft.summary,
         setting: draft.setting,
+        guide: draft.guide.trim() || undefined,
         level: draft.level,
         category: draft.category,
         icon: draft.icon,
@@ -180,7 +197,9 @@ export default function AdminCases() {
 
   return (
     <div className="space-y-8">
-      <form onSubmit={submit} className="glass-card rounded-xl p-6 space-y-6">
+      {editorOpen && (
+      <AdminModal title={editing ? "Modifier le cas pratique" : "Nouveau cas pratique"} eyebrow="Éditeur de cas" icon={editing ? "edit" : "add_circle"} onClose={reset}>
+      <form onSubmit={submit} className="p-6 md:p-8 space-y-6">
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-3">
             <Icon name={editing ? "edit" : "add_circle"} className="text-primary" fill />
@@ -243,6 +262,18 @@ export default function AdminCases() {
             placeholder="03h14. Un salarié signale un message suspect…"
             required
           />
+        </div>
+
+        <div className="space-y-1.5">
+          <label className={label}>Notes pédagogiques de l’instructeur (optionnel)</label>
+          <textarea
+            value={draft.guide}
+            onChange={(e) => set("guide", e.target.value)}
+            rows={4}
+            className={input}
+            placeholder="Ajoutez ici un contexte propre à votre entreprise, un piège fréquent ou un conseil de débrief. Le tutoriel raisonné est construit automatiquement."
+          />
+          <p className="font-code-sm text-code-sm text-on-surface-variant">Cette note complète le manuel automatique ; elle ne le remplace pas et n’est jamais envoyée aux étudiants.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -555,13 +586,16 @@ export default function AdminCases() {
           </p>
         )}
       </form>
+      </AdminModal>
+      )}
+
+      {testing && <AdminLabTester target={{ kind: "practical", item: testing }} onClose={() => setTesting(null)} />}
 
       <div className="glass-card rounded-xl overflow-hidden">
-        <div className="flex items-center gap-3 p-6 border-b border-outline-variant/30">
-          <Icon name="folder_open" className="text-secondary" fill />
-          <h3 className="font-headline-lg-mobile text-on-surface">
-            Cas existants {cases ? `(${cases.length})` : ""}
-          </h3>
+        <div className="flex flex-wrap items-center gap-3 p-6 border-b border-outline-variant/30">
+          <div className="w-10 h-10 rounded-xl grid place-items-center bg-secondary/10 text-secondary"><Icon name="folder_open" fill /></div>
+          <div><h3 className="font-headline-lg-mobile text-on-surface">Cas pratiques existants {cases ? `(${cases.length})` : ""}</h3><p className="font-code-sm text-code-sm text-on-surface-variant mt-0.5">La liste reste la vue principale. Testez un cas sans modifier la progression.</p></div>
+          <button type="button" onClick={openCreate} className="ml-auto px-4 py-2.5 rounded-lg bg-primary text-on-primary text-sm font-bold inline-flex items-center gap-2 hover:brightness-110"><Icon name="add" /> Nouveau cas pratique</button>
         </div>
 
         {cases === undefined ? (
@@ -609,6 +643,14 @@ export default function AdminCases() {
                       <div className="flex gap-3 justify-end">
                         <button
                           type="button"
+                          aria-label={`Tester ${c.title}`}
+                          onClick={() => setTesting(c)}
+                          className="px-3 py-1.5 rounded-lg border border-secondary/25 text-secondary hover:bg-secondary/10 transition-colors inline-flex items-center gap-1.5 text-xs font-bold"
+                        >
+                          <Icon name="play_arrow" className="text-base" fill /> Tester
+                        </button>
+                        <button
+                          type="button"
                           aria-label={`Modifier ${c.title}`}
                           onClick={() => {
                             setEditing(c._id);
@@ -616,6 +658,7 @@ export default function AdminCases() {
                               title: c.title,
                               summary: c.summary,
                               setting: c.setting,
+                              guide: c.guide ?? "",
                               level: c.level,
                               category: c.category,
                               icon: c.icon,
@@ -639,7 +682,7 @@ export default function AdminCases() {
                                 points: s.points,
                               })),
                             });
-                            window.scrollTo({ top: 0, behavior: "smooth" });
+                            setEditorOpen(true);
                           }}
                           className="text-on-surface-variant hover:text-primary transition-colors"
                         >
