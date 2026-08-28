@@ -10,6 +10,7 @@
 
 import type * as admin from "../admin.js";
 import type * as audit from "../audit.js";
+import type * as cases from "../cases.js";
 import type * as catalog from "../catalog.js";
 import type * as certificates from "../certificates.js";
 import type * as courses from "../courses.js";
@@ -37,6 +38,7 @@ import type {
 declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   audit: typeof audit;
+  cases: typeof cases;
   catalog: typeof catalog;
   certificates: typeof certificates;
   courses: typeof courses;

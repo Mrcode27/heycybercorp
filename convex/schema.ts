@@ -182,6 +182,78 @@ export default defineSchema({
     .index("by_user_lab", ["userId", "labId"])
     .index("by_lab", ["labId"]),
 
+  /**
+   * Scenario cases: a situation, its evidence, and ordered questions.
+   *
+   * The security rule for this whole feature: `caseSteps.answer` never leaves
+   * the server. Student-facing queries build their payload field by field, so
+   * a field added here cannot leak by accident.
+   */
+  cases: defineTable({
+    title: v.string(),
+    slug: v.string(),
+    /** Shown even when locked — the teaser. */
+    summary: v.string(),
+    /** The scene set before the first question. */
+    setting: v.string(),
+    level: levelValidator,
+    category: v.string(),
+    icon: v.string(),
+    estimatedMinutes: v.number(),
+    isFree: v.boolean(),
+    published: v.boolean(),
+    order: v.number(),
+  })
+    .index("by_slug", ["slug"])
+    .index("by_order", ["order"]),
+
+  /** Evidence attached to a case. `content` is plain text, or JSON for terminal/table. */
+  caseArtifacts: defineTable({
+    caseId: v.id("cases"),
+    order: v.number(),
+    kind: v.union(
+      v.literal("email"),
+      v.literal("log"),
+      v.literal("terminal"),
+      v.literal("file"),
+      v.literal("table"),
+      v.literal("http"),
+      v.literal("image"),
+    ),
+    label: v.string(),
+    content: v.string(),
+  }).index("by_case", ["caseId"]),
+
+  /** One question. `answer` is server-only; `choices` are safe to send. */
+  caseSteps: defineTable({
+    caseId: v.id("cases"),
+    order: v.number(),
+    prompt: v.string(),
+    kind: v.union(v.literal("text"), v.literal("choice")),
+    choices: v.array(v.string()),
+    answer: v.string(),
+    hint: v.optional(v.string()),
+    /** Consequence revealed once the step is answered. */
+    reveal: v.optional(v.string()),
+    points: v.number(),
+  }).index("by_case", ["caseId"]),
+
+  /**
+   * Per-student, per-step state. Completion and score are derived from these
+   * rows rather than stored, so the two can never disagree.
+   */
+  caseStepAttempts: defineTable({
+    userId: v.id("users"),
+    caseId: v.id("cases"),
+    stepId: v.id("caseSteps"),
+    attempts: v.number(),
+    solvedAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_case", ["userId", "caseId"])
+    .index("by_user_step", ["userId", "stepId"])
+    .index("by_case", ["caseId"]),
+
   messages: defineTable({
     kind: v.union(v.literal("contact"), v.literal("devis")),
     name: v.string(),
