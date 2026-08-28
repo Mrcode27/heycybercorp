@@ -1,235 +1,277 @@
-# heycybercorp — Environnement de simulation (« webOS »)
+# heycybercorp — le webOS et les cas pratiques
 
-> Document de conception. Décrit **ce qu'on construit**, **pour qui**, **où
-> exactement dans le dépôt**, et **sous quelles contraintes de sécurité**.
-> Rien de ce qui suit n'est codé, sauf ce qui porte la mention **[existe]**.
+> **Ce document décrit ce qui existe.** Le moteur est construit, déployé et
+> alimenté par trois cas. Ce qui reste à faire est isolé au §11.
+>
+> Dernière mise à jour : août 2026.
 
 ---
 
-## 1. Ce que c'est — et ce que ce n'est pas
+## 1. Ce que c'est
 
-**Ce n'est pas un système d'exploitation.** Ni émulation de Linux, ni machine
-virtuelle, ni conteneurs loués à l'heure.
+Le **webOS** est un poste de travail Linux simulé qui démarre, ouvre une
+session et remet un bureau à l'étudiant. Le **cas** est le dossier qu'il y
+traite : une situation, des pièces, des questions.
 
-**C'est une simulation scénarisée.** L'étudiant n'apprend pas `chmod` : il est
-l'analyste de permanence quand quelque chose tourne mal, et il traite le dossier.
+Rien n'est émulé. Ni noyau, ni machine virtuelle, ni image WebAssembly à
+télécharger. C'est du React, du CSS et un shell maison — donc **zéro coût
+serveur par étudiant**, et rien qui puisse « casser » puisqu'il n'y a rien à
+imiter fidèlement.
 
-| | Émulateur d'OS | Simulation scénarisée |
+Ce que cela achète est le cadrage : un analyste ne rencontre pas un incident
+sous la forme d'un champ de saisie sur une page web. Il le rencontre sur une
+machine.
+
+| | Émulateur d'OS (v86, WebVM) | Ce que nous faisons |
 |---|---|---|
 | Ce qu'on écrit | des commandes | des situations |
-| Ce qui casse l'illusion | `command not found` | rien : il n'y a rien à émuler |
-| Coût serveur par étudiant | élevé (VM) ou lourd (WASM) | **nul** |
+| Ce qui casse l'illusion | `command not found` | rien à émuler |
+| Poids au premier chargement | 20 à 100 Mo | quelques Ko |
+| Coût serveur par étudiant | élevé | **nul** |
 | Ce qu'on enseigne | une syntaxe | **le jugement** |
-
-Le terminal reste utile, mais comme **un artefact parmi d'autres**, ouvert quand
-le cas l'exige — pas comme le contenant de tout le reste.
 
 ---
 
-## 2. Public : l'espace francophone, sans localisme
+## 2. L'expérience, écran par écran
 
-Le contenu s'adresse à **toute la francophonie** — France, Belgique, Suisse,
-Québec, Cameroun, Sénégal, Côte d'Ivoire, RDC, Maroc, Tunisie. Un étudiant à
-Douala et un étudiant à Lyon doivent se reconnaître dans le même cas, sans que
-l'un ait l'impression de lire le courrier de l'autre.
+```
+Carte de lancement  →  Démarrage  →  Écran de session  →  Bureau
+   (dans le cas)       (log noyau)      (façon GDM)      (plein écran)
+```
 
-### La règle : entités fictives, mécanismes réels
+**Carte de lancement.** Le nom de la machine, l'utilisateur, le nombre de
+fichiers, un bouton « Lancer l'environnement ».
 
-Aucun cas ne cite une marque, une administration ou une banque réelle. On
-invente des entités plausibles et neutres :
+**Démarrage.** Un vrai log systemd : version du noyau, mémoire, initrd, puis
+des lignes `[  OK  ]` pour journald, NetworkManager, sshd, le collecteur SIEM,
+la sonde IDS. Ces lignes sont reconnaissables par un praticien — c'est
+exactement l'effet recherché. Un lien discret permet de passer.
 
-| Rôle dans le récit | Entité fictive |
+**Écran de session.** Horloge, date, avatar, `analyste@srv-app`. Entrée ou clic.
+
+**Bureau.** Interface GNOME, pas Windows :
+
+| Élément | Comportement |
 |---|---|
-| Transporteur | **RapidColis** |
-| Banque | **Banque Méridienne** |
-| Opérateur télécom / paiement mobile | **Talia Mobile** |
-| Assurance santé | **AssurLibre** |
-| Employeur du scénario | **Groupe Sévigné** |
-| Réseau social | **Voltis** |
+| Barre supérieure | Activités · horloge centrée · réseau, son, batterie, extinction |
+| Dash (gauche) | Lanceurs avec témoin d'application ouverte |
+| Icônes du bureau | Les fichiers du cas, double-clic pour ouvrir |
+| Fenêtres | Barre de titre GNOME (titre centré, boutons à droite), déplaçables, réduire / agrandir / fermer |
+| Vue Activités | Toutes les fenêtres ouvertes, clic pour revenir |
+| Bac inférieur | Fenêtres réduites |
 
-Trois raisons, toutes solides :
+**Applications :** Terminal, Fichiers, Lecteur de texte, Moniteur système.
+Toutes partagent **un seul système de fichiers en mémoire** — un fichier écrit
+dans le terminal apparaît dans le gestionnaire de fichiers.
 
-1. **Neutralité géographique.** « Votre colis RapidColis est en attente » se lit
-   pareil à Dakar et à Bruxelles. Citer une administration nationale exclut
-   immédiatement les trois quarts du public.
-2. **Responsabilité.** Un cas de phishing rédigé autour d'une vraie marque
-   constitue, littéralement, un modèle de phishing prêt à l'emploi contre elle.
-   On enseigne le mécanisme, on ne livre pas l'outil.
+**Le dossier vit dans la machine**, sous la forme de `question.txt`, ouvert à
+la connexion et accessible depuis le bureau, Fichiers ou `cat question.txt`.
+L'énoncé ne disparaît jamais de l'écran.
+
+---
+
+## 3. Public : la francophonie, sans localisme
+
+Le contenu s'adresse à **tout l'espace francophone** — France, Belgique,
+Suisse, Québec, Cameroun, Sénégal, Côte d'Ivoire, RDC, Maroc, Tunisie. Un
+étudiant à Douala et un étudiant à Lyon doivent se reconnaître dans le même cas.
+
+### Entités fictives, mécanismes réels
+
+Aucun cas ne cite une marque, une administration ou une banque réelle :
+
+| Rôle | Entité fictive |
+|---|---|
+| Transporteur | RapidColis |
+| Banque | Banque Méridienne |
+| Opérateur / paiement mobile | Talia Mobile |
+| Assurance santé | AssurLibre |
+| Employeur | Groupe Sévigné |
+| Réseau social | Voltis |
+
+Trois raisons :
+
+1. **Neutralité géographique.** Citer une administration nationale exclut
+   d'emblée les trois quarts du public.
+2. **Responsabilité.** Un phishing rédigé autour d'une vraie marque *est* un
+   modèle prêt à l'emploi contre elle. On enseigne le mécanisme, on ne livre
+   pas l'outil.
 3. **Durabilité.** Une interface réelle change ; le mécanisme, non.
 
-Ce que l'étudiant doit reconnaître, ce n'est pas un logo : c'est **l'urgence
-fabriquée, l'autorité usurpée, le canal détourné**.
-
-### Le cadre réglementaire, enseigné en comparatif
-
-Plutôt que d'enseigner une seule loi, on enseigne **l'obligation de notification
-et ses délais**, en montrant qu'ils diffèrent selon le pays :
+### Le droit, enseigné en comparatif
 
 | Espace | Texte | Délai de notification |
 |---|---|---|
-| Union européenne | RGPD | 72 h à l'autorité de contrôle |
-| Suisse | nLPD | « dans les meilleurs délais » |
+| Union européenne | RGPD | 72 h |
+| Suisse | nLPD | « meilleurs délais » |
 | Québec | Loi 25 | « avec diligence » |
 | Union africaine | Convention de Malabo | transposition nationale |
-| Afrique francophone | lois nationales (autorités de protection des données) | variable |
 
-C'est plus utile qu'un cours mono-pays, et c'est un vrai différenciateur : les
-plateformes anglophones n'enseignent aucun de ces régimes.
+Plus utile qu'un cours mono-pays, et invisible chez les plateformes anglophones.
 
 ---
 
-## 3. Décision : poste fixe uniquement
+## 4. Poste fixe uniquement
 
-Les laboratoires sont **réservés au desktop**. Sur petit écran on n'affiche pas
-une version dégradée, mais une invitation à revenir sur ordinateur.
+Jouer un cas exige un ordinateur. Sur petit écran on affiche une invitation à
+revenir, pas une version dégradée.
 
-### Pourquoi
+C'est le choix de **toutes** les plateformes comparables — TryHackMe
+(AttackBox), Hack The Box (Pwnbox), CompTIA (CertMaster Labs), Coursera.
+Aucune ne propose ses environnements pratiques sur téléphone.
 
-C'est le choix de toutes les plateformes comparables — TryHackMe (AttackBox),
-Hack The Box (Pwnbox), CompTIA (CertMaster Labs), Coursera. Aucune ne propose
-ses environnements pratiques sur téléphone : un bureau distant dans un écran de
-six pouces, sans Ctrl et sans Tab, n'est pas utilisable.
+Trois garde-fous, tous en place :
 
-### Trois conditions attachées à cette décision
-
-1. **Seuls les labs sont concernés.** Vitrine, catalogue, tarifs, paiement et
+1. **Seuls les cas sont concernés.** Vitrine, catalogue, tarifs, paiement et
    lecture des cours restent pleinement mobiles.
-2. **Le catalogue des cas reste consultable sur mobile.** On doit pouvoir voir
-   ce qu'on achète avant de pouvoir le jouer.
-3. **Le refus est utile, jamais un mur.**
+2. **Le catalogue reste consultable** sur téléphone : on voit ce qu'on achète.
+3. **Le refus est utile** : voir le catalogue, revenir aux formations, ou
+   « Continuer quand même » — une tablette en paysage avec clavier s'en sort.
 
-### Détection
-
-Pas de `User-Agent` : peu fiable et trivial à contourner. Deux signaux combinés :
-
-- largeur de fenêtre `< 1024 px`
-- pointeur grossier (`pointer: coarse`) sans clavier physique
-
-### Écran affiché
-
-> **Ce laboratoire demande un ordinateur.**
-> Les cas pratiques ouvrent un terminal et plusieurs fenêtres d'analyse :
-> il faut un clavier physique et un écran large.
->
-> `L'Élite du Terminal ne se forme pas au pouce.`
->
-> — [Voir le catalogue des cas] · [M'envoyer le lien par email] · [Continuer quand même]
-
-Le « continuer quand même » est délibéré : une tablette en paysage avec clavier
-s'en sort très bien, et un mur absolu ferait fuir un étudiant curieux.
+Détection : largeur < 1024 px **et** pointeur grossier. Jamais le `User-Agent`,
+qui ment et se contrefait.
+→ `src/components/DesktopOnlyGate.tsx`
 
 ---
 
-## 4. Anatomie d'un cas
+## 5. Anatomie d'un cas
 
 ```
 CAS
-├── Mise en situation   « 03h14. Un salarié signale un email. 3 min avant escalade. »
-├── Artefacts           les pièces du dossier (§5)
-├── Étapes 3 à 6        chacune : une question, une vérification, un indice optionnel
-└── Verdict             UNE décision finale, pas un score de QCM
+├── Mise en situation   « 03h14. Le SIEM vous réveille. »
+├── Pièces              1 à n artefacts (§6)
+├── Étapes 3 à 6        question · vérification serveur · indice · conséquence
+└── Verdict             UNE décision finale
 ```
+
+Règles de conception :
 
 - **Une seule décision finale.** Le reste instruit le dossier.
 - **Les mauvaises réponses doivent être plausibles.** Un phishing évident
   n'enseigne rien.
-- **Montrer la conséquence** : « vous avez cliqué : 4 200 comptes exposés. »
+- **La conséquence est révélée après coup** — c'est là qu'est la leçon, pas
+  dans la bonne réponse.
 - **3 à 6 étapes.** Au-delà, c'est un devoir maison.
 - **Pression temporelle dans le récit, jamais de minuteur réel.**
 - **Crédit partiel** : chaque étape validée compte.
 
 ---
 
-## 5. Les artefacts — ce que « webOS » veut dire
+## 6. Les huit types de pièces
 
-L'écran est un poste de travail d'analyste : plusieurs panneaux, chacun portant
-une pièce du dossier.
+| Type | Rendu |
+|---|---|
+| `webos` | Le poste complet : démarrage, session, bureau |
+| `terminal` | Un shell seul, sans bureau |
+| `email` | Client mail, en-têtes techniques dépliables |
+| `log` | Visionneuse filtrable, ligne à ligne |
+| `file` | Arborescence + aperçu |
+| `table` | Tableau triable |
+| `http` | Requête / réponse brutes |
+| `image` | Capture (même origine ou `data:` — la CSP bloque les hôtes tiers) |
 
-| Artefact | Rendu | Usage |
-|---|---|---|
-| `email` | client mail, en-têtes dépliables | phishing, fraude au président |
-| `log` | visionneuse ligne à ligne + recherche | `auth.log`, accès web |
-| `terminal` | shell restreint | fouiller un système |
-| `file` | arborescence + aperçu | dépôt git, disque |
-| `table` | tableau triable | flux réseau, journaux de badge |
-| `http` | requête / réponse brutes | en-têtes, certificats |
-| `image` | capture | page de phishing, alerte |
+### Le shell
 
-### Le terminal
+19 commandes de base (`ls`, `cat`, `grep`, `wc`, `head`, `tail`, `tree`,
+`ping`, `nmap`, `netstat`, `ifconfig`, `traceroute`, `hashid`, `sudo`…),
+plus 8 verbes propres à la page d'accueil.
 
-Shell **scopé au cas** : chaque cas déclare son système de fichiers et la liste
-des commandes autorisées.
+Chaque cas déclare **son** système de fichiers et **sa** liste blanche de
+commandes. `help` liste exactement ce qui existe : contrat explicite, rien de
+caché. Une commande hors périmètre répond « non disponible dans ce
+laboratoire » — jamais `command not found`, qui ferait croire à un défaut.
 
-- **`help` liste tout ce qui existe** — contrat explicite, rien de caché.
-- Une commande hors périmètre répond « non disponible dans ce laboratoire »,
-  jamais `command not found`, qui ferait croire à un défaut.
-- Le moteur existe **[existe]** (`src/components/HeroTerminal.tsx`, 33 commandes,
-  Tab, historique). Il faut l'extraire et le rendre paramétrable.
-
-Le terminal apparaît dans **environ un tiers** des cas, jamais dans le tier
-gratuit : on n'accueille pas un débutant par une invite de commande.
+→ `src/lib/shell/index.ts` · `src/components/shell/Terminal.tsx`
 
 ---
 
-## 6. Les quatre tiers
+## 7. La correction des réponses
+
+**On ne note pas l'orthographe.** Un étudiant qui a compris le cas ne doit pas
+échouer sur un synonyme ou une virgule. Chaque étape choisit son mode :
+
+| Mode | Comportement | À utiliser pour |
+|---|---|---|
+| `exact` | Égalité normalisée, **tolère une faute par ~8 caractères** | une valeur précise |
+| `contains` | La valeur attendue apparaît dans la réponse | IP, adresse, identifiant |
+| `keywords` | Chaque mot ou racine listé est présent, dans n'importe quel ordre | une phrase, une idée |
+
+La normalisation supprime accents, ponctuation et espaces multiples. Ainsi,
+sur une étape `keywords` demandant `partag` + `personne` :
+
+- « ne le partagez avec personne » ✅
+- « il ne faut pas partager le code avec personne » ✅
+- « Ne le partagez, avec personne ! » ✅
+- « envoyer le code » ❌
+
+La rigueur reste là où elle a un sens : une IP ou un horodatage ne gagne rien à
+être presque juste. `contains` ne vérifie qu'un sens — accepter aussi
+« l'attendu contient la réponse » laisserait passer `45.146.83.1` pour
+`45.146.83.12`.
+
+Chaque étape accepte en plus une liste de **formulations alternatives**, saisie
+depuis l'admin.
+
+→ `matches()` dans `convex/cases.ts`
+
+---
+
+## 8. Les quatre tiers
 
 **Le tier se mesure à la profondeur, pas au nombre.** « Vous en avez 3 au lieu
 d'1 » donne le sentiment d'être rationné ; « vous avez les investigations
 complètes » se vend seul.
 
 Cible : **Gratuit 2 · Débutant 6 · Intermédiaire 7 · Avancé 7**.
+Trois sont écrits (marqués ✅).
 
 ### Gratuit — la vitrine
-
 Aucun terminal, moins de trois minutes, doit produire un déclic.
 
-| Cas | Compétence |
-|---|---|
-| **« Votre colis est en attente »** | SMS RapidColis : vrai expéditeur, vraie destination du lien |
-| **« Le code à 6 chiffres »** | un « ami » demande de transférer un code reçu — détournement de compte |
-
-On n'achète pas après un exposé sur la triade CIA. On achète après avoir compris
-qu'on serait tombé dans le piège.
+| Cas | Compétence | |
+|---|---|---|
+| **Le code à 6 chiffres** | Détournement de compte par code transféré | ✅ |
+| « Votre colis est en attente » | SMS : vrai expéditeur, vraie destination du lien | |
 
 ### Tier 1 · Débutant — reconnaître
 
-| Cas | Compétence | Terminal |
-|---|---|---|
-| **Le domaine qui n'est pas le bon** | typosquat, homoglyphes, sous-domaine trompeur | non |
-| **Le mot de passe réutilisé** | rayon d'impact d'une fuite | non |
-| **La fraude au président** | pression hiérarchique, vérification hors canal | non |
-| **L'arnaque au virement instantané** | irréversibilité du paiement — mobile ou bancaire | non |
-| **Le Wi-Fi ouvert** | faux point d'accès jumeau | non |
-| **Première session terminal** | prise en main : `ls`, `cat`, trouver l'intrus | **oui** |
+| Cas | Compétence | Terminal | |
+|---|---|---|---|
+| **La fraude au président** | Pression hiérarchique, vérification hors canal | non | ✅ |
+| Le domaine qui n'est pas le bon | Typosquat, homoglyphes | non | |
+| Le mot de passe réutilisé | Rayon d'impact d'une fuite | non | |
+| L'arnaque au virement instantané | Irréversibilité — mobile ou bancaire | non | |
+| Le Wi-Fi ouvert | Faux point d'accès jumeau | non | |
+| Première session terminal | Prise en main | **oui** | |
 
-*L'arnaque au virement instantané* est le cas-pont : paiement mobile en Afrique,
-virement instantané en Europe, **même mécanisme, même irréversibilité**.
+*L'arnaque au virement instantané* est le cas-pont : paiement mobile en
+Afrique, virement instantané en Europe, **même mécanisme**.
 
 ### Tier 2 · Intermédiaire — analyser
 
-| Cas | Compétence | Terminal |
-|---|---|---|
-| **03h14 : connexion réussie** | force brute dans `auth.log` : IP, bascule, réaction | **oui** |
-| **Le serveur qui parle trop** | en-têtes + scan → exposition, priorisation | **oui** |
-| **Le processus fantôme** | `ps` / `netstat` : balise et port de commande | **oui** |
-| **OSINT : le prestataire** | empreinte publique, métadonnées de documents | non |
-| **Le certificat qui ne colle pas** | lire une chaîne TLS | non |
-| **Le `.env` dans le dépôt** | secret commité — pourquoi le supprimer ne suffit pas | **oui** |
-| **Trois alertes, dix minutes** | triage : classer et justifier | non |
-
-Le dernier est le plus proche du métier réel.
+| Cas | Compétence | Terminal | |
+|---|---|---|---|
+| **03h14 : connexion réussie** | Force brute SSH, confinement | **webOS** | ✅ |
+| Le serveur qui parle trop | En-têtes + scan, priorisation | oui | |
+| Le processus fantôme | Balise et port de commande | oui | |
+| OSINT : le prestataire | Empreinte publique, métadonnées | non | |
+| Le certificat qui ne colle pas | Lire une chaîne TLS | non | |
+| Le `.env` dans le dépôt | Secret commité, et pourquoi le supprimer ne suffit pas | oui | |
+| Trois alertes, dix minutes | Triage : classer et justifier | non | |
 
 ### Tier 3 · Avancé — investigations complètes
 
 | Cas | Compétence |
 |---|---|
-| **Compromission d'un compte Voltis** | chaîne complète : page de phishing → cookie de session → reset 2FA → email de récupération remplacé |
-| **Handshake capturé** | WPA2 : identifier le handshake, expliquer la faiblesse d'une PSK |
-| **Chronologie d'une intrusion** | reconstituer 8 événements, vecteur initial, temps de présence |
-| **Le ransomware du vendredi soir** | payer / restaurer / négocier — **et notifier qui, dans quel délai, selon le pays** |
-| **Exfiltration lente** | tunnel DNS : anomalie de volume et d'entropie |
-| **L'insider** | badges + accès fichiers + RH : malveillance ou coïncidence ? |
-| **Le rapport à la direction** | synthèse pour un comité non technique |
+| Compromission d'un compte Voltis | Phishing → cookie de session → reset 2FA → email de récupération |
+| Handshake capturé | WPA2, faiblesse d'une PSK |
+| Chronologie d'une intrusion | Vecteur initial, temps de présence |
+| Le ransomware du vendredi soir | Payer / restaurer / négocier — **et notifier qui, sous quel délai** |
+| Exfiltration lente | Tunnel DNS, entropie |
+| L'insider | Malveillance ou coïncidence ? |
+| Le rapport à la direction | Synthèse pour un comité non technique |
+
+Deux méritent une note :
 
 - **L'insider** doit pouvoir se gagner en concluant *« les preuves ne suffisent
   pas à accuser »*. Enseigner la retenue est rare, et c'est ce qui sépare un
@@ -239,210 +281,149 @@ Le dernier est le plus proche du métier réel.
 
 ---
 
-## 7. Où le système se construit — placement exact
-
-Le dépôt suit déjà une séparation nette : **Convex pour les données et les
-règles, `src/` pour l'interface**. Le nouveau système s'y insère sans rien
-déplacer.
+## 9. Où vit le code
 
 ### Backend — Convex
 
-| Fichier | Rôle |
-|---|---|
-| `convex/schema.ts` | **modifier** : ajouter `cases`, `caseArtifacts`, `caseSteps`, `caseProgress` |
-| `convex/cases.ts` | **créer** : `listForStudent`, `getCase`, `submitStep`, + CRUD admin |
-| `convex/entitlements.ts` | **réutiliser** : `ownedLevels()` pour le verrouillage par pack **[existe]** |
-| `convex/users.ts` | **réutiliser** : `getCurrentUser()`, `requireAdmin()` **[existe]** |
-| `convex/lib/audit.ts` | **réutiliser** : `logAudit()` sur chaque écriture admin **[existe]** |
-| `convex/labs.ts` | **[existe]** — reste en place ; les labs à flag unique cohabitent avec les cas |
+| Fichier | Rôle | Lignes |
+|---|---|---|
+| `convex/cases.ts` | Catalogue, lecture d'un cas, correction, CRUD admin | 485 |
+| `convex/schema.ts` | `cases`, `caseArtifacts`, `caseSteps`, `caseStepAttempts` | — |
+| `convex/labs.ts` | Challenges à flag unique (cohabitent avec les cas) | 251 |
+| `convex/entitlements.ts` | `ownedLevels()` — le verrouillage par pack |
+| `convex/users.ts` | `getCurrentUser()`, `requireAdmin()` |
+| `convex/lib/audit.ts` | `logAudit()` sur chaque écriture admin |
 
 ### Frontend — étudiant
 
-| Fichier | Rôle |
-|---|---|
-| `src/app/dashboard/labs/page.tsx` | **modifier** : catalogue (reste mobile) **[existe]** |
-| `src/app/dashboard/labs/[slug]/page.tsx` | **créer** : la page d'un cas |
-| `src/components/console/CaseRunner.tsx` | **créer** : orchestration étapes + artefacts |
-| `src/components/console/artifacts/` | **créer** : `EmailArtifact`, `LogArtifact`, `TerminalArtifact`, `FileArtifact`, `TableArtifact`, `HttpArtifact`, `ImageArtifact` |
-| `src/components/DesktopOnlyGate.tsx` | **créer** : la barrière du §3 |
-| `src/lib/shell/` | **créer** : moteur de terminal extrait de `HeroTerminal.tsx`, paramétrable par cas |
-| `src/components/HeroTerminal.tsx` | **modifier** : devient un consommateur de `src/lib/shell/` **[existe]** |
+| Fichier | Rôle | Lignes |
+|---|---|---|
+| `src/components/console/WebOS.tsx` | Démarrage, session, bureau, fenêtres, applications | 668 |
+| `src/components/console/CaseRunner.tsx` | Enchaînement pièces → étapes | 307 |
+| `src/components/console/CaseArtifact.tsx` | Les huit visionneuses | 350 |
+| `src/components/console/CasesCatalogue.tsx` | Le catalogue (reste mobile) | 207 |
+| `src/components/DesktopOnlyGate.tsx` | La barrière du §4 | 88 |
+| `src/lib/shell/index.ts` | Le shell : registre, exécution, complétion | 425 |
+| `src/components/shell/Terminal.tsx` | Rendu du terminal | 150 |
+| `src/app/dashboard/labs/page.tsx` | Catalogue | — |
+| `src/app/dashboard/labs/[slug]/page.tsx` | Un cas | 21 |
 
 ### Frontend — admin
 
-| Fichier | Rôle |
-|---|---|
-| `src/app/admin/labs/page.tsx` | **modifier** : onglets « Labs » / « Cas » **[existe]** |
-| `src/components/console/AdminCases.tsx` | **créer** : rédaction (métadonnées, artefacts, étapes, prévisualisation) |
-| `src/components/consoleNav.ts` | **[existe]** — l'entrée « Labs » couvre déjà les deux |
+| Fichier | Rôle | Lignes |
+|---|---|---|
+| `src/components/console/AdminCases.tsx` | Rédaction : métadonnées, pièces, étapes, prévisualisation | 675 |
+| `src/app/admin/labs/page.tsx` | Cas + challenges | 35 |
 
-### Transverse
-
-| Fichier | Rôle |
-|---|---|
-| `src/app/globals.css` | **modifier** : styles des artefacts, jetons `--color-terminal` **[existe]** |
-| `next.config.ts` | **vérifier** : la CSP couvre les artefacts (§8) **[existe]** |
-| `src/proxy.ts` | **[existe]** — `/dashboard(.*)` est déjà protégé, rien à changer |
+`src/proxy.ts` protège déjà `/dashboard(.*)` : rien à y changer.
 
 ---
 
-## 8. Sécurité — contraintes non négociables
+## 10. Sécurité — ce qui est en place
 
-Une plateforme qui enseigne la sécurité et qui échoue à un audit n'a plus
-d'argument commercial. Chaque point ci-dessous est une **condition de recette**.
+### 10.1 Les réponses ne quittent jamais le serveur
+Les charges utiles destinées à l'étudiant sont **construites champ par champ**,
+jamais par étalement du document : ajouter une colonne au schéma ne peut donc
+pas provoquer de fuite. Un cas verrouillé renvoie `setting: null`, sans pièces
+ni étapes — le corps n'est pas envoyé puis masqué.
+**Vérifié sur la fonction déployée :** zéro occurrence de `answer`, `accept` ou
+`match` dans la réponse.
 
-### 8.1 Les réponses ne quittent jamais le serveur
+### 10.2 Le contrôle d'accès est serveur, aux trois points d'entrée
+`ownedLevels()` est revérifié dans le catalogue, dans la lecture par slug
+(**prévention d'IDOR**) et à **chaque** soumission. Masquer un bouton n'est pas
+un contrôle d'accès.
 
-Comme pour les labs actuels **[existe]** : la requête destinée à l'étudiant
-**construit sa réponse champ par champ**, elle n'étale jamais le document. Un
-champ ajouté au schéma ne peut donc pas fuiter par inadvertance.
+### 10.3 Force brute
+Plafond de 3 tentatives sur un QCM, 40 sur une réponse libre. La réponse ne dit
+jamais « proche », ni quelle option était fausse. Le score est **calculé côté
+serveur**.
 
-- Un cas verrouillé renvoie `brief: null`, **pas** une chaîne masquée côté client.
-- Une étape non résolue ne renvoie ni `answer`, ni la bonne option d'un QCM.
-- **Recette :** appeler la fonction déployée et vérifier zéro occurrence de la
-  réponse dans la charge utile. C'est déjà la procédure appliquée aux labs.
+*Soyons honnêtes sur ce que cela vaut* : sur quatre options, aucun plafond
+n'empêche de deviner. Ce qui porte la valeur est la **conséquence révélée**,
+qu'un devineur saute sans rien apprendre.
 
-### 8.2 Le contrôle d'accès est serveur, jamais UI
+### 10.4 Le shell n'exécute rien
+Registre fixe de commandes. Aucun `eval`, aucun `new Function`, **aucun accès
+réseau**. Un laboratoire capable d'atteindre Internet deviendrait une
+infrastructure d'attaque portant notre nom de domaine.
 
-Masquer un bouton n'est pas un contrôle d'accès. `ownedLevels()` est revérifié :
+### 10.5 Les pièces sont du texte, jamais du HTML
+Aucun `dangerouslySetInnerHTML` : un compte admin compromis ne peut pas devenir
+une exécution de script chez chaque étudiant. Les images doivent être de même
+origine ou `data:`, et le disent quand elles ne le sont pas.
 
-- dans `listForStudent` (ce qu'on voit)
-- dans `getCase` (accès direct par slug — **prévention d'IDOR**)
-- dans `submitStep` (à chaque soumission)
+### 10.6 Aucune donnée personnelle réelle
+Personnes, entreprises, adresses, documents « fuités » : tout est fabriqué. Le
+cas OSINT est le piège évident — l'écrire sur une vraie personne serait un
+traitement sans base légale.
 
-Un étudiant qui devine l'URL d'un cas Avancé doit être refusé par le serveur.
+### 10.7 Aucun code malveillant réel
+Pas d'échantillon, même inerte. Pas d'exploit fonctionnel. Une charge
+illustrative est un objet d'analyse, pas une arme.
 
-### 8.3 Anti-force brute sur les étapes
+### 10.8 Traçabilité
+`logAudit()` sur création, modification et suppression. Supprimer un cas
+supprime ses résolutions — le dialogue l'annonce avant.
 
-Un QCM à quatre choix se casse en quatre essais. Donc :
-
-- **plafond de tentatives par étape** (référence : 100 sur les labs **[existe]**,
-  à resserrer à ~10 pour un QCM) ;
-- la réponse ne dit **jamais** « proche » ni quelle option était fausse ;
-- le score est **calculé côté serveur**, jamais accepté depuis le client.
-
-### 8.4 Le shell simulé n'exécute rien
-
-Le terminal est un **registre fixe de commandes**. Interdits absolus dans
-`src/lib/shell/` :
-
-- `eval()`, `new Function()`, `setTimeout("chaîne")` — aucune évaluation
-  dynamique de saisie utilisateur ;
-- tout accès réseau : le shell ne fait **aucun** `fetch`. Un lab qui atteint
-  Internet devient une infrastructure d'attaque relayée par notre domaine ;
-- toute écriture hors du système de fichiers virtuel en mémoire.
-
-### 8.5 Le contenu des artefacts est du texte, jamais du HTML
-
-Les cas sont rédigés par un admin, mais **un compte admin compromis ne doit pas
-devenir une exécution de script** chez chaque étudiant.
-
-- Rendu en texte (`whitespace-pre-wrap`), **jamais** `dangerouslySetInnerHTML`.
-- Les artefacts `image` sont hébergés par nous ou en `data:` — la CSP en
-  production **[existe]** bloque déjà les hôtes tiers, et c'est voulu.
-- Aucun artefact ne peut introduire d'origine externe sans modification
-  explicite de `next.config.ts`.
-
-### 8.6 Aucune donnée personnelle réelle dans les cas
-
-Le cas **OSINT : le prestataire** est le piège évident : construire un exercice
-sur une vraie personne serait un traitement de données personnelles sans base
-légale, en plus d'être déloyal.
-
-- Personnes, entreprises, adresses, numéros : **fictifs**.
-- Les documents « fuités » d'un cas sont fabriqués pour l'occasion.
-
-### 8.7 Aucun code malveillant réel
-
-Les cas décrivent des mécanismes ; ils ne livrent pas d'outil.
-
-- Pas d'échantillon de malware, même inerte : faux positifs antivirus,
-  responsabilité d'hébergement, et aucun gain pédagogique.
-- Pas d'exploit fonctionnel. Une charge illustrative (`1' OR '1'='1`) est un
-  objet d'analyse, pas une arme.
-
-### 8.8 Traçabilité
-
-`logAudit()` **[existe]** sur toute écriture admin : création, modification,
-publication, suppression d'un cas. Supprimer un cas supprime ses résolutions —
-le dialogue de confirmation doit l'annoncer, comme pour les labs **[existe]**.
-
-### 8.9 Ce qui existe déjà et qu'il ne faut pas casser
-
-| Contrôle | État |
-|---|---|
-| CSP **appliquée** en production | **[existe]** |
-| HSTS, `X-Frame-Options: DENY`, `nosniff`, `Referrer-Policy` | **[existe]** |
-| Authentification déléguée (Clerk), `/dashboard(.*)` protégé | **[existe]** |
-| Limitation de débit sur les formulaires publics | **[existe]** |
-| Journal d'audit | **[existe]** |
-
-**Recette avant mise en ligne :** exécuter la revue de sécurité sur le diff, et
-vérifier qu'aucune origine n'a été ajoutée à la CSP sans justification.
+### 10.9 Ce qui existait déjà et n'a pas été cassé
+CSP **appliquée** en production, HSTS, `X-Frame-Options: DENY`, `nosniff`,
+`Referrer-Policy`, authentification Clerk, limitation de débit, journal d'audit.
 
 ---
 
-## 9. Modèle de données (esquisse)
-
-```
-cases          titre, slug, niveau, catégorie, isFree, publié, ordre,
-               miseEnSituation, dureeEstimee, points
-
-caseArtifacts  caseId, type (email|log|terminal|file|table|http|image),
-               libellé, contenu
-
-caseSteps      caseId, ordre, question, type (texte|choix|multiple),
-               choix[], réponse, indice, points
-
-caseProgress   userId, caseId, étapeCourante, réponses[], terminéLe, score
-```
-
-Pour un artefact `terminal`, `contenu` porte le système de fichiers du cas et la
-liste blanche de commandes.
-
----
-
-## 10. État actuel
+## 11. Ce qui reste
 
 | Élément | État |
 |---|---|
-| Labs : verrouillage par pack, points, résolution | **[existe]** |
-| Vérification serveur, réponse jamais exposée | **[existe]** |
-| Admin : créer / éditer / publier / supprimer | **[existe]** |
-| Moteur de terminal (33 commandes, Tab, historique) | **[existe]** — à extraire |
-| 6 labs à flag unique, dont 2 gratuits | **[existe]** |
-| Étapes multiples · artefacts · barrière desktop | à faire |
-| Rédaction des cas dans l'admin | à faire |
-| Les 22 cas | à écrire |
+| Moteur de cas, correction, verrouillage par pack | ✅ |
+| webOS : démarrage, session, bureau, fenêtres | ✅ |
+| 8 types de pièces | ✅ |
+| Correction tolérante (3 modes) | ✅ |
+| Barrière desktop | ✅ |
+| Rédaction dans l'admin | ✅ |
+| 3 cas écrits | ✅ |
+| **19 cas restants** | à écrire |
+| Répondre depuis le bureau, sans le quitter | à décider |
+| Sauvegarde de l'état du bureau entre deux visites | non prévu |
+
+### Répondre sans quitter le bureau
+Aujourd'hui le bureau occupe l'écran, et le panneau « Investigation » est
+derrière : on ferme la session pour répondre. Une application « Dossier »
+intégrée au bureau permettrait de répondre sans en sortir. Le gestionnaire de
+fenêtres existe, donc le coût est faible — mais c'est un choix ergonomique, pas
+une nécessité.
 
 ---
 
-## 11. Ordre de construction
+## 12. Écrire un cas
 
-**Phase 1 — le moteur et trois cas.** Étapes multiples, artefacts `email` /
-`log` / `terminal`, barrière desktop. Trois cas seulement, choisis pour exercer
-chaque mécanisme : « Le code à 6 chiffres » (gratuit), « La fraude au président »
-(Débutant), « 03h14 : connexion réussie » (Intermédiaire, terminal).
-But : valider le format avant d'écrire vingt cas dans un format à jeter.
+Tout se fait depuis `/admin/labs`, jamais dans le code.
 
-**Phase 2 — la rédaction dans l'admin.** Sans elle, chaque nouveau cas passe par
-un développeur.
+1. **Métadonnées** — titre, catégorie, niveau, durée, gratuit, publié.
+2. **Résumé** — visible même verrouillé : donner envie sans rien dévoiler.
+3. **Mise en situation** — planter la scène en trois lignes.
+4. **Pièces** — ajouter un type ; un gabarit pré-rempli montre la forme
+   attendue. « Prévisualiser » les affiche telles que l'étudiant les verra.
+5. **Étapes** — question, mode de correction, réponse, formulations
+   alternatives, indice, conséquence, points.
+6. **Publier.**
 
-**Phase 3 — les artefacts restants.** `file`, `table`, `http`, `image`.
-
-**Phase 4 — le contenu.** Les 19 cas restants, par tier.
+⚠ Enregistrer un cas existant **remplace** ses pièces et ses étapes, et remet à
+zéro la progression des étudiants dessus. C'est délibéré : après reformulation
+d'une question, aucune règle honnête ne permet de décider qu'une ancienne
+réponse compte encore.
 
 ---
 
-## 12. Le vrai risque
+## 13. Le vrai risque
 
-Ce n'est pas la technique. C'est que **le développement remplace la production de
-contenu**.
+Ce n'est pas la technique — elle est faite.
 
-À ce jour : **15 formations publiées, 1 leçon**. Quatorze pages de cours vendent
-quelque chose qui n'existe pas. Un moteur de simulation parfait n'y remédie pas —
-il ajoute une seconde bibliothèque vide.
+**15 formations publiées, 1 leçon.** Quatorze pages de cours vendent quelque
+chose qui n'existe pas. Le moteur de simulation n'y remédie pas : il ajoute une
+seconde bibliothèque presque vide.
 
-La recommandation tient en une phrase : **construire la Phase 1, écrire trois
-cas, les mettre en ligne, et regarder si quelqu'un les joue** avant d'écrire les
-dix-neuf autres.
+La recommandation tient en une phrase : **mettre les trois cas devant de vrais
+étudiants, regarder s'ils les jouent jusqu'au bout**, et n'écrire les
+dix-neuf autres qu'ensuite.
