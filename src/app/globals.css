@@ -477,6 +477,80 @@ html[data-theme="light"] .terminal-container {
   animation: terminal-scan 7s linear infinite;
 }
 
+.terminal-command-form {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding-top: 0.15rem;
+}
+
+.terminal-submit {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 1.75rem;
+  flex: 0 0 auto;
+  margin-left: 0.5rem;
+  border: 1px solid rgba(77, 231, 144, 0.52);
+  border-radius: 0.3rem;
+  background: rgba(42, 165, 97, 0.14);
+  color: #7dffb3;
+  font: 700 1rem/1 var(--font-jetbrains-mono), monospace;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.terminal-submit:not(:disabled):hover,
+.terminal-submit:not(:disabled):focus-visible {
+  border-color: #7dffb3;
+  background: rgba(42, 165, 97, 0.3);
+  transform: translateY(-1px);
+  outline: none;
+  box-shadow: 0 0 14px rgba(42, 165, 97, 0.22);
+}
+
+.terminal-submit:disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+}
+
+.terminal-demo-suggestion {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  width: fit-content;
+  min-height: 1.55rem;
+  margin: 0.15rem 0 0.55rem;
+  padding: 0.25rem 0.5rem;
+  border-left: 2px solid rgba(0, 196, 223, 0.6);
+  background: rgba(0, 151, 178, 0.08);
+  color: rgba(222, 255, 235, 0.58);
+  font: 500 0.65rem/1 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.08em;
+}
+
+.terminal-demo-suggestion span {
+  color: rgba(0, 211, 241, 0.8);
+  font-size: 0.55rem;
+  letter-spacing: 0.16em;
+}
+
+.terminal-demo-suggestion code {
+  min-width: 5.6rem;
+  color: #7dffb3;
+}
+
+.terminal-demo-suggestion i {
+  width: 0.38rem;
+  height: 0.85rem;
+  background: #7dffb3;
+  box-shadow: 0 0 8px rgba(77, 231, 144, 0.55);
+  animation: terminal-demo-caret 0.72s steps(1, end) infinite;
+}
+
+@keyframes terminal-demo-caret { 50% { opacity: 0; } }
+
 @keyframes terminal-scan {
   0% { transform: translateY(-120px); }
   100% { transform: translateY(440px); }
@@ -524,13 +598,1097 @@ html[data-theme="light"] .terminal-container {
   to { transform: translateX(260%); }
 }
 
+/* ============================================================
+   Homepage motion system
+   ------------------------------------------------------------
+   A restrained operations-centre layer: depth, signal movement and measured
+   entrances. The content remains visible when JavaScript is unavailable.
+   ============================================================ */
+.landing-hero {
+  --hero-pointer-x: 68%;
+  --hero-pointer-y: 38%;
+  --hero-tilt-x: 0deg;
+  --hero-tilt-y: 0deg;
+  --eye-offset-x: 0px;
+  --eye-offset-y: 0px;
+  --code-shift-x: 0px;
+  --code-shift-y: 0px;
+  --color-background: #f6faf6;
+  --color-surface: #ffffff;
+  --color-on-surface: #102018;
+  --color-on-surface-variant: #43534a;
+  --color-primary: #08723d;
+  --color-secondary: #087f97;
+  --color-on-secondary: #ffffff;
+  --color-outline-variant: #c6d8ca;
+  --color-brand-green: #08723d;
+  isolation: isolate;
+  cursor: crosshair;
+  background-color: #f6faf6;
+  background-image:
+    radial-gradient(
+      circle at var(--hero-pointer-x) var(--hero-pointer-y),
+      rgba(0, 151, 178, 0.16) 0,
+      rgba(42, 165, 97, 0.09) 13rem,
+      transparent 29rem
+    ),
+    linear-gradient(135deg, rgba(0, 145, 80, 0.055), transparent 46%),
+    linear-gradient(to right, rgba(0, 70, 48, 0.11) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 70, 48, 0.11) 1px, transparent 1px);
+  background-size: auto, auto, 40px 40px, 40px 40px;
+  transition: background-position 180ms ease-out;
+}
+
+.landing-hero a,
+.landing-hero button,
+.landing-hero input,
+.landing-hero select,
+.landing-hero textarea {
+  cursor: pointer;
+}
+
+.landing-hero input,
+.landing-hero textarea {
+  cursor: text;
+}
+
+/* The MagicRings canvas sits underneath the atmosphere layer, so the auroras,
+   the scan beam and the hero vignette all still read on top of it. It keeps its
+   own pointer events: that is what drives the rings' follow, hover and burst. */
+.landing-rings {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.landing-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(to bottom, transparent 70%, var(--color-background)),
+    radial-gradient(circle at 50% 45%, transparent 35%, color-mix(in srgb, var(--color-background) 82%, transparent) 100%);
+}
+
+.landing-atmosphere {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.landing-atmosphere::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  opacity: 0.34;
+  background-image: radial-gradient(rgba(0, 127, 151, 0.38) 0.7px, transparent 0.7px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(circle at var(--hero-pointer-x) var(--hero-pointer-y), black, transparent 18rem);
+  transition: opacity 220ms ease;
+}
+
+.landing-hero.landing-user-active .landing-atmosphere::after {
+  opacity: 0.72;
+}
+
+.landing-aurora {
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 999px;
+  filter: blur(90px);
+  opacity: 0.12;
+  will-change: transform;
+}
+
+.landing-aurora-primary {
+  top: 0;
+  right: 5%;
+  background: var(--color-primary);
+  animation: landing-aurora-drift 13s ease-in-out infinite alternate;
+}
+
+.landing-aurora-secondary {
+  bottom: -16rem;
+  left: 8%;
+  background: var(--color-secondary);
+  animation: landing-aurora-drift 16s ease-in-out -6s infinite alternate-reverse;
+}
+
+.landing-aurora,
+.landing-grid-plane,
+.landing-scan-beam,
+.landing-data-rail span,
+.landing-radar i,
+.landing-radar span:nth-child(3) {
+  animation-play-state: paused;
+}
+
+.landing-hero.landing-user-active .landing-aurora,
+.landing-hero.landing-user-active .landing-grid-plane,
+.landing-hero.landing-user-active .landing-scan-beam,
+.landing-hero.landing-user-active .landing-data-rail span,
+.landing-hero.landing-user-active .landing-radar i,
+.landing-hero.landing-user-active .landing-radar span:nth-child(3) {
+  animation-play-state: running;
+}
+
+@keyframes landing-aurora-drift {
+  from { transform: translate3d(-4%, -2%, 0) scale(0.94); }
+  to { transform: translate3d(8%, 7%, 0) scale(1.08); }
+}
+
+.landing-grid-plane {
+  position: absolute;
+  left: -15%;
+  right: -15%;
+  bottom: -32%;
+  height: 68%;
+  opacity: 0.17;
+  transform: perspective(460px) rotateX(62deg);
+  transform-origin: center top;
+  background-image:
+    linear-gradient(color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 40%, transparent) 1px, transparent 1px);
+  background-size: 64px 42px;
+  animation: landing-grid-travel 9s linear infinite;
+}
+
+@keyframes landing-grid-travel {
+  to { background-position: 0 42px, 0 0; }
+}
+
+.landing-scan-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -10%;
+  width: 18%;
+  opacity: 0.16;
+  transform: skewX(-10deg);
+  background: linear-gradient(90deg, transparent, var(--color-secondary), transparent);
+  filter: blur(18px);
+  animation: landing-beam-sweep 10s cubic-bezier(0.5, 0, 0.4, 1) infinite;
+}
+
+@keyframes landing-beam-sweep {
+  0%, 15% { transform: translateX(-140%) skewX(-10deg); opacity: 0; }
+  35% { opacity: 0.13; }
+  65%, 100% { transform: translateX(720%) skewX(-10deg); opacity: 0; }
+}
+
+.landing-data-rail {
+  position: absolute;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-secondary) 52%, transparent), transparent);
+  opacity: 0.55;
+}
+
+.landing-data-rail-one {
+  top: 20%;
+  left: 2%;
+  width: 31%;
+}
+
+.landing-data-rail-two {
+  right: 2%;
+  bottom: 24%;
+  width: 25%;
+}
+
+.landing-data-rail span {
+  position: absolute;
+  top: -2px;
+  left: 0;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  box-shadow: 0 0 12px var(--color-secondary);
+  animation: landing-packet 5.2s linear infinite;
+}
+
+.landing-data-rail span:nth-child(2) { animation-delay: -1.7s; }
+.landing-data-rail span:nth-child(3) { animation-delay: -3.4s; }
+
+@keyframes landing-packet {
+  0% { left: 0; opacity: 0; }
+  12%, 82% { opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+.landing-radar {
+  position: absolute;
+  top: 14%;
+  right: 4%;
+  width: 13rem;
+  aspect-ratio: 1;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  border-radius: 50%;
+  opacity: 0.42;
+}
+
+.landing-radar::before,
+.landing-radar::after,
+.landing-radar span {
+  content: "";
+  position: absolute;
+  inset: 50%;
+  border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 28%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.landing-radar::before { width: 66%; height: 66%; }
+.landing-radar::after { width: 34%; height: 34%; }
+.landing-radar span:nth-child(1) { width: 1px; height: 100%; border: 0; background: color-mix(in srgb, var(--color-primary) 25%, transparent); }
+.landing-radar span:nth-child(2) { width: 100%; height: 1px; border: 0; background: color-mix(in srgb, var(--color-primary) 25%, transparent); }
+.landing-radar span:nth-child(3) {
+  inset: 25% auto auto 66%;
+  width: 5px;
+  height: 5px;
+  border: 0;
+  background: var(--color-secondary);
+  box-shadow: 0 0 10px var(--color-secondary);
+  animation: landing-radar-blip 2.4s ease-in-out infinite;
+}
+
+.landing-radar i {
+  position: absolute;
+  inset: -1px;
+  border-radius: 50%;
+  background: conic-gradient(from 25deg, color-mix(in srgb, var(--color-primary) 25%, transparent), transparent 18% 100%);
+  animation: landing-radar-sweep 6s linear infinite;
+}
+
+@keyframes landing-radar-sweep { to { transform: rotate(360deg); } }
+@keyframes landing-radar-blip { 50% { opacity: 0.25; transform: scale(1.8); } }
+
+.landing-code-cloud {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  transform: translate3d(var(--code-shift-x), var(--code-shift-y), 0);
+  transition: transform 180ms ease-out;
+}
+
+.landing-code-cloud span {
+  position: absolute;
+  color: color-mix(in srgb, var(--color-primary) 58%, transparent);
+  font: 600 0.58rem/1.2 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.13em;
+  opacity: 0;
+  text-shadow: 0 0 12px color-mix(in srgb, var(--color-secondary) 24%, transparent);
+  animation: landing-code-signal 8.5s ease-in-out infinite;
+}
+
+.landing-code-cloud span:nth-child(1) { top: 14%; left: 4%; animation-delay: -1s; }
+.landing-code-cloud span:nth-child(2) { top: 27%; right: 7%; animation-delay: -5.2s; }
+.landing-code-cloud span:nth-child(3) { top: 43%; left: 2%; animation-delay: -3.1s; }
+.landing-code-cloud span:nth-child(4) { top: 56%; right: 3%; animation-delay: -7.3s; }
+.landing-code-cloud span:nth-child(5) { top: 72%; left: 8%; animation-delay: -4.4s; }
+.landing-code-cloud span:nth-child(6) { top: 83%; right: 14%; animation-delay: -0.2s; }
+.landing-code-cloud span:nth-child(7) { top: 18%; left: 67%; animation-delay: -6.1s; }
+.landing-code-cloud span:nth-child(8) { top: 63%; left: 49%; animation-delay: -2.2s; }
+.landing-code-cloud span:nth-child(9) { top: 88%; left: 39%; animation-delay: -7.8s; }
+
+@keyframes landing-code-signal {
+  0%, 12%, 100% { opacity: 0; filter: blur(2px); transform: translateY(7px); }
+  22%, 48% { opacity: 0.34; filter: blur(0); transform: translateY(0); }
+  60% { opacity: 0; filter: blur(1px); transform: translateY(-5px); }
+}
+
+/* The hood is the hero's background image. It is laid out as one square stage
+   sized to the LONGER side of the section, so the artwork always covers the
+   full hero in both axes; the gaze and caption are pinned to that stage in
+   percentages, which keeps them on the face at every viewport. */
+.landing-hood-observer {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  container-type: size;
+  opacity: 0.88;
+}
+
+.landing-hood-stage {
+  --hood-stage: max(100cqw, 100cqh);
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: var(--hood-stage);
+  height: var(--hood-stage);
+  transform: translate(-50%, -50%);
+}
+
+/* logo-master-mark.png is logo-master-512.png with its black ground keyed out.
+   The ground matters at this size: an opaque one would multiply a flat wash
+   across the whole hero instead of only drawing the hood. */
+.landing-hood-mark {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-primary) 82%, var(--color-secondary));
+  opacity: 0.22;
+  mix-blend-mode: multiply;
+  /* The artwork is the alpha mask, so the hood takes the brand green exactly
+     rather than whatever a filter chain lands on. The second layer keeps the
+     hood and fades the wordmark banner underneath it. */
+  -webkit-mask-image:
+    url("/logo-master-mark.png"),
+    linear-gradient(to bottom, transparent 0 3%, #000 16% 62%, transparent 82%);
+  mask-image:
+    url("/logo-master-mark.png"),
+    linear-gradient(to bottom, transparent 0 3%, #000 16% 62%, transparent 82%);
+  -webkit-mask-size: 100% 100%, 100% 100%;
+  mask-size: 100% 100%, 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  transition: opacity 180ms ease;
+}
+
+.landing-hood-gaze {
+  position: absolute;
+  top: 30%;
+  left: 50%;
+  display: flex;
+  gap: clamp(0.45rem, calc(var(--hood-stage) * 0.011), 1.1rem);
+  transform: translateX(-50%);
+}
+
+.landing-hood-eye {
+  position: relative;
+  display: block;
+  width: clamp(2.5rem, calc(var(--hood-stage) * 0.052), 5.5rem);
+  height: clamp(0.72rem, calc(var(--hood-stage) * 0.0148), 1.6rem);
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 50%, transparent);
+  border-radius: 80% 15% 80% 15%;
+  background: color-mix(in srgb, var(--color-surface) 70%, transparent);
+  box-shadow: inset 0 0 13px color-mix(in srgb, var(--color-primary) 16%, transparent);
+  transform: skewX(-8deg);
+}
+
+.landing-hood-eye:last-child {
+  border-radius: 15% 80% 15% 80%;
+  transform: skewX(8deg);
+}
+
+.landing-hood-eye i {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: clamp(0.48rem, calc(var(--hood-stage) * 0.0098), 1rem);
+  aspect-ratio: 1;
+  border: 2px solid #e9fff2;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-secondary) 70%, transparent);
+  transform: translate(calc(-50% + var(--eye-offset-x)), calc(-50% + var(--eye-offset-y)));
+  transition: transform 80ms linear;
+}
+
+/* Directly under the gaze. Both sit in the clear band above the headline: the
+   hood's own face lands behind the terminal panel, and the hero's bottom fade
+   is opaque, so neither lower position survives. */
+.landing-hood-caption {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  width: max-content;
+  transform: translateX(-50%);
+  color: color-mix(in srgb, var(--color-primary) 60%, transparent);
+  font: 600 0.55rem/1 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.15em;
+}
+
+.landing-hood-caption span {
+  width: 0.36rem;
+  height: 0.36rem;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-secondary) 45%, transparent);
+  animation: landing-hood-live 2s ease-out infinite;
+}
+
+.landing-hero.landing-user-active .landing-hood-mark { opacity: 0.3; }
+.landing-hero.landing-user-active .landing-hood-eye {
+  border-color: color-mix(in srgb, var(--color-secondary) 76%, transparent);
+  box-shadow: inset 0 0 15px color-mix(in srgb, var(--color-secondary) 18%, transparent), 0 0 15px color-mix(in srgb, var(--color-secondary) 12%, transparent);
+}
+
+@keyframes landing-hood-live {
+  70%, 100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.landing-pointer-reticle,
+.landing-click-wave {
+  position: absolute;
+  z-index: 8;
+  left: var(--hero-pointer-x);
+  top: var(--hero-pointer-y);
+  pointer-events: none;
+}
+
+.landing-pointer-reticle {
+  width: 4rem;
+  height: 4rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 58%, transparent);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-5deg);
+  transition: opacity 150ms ease, transform 180ms ease;
+  box-shadow:
+    0 0 0 5px color-mix(in srgb, var(--color-primary) 7%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-secondary) 16%, transparent);
+}
+
+.landing-pointer-reticle::before,
+.landing-pointer-reticle::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+}
+
+.landing-pointer-reticle::before {
+  width: 5rem;
+  height: 5rem;
+  border: 1px dashed color-mix(in srgb, var(--color-secondary) 46%, transparent);
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.landing-pointer-reticle::after {
+  width: 0.42rem;
+  height: 0.42rem;
+  border-radius: 50%;
+  background: var(--color-secondary);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--color-secondary) 52%, transparent);
+  transform: translate(-50%, -50%);
+}
+
+.landing-pointer-reticle > span {
+  position: absolute;
+}
+
+.landing-pointer-reticle > span:first-child {
+  inset: 0.62rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, transparent);
+  border-radius: 50%;
+}
+
+.landing-pointer-reticle > span:nth-child(2) {
+  top: 50%;
+  left: -0.48rem;
+  right: -0.48rem;
+  height: 1px;
+  background: linear-gradient(90deg, var(--color-primary), transparent 22% 78%, var(--color-primary));
+}
+
+.landing-pointer-reticle > i {
+  position: absolute;
+  inset: 0.2rem;
+  border-radius: 50%;
+  background: conic-gradient(from 15deg, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 28% 100%);
+  animation: landing-camera-scan 2.8s linear infinite;
+  animation-play-state: paused;
+}
+
+.landing-pointer-reticle strong {
+  position: absolute;
+  top: calc(100% + 0.45rem);
+  left: 50%;
+  width: max-content;
+  transform: translateX(-50%);
+  color: var(--color-secondary);
+  font: 500 0.54rem/1 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.12em;
+  text-shadow: 0 0 9px color-mix(in srgb, var(--color-secondary) 32%, transparent);
+}
+
+.landing-hero.landing-user-active .landing-pointer-reticle {
+  opacity: 0.78;
+  transform: translate(-50%, -50%) scale(1) rotate(0);
+}
+
+.landing-hero.landing-user-active .landing-pointer-reticle > i {
+  animation-play-state: running;
+}
+
+.landing-spy-camera {
+  position: absolute;
+  z-index: 8;
+  top: 7.5rem;
+  right: 3.5%;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.65rem 0.5rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-on-surface-variant);
+  opacity: 0.72;
+  backdrop-filter: blur(12px);
+  transition: border-color 180ms ease, box-shadow 180ms ease, opacity 180ms ease;
+}
+
+.landing-spy-lens {
+  position: relative;
+  width: 2.55rem;
+  height: 2.55rem;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--color-secondary) 46%, transparent);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0, 151, 178, 0.12), rgba(0, 70, 48, 0.035));
+}
+
+.landing-spy-lens::before {
+  content: "";
+  position: absolute;
+  inset: 0.42rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, transparent);
+  border-radius: 50%;
+}
+
+.landing-spy-lens::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0.62rem;
+  height: 0.62rem;
+  border: 2px solid var(--color-surface);
+  border-radius: 50%;
+  background: var(--color-secondary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-secondary) 48%, transparent);
+  transform: translate(calc(-50% + var(--spy-offset-x)), calc(-50% + var(--spy-offset-y)));
+  transition: transform 90ms linear;
+}
+
+.landing-spy-lens > span {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: color-mix(in srgb, var(--color-primary) 24%, transparent);
+}
+
+.landing-spy-lens > i {
+  position: absolute;
+  inset: 0.12rem;
+  border-radius: 50%;
+  background: conic-gradient(color-mix(in srgb, var(--color-secondary) 16%, transparent), transparent 24% 100%);
+  animation: landing-camera-scan 3.4s linear infinite;
+  animation-play-state: paused;
+}
+
+.landing-spy-camera > div:last-child {
+  display: grid;
+  gap: 0.15rem;
+  font-family: var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.08em;
+}
+
+.landing-spy-camera strong {
+  color: var(--color-on-surface);
+  font-size: 0.62rem;
+}
+
+.landing-spy-camera > div:last-child span {
+  color: var(--color-primary);
+  font-size: 0.5rem;
+}
+
+.landing-hero.landing-user-active .landing-spy-camera {
+  border-color: color-mix(in srgb, var(--color-secondary) 48%, transparent);
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--color-secondary) 16%, transparent);
+  opacity: 1;
+}
+
+.landing-hero.landing-user-active .landing-spy-lens > i {
+  animation-play-state: running;
+}
+
+@keyframes landing-camera-scan { to { transform: rotate(360deg); } }
+
+.landing-click-wave {
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--color-primary);
+  border-radius: 50%;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.2);
+}
+
+.landing-hero.landing-user-clicked .landing-click-wave {
+  animation: landing-user-pulse 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes landing-user-pulse {
+  0% { opacity: 0.9; transform: translate(-50%, -50%) scale(0.2); box-shadow: 0 0 18px var(--color-primary); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(8); box-shadow: 0 0 0 transparent; }
+}
+
+.landing-kicker {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, transparent);
+  border-radius: 0.35rem;
+  background: color-mix(in srgb, var(--color-surface) 72%, transparent);
+  color: var(--color-primary);
+  font-family: var(--font-jetbrains-mono), monospace;
+  font-size: 0.68rem;
+  letter-spacing: 0.12em;
+  box-shadow: inset 0 0 16px color-mix(in srgb, var(--color-primary) 5%, transparent);
+  backdrop-filter: blur(10px);
+}
+
+.landing-kicker-status {
+  padding-left: 0.65rem;
+  border-left: 1px solid color-mix(in srgb, var(--color-outline-variant) 75%, transparent);
+  color: var(--color-on-surface-variant);
+}
+
+.landing-live-dot {
+  width: 0.42rem;
+  height: 0.42rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: var(--color-primary);
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 55%, transparent);
+  animation: landing-status-pulse 2.2s ease-out infinite;
+}
+
+@keyframes landing-status-pulse {
+  65%, 100% { box-shadow: 0 0 0 8px transparent; }
+}
+
+.landing-cyber-word {
+  position: relative;
+  display: inline-block;
+  color: transparent;
+  background: linear-gradient(100deg, var(--color-primary) 5%, var(--color-secondary) 46%, var(--color-primary) 78%);
+  background-size: 220% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  filter: drop-shadow(0 0 16px color-mix(in srgb, var(--color-primary) 18%, transparent));
+  animation: landing-word-signal 7s ease-in-out infinite;
+}
+
+.hero-typed-heading {
+  position: relative;
+}
+
+.hero-typed-heading-ghost,
+.hero-typed-heading-live {
+  display: block;
+}
+
+.hero-typed-heading-ghost {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.hero-typed-heading-live {
+  position: absolute;
+  inset: 0;
+}
+
+.hero-heading-caret {
+  display: inline-block;
+  width: 3px;
+  height: 0.88em;
+  margin-left: 0.08em;
+  border-radius: 999px;
+  vertical-align: -0.04em;
+  background: var(--color-secondary);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-secondary) 48%, transparent);
+  animation: hero-heading-caret-blink 0.72s steps(1, end) infinite;
+}
+
+.hero-heading-caret-complete {
+  opacity: 0;
+  animation: none;
+  transition: opacity 220ms ease;
+}
+
+@keyframes hero-heading-caret-blink { 50% { opacity: 0; } }
+
+.hero-type-shell {
+  position: relative;
+  display: inline-block;
+  white-space: nowrap;
+}
+
+.hero-type-shell .landing-cyber-word {
+  clip-path: inset(0 100% 0 0);
+  animation:
+    landing-word-signal 7s ease-in-out infinite,
+    hero-type-reveal 1.35s steps(12, end) 0.55s forwards;
+}
+
+.hero-type-caret {
+  position: absolute;
+  z-index: 3;
+  top: 0.08em;
+  bottom: 0.05em;
+  left: 0;
+  width: 3px;
+  border-radius: 999px;
+  background: var(--color-secondary);
+  box-shadow: 0 0 9px color-mix(in srgb, var(--color-secondary) 42%, transparent);
+  animation: hero-caret-write 1.35s steps(12, end) 0.55s forwards;
+}
+
+@keyframes hero-type-reveal {
+  to { clip-path: inset(0 0 0 0); }
+}
+
+@keyframes hero-caret-write {
+  0% { left: 0; opacity: 1; }
+  88% { left: 100%; opacity: 1; }
+  100% { left: 100%; opacity: 0; }
+}
+
+.landing-cyber-word::after {
+  content: "";
+  position: absolute;
+  left: 2%;
+  right: -2%;
+  bottom: 0.06em;
+  height: 2px;
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), transparent);
+  box-shadow: 0 0 10px color-mix(in srgb, var(--color-secondary) 45%, transparent);
+  animation: landing-underline-scan 4.8s ease-in-out infinite;
+}
+
+@keyframes landing-word-signal {
+  0%, 100% { background-position: 0 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes landing-underline-scan {
+  0%, 16% { transform: scaleX(0); opacity: 0; }
+  38%, 78% { transform: scaleX(1); opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.landing-primary-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+}
+
+.landing-primary-cta::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -2px;
+  background: linear-gradient(105deg, transparent 25%, rgba(255, 255, 255, 0.32), transparent 66%);
+  transform: translateX(-115%);
+}
+
+.landing-primary-cta:hover::before,
+.landing-primary-cta:focus-visible::before {
+  animation: landing-cta-shine 0.85s ease-out;
+}
+
+@keyframes landing-cta-shine { to { transform: translateX(115%); } }
+
+.landing-proof-avatars > div {
+  box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-primary) 40%, transparent);
+  transition: transform 240ms ease, box-shadow 240ms ease;
+}
+
+.landing-proof:hover .landing-proof-avatars > div {
+  transform: translateY(-3px);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--color-primary) 30%, transparent);
+}
+
+.landing-proof:hover .landing-proof-avatars > div:nth-child(2) { transition-delay: 55ms; }
+.landing-proof:hover .landing-proof-avatars > div:nth-child(3) { transition-delay: 110ms; }
+
+.landing-terminal-shell {
+  padding: 1.1rem;
+  transform-style: preserve-3d;
+}
+
+.landing-terminal-depth {
+  position: relative;
+  z-index: 2;
+  transform: perspective(1100px) rotateX(var(--hero-tilt-x)) rotateY(var(--hero-tilt-y));
+  transition: transform 160ms ease-out;
+  filter: drop-shadow(0 28px 40px color-mix(in srgb, var(--color-brand-pure) 55%, transparent));
+}
+
+.landing-terminal-depth::after {
+  content: "";
+  position: absolute;
+  z-index: 5;
+  inset: 0;
+  border-radius: 0.5rem;
+  pointer-events: none;
+  background: radial-gradient(
+    circle at var(--hero-pointer-x) var(--hero-pointer-y),
+    rgba(255, 255, 255, 0.09),
+    transparent 38%
+  );
+  mix-blend-mode: screen;
+}
+
+.landing-terminal-corner {
+  position: absolute;
+  z-index: 4;
+  width: 2.5rem;
+  height: 2.5rem;
+  pointer-events: none;
+}
+
+.landing-terminal-corner-tl {
+  top: 0;
+  left: 0;
+  border-top: 1px solid var(--color-secondary);
+  border-left: 1px solid var(--color-secondary);
+}
+
+.landing-terminal-corner-br {
+  right: 0;
+  bottom: 0;
+  border-right: 1px solid var(--color-primary);
+  border-bottom: 1px solid var(--color-primary);
+}
+
+.landing-node-label {
+  position: absolute;
+  z-index: 5;
+  right: 1.1rem;
+  bottom: -0.55rem;
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.38rem 0.55rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 42%, transparent);
+  background: color-mix(in srgb, var(--color-background) 92%, transparent);
+  color: var(--color-on-surface-variant);
+  font: 500 0.57rem/1 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.08em;
+}
+
+.landing-node-label span { color: var(--color-secondary); }
+.landing-node-label strong { font-weight: 500; }
+
+.landing-course-card {
+  isolation: isolate;
+}
+
+.landing-course-card::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: -65%;
+  left: -42%;
+  width: 34%;
+  height: 230%;
+  pointer-events: none;
+  transform: rotate(17deg);
+  background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-primary) 13%, transparent), transparent);
+  transition: left 680ms cubic-bezier(0.2, 0.65, 0.3, 1);
+}
+
+.landing-course-card::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: auto 0 0;
+  height: 2px;
+  pointer-events: none;
+  transform: scaleX(0.15);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-secondary), transparent);
+  opacity: 0;
+  transition: transform 500ms ease, opacity 500ms ease;
+}
+
+.landing-course-card:hover::before { left: 118%; }
+.landing-course-card:hover::after { transform: scaleX(1); opacity: 1; }
+
+.landing-course-card:hover .material-symbols-outlined {
+  filter: drop-shadow(0 0 7px currentColor);
+}
+
+.landing-contact-panel {
+  position: relative;
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--color-brand-pure) 35%, transparent);
+}
+
+.landing-contact-panel::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, var(--color-secondary), var(--color-primary), transparent);
+  background-size: 200% 100%;
+  animation: landing-border-signal 6s linear infinite;
+}
+
+@keyframes landing-border-signal { to { background-position: -200% 0; } }
+
+.landing-motion-ready [data-cyber-reveal] {
+  opacity: 0;
+  filter: blur(5px);
+  transform: translateY(24px);
+  transition:
+    opacity 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    filter 720ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 720ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.landing-motion-ready [data-cyber-reveal].cyber-in-view {
+  opacity: 1;
+  filter: blur(0);
+  transform: translateY(0);
+}
+
+.landing-motion-ready .landing-hero h1[data-cyber-reveal] { transition-delay: 80ms; }
+.landing-motion-ready .landing-hero p[data-cyber-reveal] { transition-delay: 150ms; }
+.landing-motion-ready .landing-hero div[data-cyber-reveal]:has(a) { transition-delay: 220ms; }
+.landing-motion-ready .landing-proof[data-cyber-reveal] { transition-delay: 290ms; }
+.landing-motion-ready .landing-terminal-shell[data-cyber-reveal] { transition-delay: 180ms; }
+.landing-motion-ready .landing-course-card:nth-child(2) { transition-delay: 80ms; }
+.landing-motion-ready .landing-course-card:nth-child(3) { transition-delay: 160ms; }
+
+html[data-theme="light"] .landing-hero {
+  background-color: #f6faf6;
+  background-image:
+    radial-gradient(
+      circle at var(--hero-pointer-x) var(--hero-pointer-y),
+      rgba(0, 151, 178, 0.16) 0,
+      rgba(42, 165, 97, 0.09) 13rem,
+      transparent 29rem
+    ),
+    linear-gradient(135deg, rgba(0, 145, 80, 0.055), transparent 46%),
+    linear-gradient(to right, rgba(0, 70, 48, 0.11) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 70, 48, 0.11) 1px, transparent 1px);
+}
+
+html[data-theme="light"] .landing-aurora { opacity: 0.14; }
+html[data-theme="light"] .landing-grid-plane { opacity: 0.2; }
+html[data-theme="light"] .landing-scan-beam { opacity: 0.16; }
+html[data-theme="light"] .landing-terminal-depth {
+  filter: drop-shadow(0 24px 34px rgba(19, 28, 21, 0.22));
+}
+html[data-theme="light"] .landing-contact-panel {
+  box-shadow: 0 24px 64px rgba(19, 28, 21, 0.1);
+}
+
+@media (max-width: 767px) {
+  .landing-hero { min-height: auto; padding-bottom: 6rem; }
+  .landing-radar { width: 9rem; top: 13%; right: -3.5rem; opacity: 0.28; }
+  .landing-data-rail-one { top: 14%; width: 42%; }
+  .landing-grid-plane { bottom: -18%; opacity: 0.11; }
+  .landing-kicker { max-width: 100%; font-size: 0.58rem; letter-spacing: 0.08em; }
+  .landing-kicker-status { display: none; }
+  .landing-spy-camera { display: none; }
+  .landing-hood-observer { opacity: 0.58; }
+  .landing-hood-caption { display: none; }
+  .landing-rings { opacity: 0.5; }
+  .landing-code-cloud span { font-size: 0.48rem; }
+  .landing-code-cloud span:nth-child(2),
+  .landing-code-cloud span:nth-child(4),
+  .landing-code-cloud span:nth-child(7),
+  .landing-code-cloud span:nth-child(8) { display: none; }
+}
+
+@media (pointer: coarse) {
+  .landing-pointer-reticle { display: none; }
+}
+
+/* ============================================================
+   Fluid cursor
+   ------------------------------------------------------------
+   A viewport-fixed WebGL canvas that trails the pointer everywhere except the
+   hero, which runs its own reticle. It never takes pointer events, and it sits
+   below the navbar so the header stays legible.
+   ============================================================ */
+.fluid-cursor-canvas {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fluid-cursor-canvas { display: none; }
+}
+
 /* Respect a reduced-motion preference: keep the colour, drop the movement. */
 @media (prefers-reduced-motion: reduce) {
   .terminal-sweep::before,
-  .btn-sweep::after {
+  .terminal-demo-suggestion i,
+  .btn-sweep::after,
+  .landing-aurora,
+  .landing-grid-plane,
+  .landing-scan-beam,
+  .landing-data-rail span,
+  .landing-radar i,
+  .landing-radar span:nth-child(3),
+  .landing-code-cloud span,
+  .landing-hood-caption span,
+  .landing-click-wave,
+  .landing-pointer-reticle > i,
+  .landing-spy-lens > i,
+  .landing-live-dot,
+  .landing-cyber-word,
+  .landing-cyber-word::after,
+  .hero-type-shell .landing-cyber-word,
+  .hero-type-caret,
+  .hero-heading-caret,
+  .landing-primary-cta::before,
+  .landing-contact-panel::before {
     animation: none;
   }
   .btn-sweep::before {
     transition: none;
+  }
+  .landing-code-cloud { transform: none; }
+  .landing-hood-eye i { transition: none; }
+  .landing-terminal-depth,
+  .landing-course-card,
+  [data-cyber-reveal] {
+    transition: none !important;
+    transform: none !important;
+  }
+  [data-cyber-reveal] {
+    opacity: 1 !important;
+    filter: none !important;
+  }
+  .hero-type-shell .landing-cyber-word {
+    clip-path: none;
+  }
+  .hero-type-caret {
+    display: none;
   }
 }

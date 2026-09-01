@@ -166,6 +166,8 @@ const MOTD: Line[] = [
   { type: "system", text: "Tapez 'help' pour lister les commandes." },
 ];
 
+const DEMO_COMMANDS = ["help", "formations", "labs", "neofetch"] as const;
+
 export default function HeroTerminal() {
-  return <Terminal config={CONFIG} motd={MOTD} />;
+  return <Terminal config={CONFIG} motd={MOTD} demoCommands={DEMO_COMMANDS} />;
 }

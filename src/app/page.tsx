@@ -6,6 +6,9 @@ import PricingPreview from "@/components/PricingPreview";
 import LiveForm from "@/components/LiveForm";
 import FreeContent from "@/components/FreeContent";
 import Socials from "@/components/Socials";
+import LandingMotion from "@/components/LandingMotion";
+import HeroTypingHeadline from "@/components/HeroTypingHeadline";
+import LandingRings, { LandingFluidCursor } from "@/components/LandingEffects";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
 import { CONTACT_EMAIL } from "@/lib/site";
 
@@ -46,21 +49,90 @@ export default function Home() {
   return (
     <PublicShell>
       <OrganizationJsonLd />
+      <LandingMotion />
+      {/* Fluid trail for the page below the fold. The hero is excluded: it has
+          its own reticle and pointer choreography. */}
+      <LandingFluidCursor />
       {/* Hero */}
-      <section className="relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid">
+      <section
+        className="landing-hero relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid"
+        data-cyber-hero
+      >
+        <LandingRings />
+        <div className="landing-atmosphere" aria-hidden="true">
+          <div className="landing-aurora landing-aurora-primary" />
+          <div className="landing-aurora landing-aurora-secondary" />
+          <div className="landing-grid-plane" />
+          <div className="landing-scan-beam" />
+          <div className="landing-data-rail landing-data-rail-one">
+            <span />
+            <span />
+            <span />
+          </div>
+          <div className="landing-data-rail landing-data-rail-two">
+            <span />
+            <span />
+          </div>
+          <div className="landing-radar">
+            <span />
+            <span />
+            <span />
+            <i />
+          </div>
+          <div className="landing-code-cloud">
+            <span>AUTH_OK // SESSION 7F3A</span>
+            <span>01001000 01000011 01000011</span>
+            <span>PORT 443/TCP · VERIFIED</span>
+            <span>SHA-256 :: INTEGRITY_OK</span>
+            <span>/var/log/auth.log</span>
+            <span>SOC::MONITOR [ACTIVE]</span>
+            <span>AES-GCM // CHANNEL LOCKED</span>
+            <span>TRACE_ID 0x8C21</span>
+            <span>PACKET ACCEPTED</span>
+          </div>
+          <div className="landing-hood-observer">
+            <div className="landing-hood-stage">
+              <div className="landing-hood-mark" />
+              <div className="landing-hood-gaze">
+                <span className="landing-hood-eye">
+                  <i />
+                </span>
+                <span className="landing-hood-eye">
+                  <i />
+                </span>
+              </div>
+              <div className="landing-hood-caption">
+                <span /> VISUAL TRACE // LIVE
+              </div>
+            </div>
+          </div>
+          <div className="landing-pointer-reticle">
+            <span />
+            <span />
+            <i />
+            <strong data-pointer-readout>USER INPUT</strong>
+          </div>
+          <div className="landing-click-wave" />
+        </div>
         <div className="relative z-10 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto w-full grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div className="space-y-8">
-            <h1 className="font-headline-xl text-headline-xl lg:text-[64px] leading-tight text-on-surface">
-              Maîtrisez l&apos;Art de la <span className="text-primary italic">Cyberdéfense</span>
-            </h1>
-            <p className="font-body-lg text-body-lg text-on-surface-variant max-w-xl">
+            <div className="landing-kicker" data-cyber-reveal>
+              <span className="landing-live-dot" />
+              <span>HCC // ACADEMY NETWORK</span>
+              <span className="landing-kicker-status">SYSTÈMES OPÉRATIONNELS</span>
+            </div>
+            <HeroTypingHeadline className="font-headline-xl text-headline-xl lg:text-[64px] leading-tight text-on-surface" />
+            <p
+              className="font-body-lg text-body-lg text-on-surface-variant max-w-xl"
+              data-cyber-reveal
+            >
               Formations de pointe pour les talents africains et européens. Apprenez auprès des
               experts du renseignement et de la sécurité offensive.
             </p>
-            <div className="flex flex-wrap gap-4 pt-4">
+            <div className="flex flex-wrap gap-4 pt-4" data-cyber-reveal>
               <Link
                 href="/formations"
-                className="px-8 py-4 bg-brand-green text-white rounded-lg font-bold cyber-glow-primary hover:brightness-110 transition-all flex items-center gap-2 group"
+                className="landing-primary-cta px-8 py-4 bg-brand-green text-white rounded-lg font-bold cyber-glow-primary hover:brightness-110 transition-all flex items-center gap-2 group"
               >
                 Découvrir nos formations
                 <Icon
@@ -85,8 +157,8 @@ export default function Home() {
                 />
               </Link>
             </div>
-            <div className="flex items-center gap-6 pt-8">
-              <div className="flex -space-x-3">
+            <div className="landing-proof flex items-center gap-6 pt-8" data-cyber-reveal>
+              <div className="landing-proof-avatars flex -space-x-3">
                 {["#2aa561", "#0097b2", "#004630"].map((c, i) => (
                   <div
                     key={i}
@@ -104,8 +176,19 @@ export default function Home() {
           </div>
 
           {/* Interactive terminal */}
-          <div className="hidden lg:block relative">
-            <HeroTerminal />
+          <div
+            className="landing-terminal-shell hidden lg:block relative"
+            data-cyber-reveal
+          >
+            <div className="landing-terminal-corner landing-terminal-corner-tl" aria-hidden="true" />
+            <div className="landing-terminal-corner landing-terminal-corner-br" aria-hidden="true" />
+            <div className="landing-node-label" aria-hidden="true">
+              <span>NODE 01</span>
+              <strong>ENVIRONNEMENT D&apos;ENTRAÎNEMENT</strong>
+            </div>
+            <div className="landing-terminal-depth">
+              <HeroTerminal />
+            </div>
             <div className="absolute -bottom-6 -right-6 w-32 h-32 bg-primary/20 blur-3xl rounded-full" />
             <div className="absolute -top-6 -left-6 w-32 h-32 bg-secondary/20 blur-3xl rounded-full" />
           </div>
@@ -114,7 +197,10 @@ export default function Home() {
 
       {/* Course preview */}
       <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto overflow-hidden">
-        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6">
+        <div
+          className="flex flex-col md:flex-row justify-between items-end mb-16 gap-6"
+          data-cyber-reveal
+        >
           <div className="max-w-2xl">
             <div className="text-primary font-label-mono mb-4 flex items-center gap-2">
               <span className="h-px w-8 bg-primary" />
@@ -134,7 +220,8 @@ export default function Home() {
           {COURSES.map((c) => (
             <div
               key={c.title}
-              className={`glass-panel p-8 rounded-xl group transition-all duration-500 relative overflow-hidden flex flex-col h-full ${c.border}`}
+              className={`landing-course-card glass-panel p-8 rounded-xl group transition-all duration-500 relative overflow-hidden flex flex-col h-full ${c.border}`}
+              data-cyber-reveal
             >
               <div className="relative z-10 flex flex-col h-full">
                 <div
@@ -161,13 +248,17 @@ export default function Home() {
 
       {/* Pricing preview */}
       <section className="py-24 bg-surface-container-low border-y border-outline-variant/30">
-        <PricingPreview />
+        <div data-cyber-reveal>
+          <PricingPreview />
+        </div>
       </section>
 
       {/* Free content + community */}
       <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
-        <FreeContent />
-        <div className="text-center">
+        <div data-cyber-reveal>
+          <FreeContent />
+        </div>
+        <div className="text-center" data-cyber-reveal>
           <div className="inline-flex items-center gap-2 text-secondary font-label-mono mb-4">
             <span className="h-px w-8 bg-secondary" />
             COMMUNAUTÉ
@@ -184,7 +275,10 @@ export default function Home() {
 
       {/* Quote request form */}
       <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
-        <div className="glass-panel rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2">
+        <div
+          className="landing-contact-panel glass-panel rounded-2xl overflow-hidden grid grid-cols-1 lg:grid-cols-2"
+          data-cyber-reveal
+        >
           <div className="p-12 lg:p-16 bg-primary/5 border-r border-outline-variant/30">
             <h2 className="font-headline-xl text-on-surface mb-6">
               Besoin d&apos;un programme spécifique ?

@@ -5,6 +5,7 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import Icon from "./Icon";
+import NotificationBell from "./NotificationBell";
 
 export type SidebarItem = {
   icon: string;
@@ -104,14 +105,7 @@ export default function ConsoleSidebar({
               >
                 <Icon name="home" />
               </Link>
-              <button
-                type="button"
-                className="text-on-surface-variant hover:text-primary relative"
-                aria-label="Notifications"
-              >
-                <Icon name="notifications" />
-                <span className="absolute -top-1 -right-1 w-2 h-2 bg-error rounded-full" />
-              </button>
+              <NotificationBell />
               <div className="w-9 h-9 rounded-full bg-primary/20 flex items-center justify-center text-primary shrink-0">
                 <Icon name="person" fill />
               </div>

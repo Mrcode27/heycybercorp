@@ -4,6 +4,7 @@ import { ADMIN_NAV } from "@/components/consoleNav";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminMessages from "@/components/console/AdminMessages";
+import AdminConversations from "@/components/console/AdminConversations";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,12 @@ export default function Page() {
         <SectionHeader
           icon="mail"
           title="Messages"
-          subtitle="Demandes de contact et de devis reçues depuis le site."
+          subtitle="Messagerie avec les étudiants, et demandes reçues depuis le site."
         />
-        <AdminMessages />
+        <div className="space-y-6">
+          <AdminConversations />
+          <AdminMessages />
+        </div>
       </AdminGate>
     </ConsoleSidebar>
   );

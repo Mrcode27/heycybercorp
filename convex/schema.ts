@@ -86,10 +86,69 @@ export default defineSchema({
   /**
    * Site-wide settings — exactly one row. `theme` drives the public look and
    * is switched from /admin/apparence.
+   *
+   * The two colour lists drive the landing-page animations, also from
+   * /admin/apparence. They are ordered: the rings interpolate across the list
+   * from the innermost ring outwards, and the fluid cursor draws one entry per
+   * stroke. Absent (or empty) means the built-in brand defaults — that is the
+   * state before an admin has ever touched them, so it must stay valid.
    */
   siteSettings: defineTable({
     theme: v.union(v.literal("dark"), v.literal("light")),
+    ringColors: v.optional(v.array(v.string())),
+    fluidColors: v.optional(v.array(v.string())),
   }),
+
+  /**
+   * Bell notifications. One row per user per event; `readAt` absent = unread.
+   *
+   * Deliberately denormalised (title/body/href are copied in, not looked up):
+   * a notification is a record of what was true when it fired, and the bell
+   * must render from a single indexed read.
+   */
+  notifications: defineTable({
+    userId: v.id("users"),
+    kind: v.union(
+      v.literal("message"),
+      v.literal("system"),
+      v.literal("purchase"),
+      v.literal("certificate"),
+    ),
+    title: v.string(),
+    body: v.optional(v.string()),
+    /** In-app destination, e.g. "/dashboard/messages". */
+    href: v.optional(v.string()),
+    readAt: v.optional(v.number()),
+  })
+    .index("by_user", ["userId"])
+    .index("by_user_read", ["userId", "readAt"]),
+
+  /**
+   * In-app messaging between one student and the admin team.
+   *
+   * A conversation always belongs to a student (`userId`); admins are the
+   * counterparty collectively, so any admin can answer any thread. The unread
+   * counters are maintained on write rather than derived, so listing every
+   * thread stays one read per side.
+   */
+  conversations: defineTable({
+    userId: v.id("users"),
+    subject: v.string(),
+    status: v.union(v.literal("open"), v.literal("closed")),
+    lastMessageAt: v.number(),
+    lastSender: v.union(v.literal("student"), v.literal("admin")),
+    unreadForStudent: v.number(),
+    unreadForAdmin: v.number(),
+  })
+    .index("by_user", ["userId"])
+    .index("by_last_message", ["lastMessageAt"]),
+
+  conversationMessages: defineTable({
+    conversationId: v.id("conversations"),
+    authorId: v.id("users"),
+    authorRole: v.union(v.literal("student"), v.literal("admin")),
+    body: v.string(),
+  }).index("by_conversation", ["conversationId"]),
 
   orders: defineTable({
     userId: v.id("users"),

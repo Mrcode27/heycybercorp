@@ -5,6 +5,7 @@ export const DASHBOARD_NAV: SidebarItem[] = [
   { icon: "school", label: "Mes Formations", href: "/dashboard/formations" },
   { icon: "science", label: "Labs Pratiques", href: "/dashboard/labs" },
   { icon: "workspace_premium", label: "Certifications", href: "/dashboard/certifications" },
+  { icon: "forum", label: "Messagerie", href: "/dashboard/messages" },
   { icon: "shopping_bag", label: "Mes achats", href: "/dashboard/achats" },
   { icon: "settings", label: "Paramètres", href: "/dashboard/parametres" },
 ];

@@ -179,6 +179,88 @@ export const sendContactNotification = internalAction({
 });
 
 /**
+ * Notify one side of an in-app conversation that the other side wrote.
+ *
+ * Scheduled by convex/conversations.ts after the message is committed, for the
+ * same reason as the contact form: the thread is the record, email is only the
+ * nudge that brings someone back to it. A failure is logged and swallowed.
+ *
+ * `to: "admins"` goes to MAIL_TO (the team inbox) with the student set as
+ * Reply-To. `to: "student"` goes to that student's own address, and is only
+ * scheduled when they have not switched email notifications off.
+ */
+export const sendConversationNotification = internalAction({
+  args: {
+    to: v.union(v.literal("admins"), v.literal("student")),
+    studentEmail: v.optional(v.string()),
+    subject: v.string(),
+    body: v.string(),
+    fromName: v.string(),
+    fromEmail: v.optional(v.string()),
+    link: v.string(),
+  },
+  handler: async (_ctx, args): Promise<SendResult> => {
+    const cfg = mailConfig();
+    if (!cfg) {
+      console.error(
+        "SMTP_USER / SMTP_PASSWORD absents de ce déploiement Convex — " +
+          "message enregistré mais aucune notification envoyée.",
+      );
+      return { sent: false as const, reason: "not-configured" as const };
+    }
+
+    const recipient = args.to === "admins" ? cfg.to : args.studentEmail?.trim();
+    if (!recipient) {
+      console.error("Destinataire manquant pour la notification de conversation.");
+      return { sent: false as const, reason: "not-configured" as const };
+    }
+
+    const url = `${(process.env.SITE_URL ?? "https://www.heycybercorp.fr").replace(/\/$/, "")}${args.link}`;
+    const heading =
+      args.to === "admins" ? "Nouveau message dans la messagerie" : "Réponse de heycybercorp";
+
+    try {
+      await transport(cfg).sendMail({
+        from: cfg.from,
+        to: recipient,
+        // Answering the admin copy in the inbox reaches the student directly.
+        replyTo: args.fromEmail ? `${args.fromName} <${args.fromEmail}>` : undefined,
+        subject: `[Messagerie] ${args.subject}`,
+        text: [
+          heading,
+          "",
+          `De     : ${args.fromName}`,
+          `Sujet  : ${args.subject}`,
+          "",
+          args.body,
+          "",
+          "—",
+          `Répondre dans l'application : ${url}`,
+        ].join("\n"),
+        html: `
+          <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;line-height:1.6">
+            <h2 style="margin:0 0 16px">${escapeHtml(heading)}</h2>
+            <p style="margin:0 0 4px"><strong>De&nbsp;:</strong> ${escapeHtml(args.fromName)}</p>
+            <p style="margin:0 0 4px"><strong>Sujet&nbsp;:</strong> ${escapeHtml(args.subject)}</p>
+            <hr style="border:none;border-top:1px solid #ddd;margin:16px 0">
+            <div style="white-space:pre-wrap">${escapeHtml(args.body)}</div>
+            <hr style="border:none;border-top:1px solid #ddd;margin:16px 0">
+            <p style="margin:0">
+              <a href="${escapeHtml(url)}" style="color:#08723d;font-weight:600">
+                Répondre dans l'application
+              </a>
+            </p>
+          </div>`,
+      });
+      return { sent: true as const };
+    } catch (err) {
+      console.error("Envoi SMTP échoué (messagerie):", err);
+      return { sent: false as const, reason: "send-failed" as const };
+    }
+  },
+});
+
+/**
  * Connectivity + credential check, safe to run before any password exists.
  *
  * Step 1 opens a raw socket to the SMTP host and reads its greeting banner,

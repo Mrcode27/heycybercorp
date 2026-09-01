@@ -15,6 +15,7 @@ export default function Terminal({
   title,
   height = "h-[340px]",
   className = "",
+  demoCommands = [],
 }: {
   config: ShellConfig;
   /** Optional shared in-memory filesystem used by the webOS file manager. */
@@ -23,11 +24,14 @@ export default function Terminal({
   title?: string;
   height?: string;
   className?: string;
+  /** Optional animated examples. They never occupy or alter the real input. */
+  demoCommands?: readonly string[];
 }) {
   const [history, setHistory] = useState<Line[]>(motd);
   const [input, setInput] = useState("");
   const [cmdLog, setCmdLog] = useState<string[]>([]);
   const [logIndex, setLogIndex] = useState(-1);
+  const [demoState, setDemoState] = useState({ index: 0, length: 0, deleting: false });
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -40,6 +44,48 @@ export default function Terminal({
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
   }, [history]);
+
+  useEffect(() => {
+    if (demoCommands.length === 0 || input || cmdLog.length > 0) return;
+
+    const target = demoCommands[demoState.index % demoCommands.length];
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (reducedMotion) {
+      const frame = window.requestAnimationFrame(() => {
+        setDemoState((current) => ({ ...current, length: target.length, deleting: false }));
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+
+    const delay = demoState.deleting
+      ? demoState.length === 0
+        ? 260
+        : 34
+      : demoState.length === target.length
+        ? 1050
+        : 72;
+
+    const timer = window.setTimeout(() => {
+      setDemoState((current) => {
+        if (!current.deleting && current.length >= target.length) {
+          return { ...current, deleting: true };
+        }
+        if (current.deleting && current.length === 0) {
+          return {
+            index: (current.index + 1) % demoCommands.length,
+            length: 0,
+            deleting: false,
+          };
+        }
+        return {
+          ...current,
+          length: current.length + (current.deleting ? -1 : 1),
+        };
+      });
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [cmdLog.length, demoCommands, demoState, input]);
 
   function run(raw: string) {
     const { lines, clear } = runCommand(config, files, cmdLog, raw);
@@ -54,7 +100,9 @@ export default function Terminal({
   }
 
   function onKeyDown(e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter") {
+    const key = e.key.toLowerCase();
+    if (key === "enter" || e.code === "Enter" || e.keyCode === 13) {
+      e.preventDefault();
       run(input);
     } else if (e.key === "Tab") {
       e.preventDefault();
@@ -135,7 +183,21 @@ export default function Terminal({
           );
         })}
 
-        <div className="flex items-center relative z-10">
+        {demoCommands.length > 0 && cmdLog.length === 0 && !input && (
+          <div className="terminal-demo-suggestion" aria-hidden="true">
+            <span>ESSAYEZ</span>
+            <code>{demoCommands[demoState.index]?.slice(0, demoState.length)}</code>
+            <i />
+          </div>
+        )}
+
+        <form
+          className="terminal-command-form relative z-10"
+          onSubmit={(event) => {
+            event.preventDefault();
+            run(input);
+          }}
+        >
           <span className="text-secondary shrink-0">{prompt}</span>
           <input
             ref={inputRef}
@@ -147,7 +209,16 @@ export default function Terminal({
             aria-label="Terminal interactif"
             className="flex-1 ml-2 bg-transparent border-none outline-none text-primary-fixed-dim font-code-sm text-code-sm"
           />
-        </div>
+          <button
+            type="submit"
+            disabled={!input.trim()}
+            className="terminal-submit"
+            aria-label="Exécuter la commande"
+            title="Exécuter (Entrée)"
+          >
+            <span aria-hidden="true">↵</span>
+          </button>
+        </form>
       </div>
     </div>
   );
