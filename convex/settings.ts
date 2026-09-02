@@ -296,3 +296,19 @@ export const resetAnimationColors = mutation({
     await logAudit(ctx, "settings.animation_colors", admin.email, "réinitialisées");
   },
 });
+
+/** Admin only — enable or disable email notifications for broadcast messages. */
+export const setBroadcastEmailEnabled = mutation({
+  args: { broadcastEmailEnabled: v.boolean() },
+  handler: async (ctx, { broadcastEmailEnabled }) => {
+    const admin = await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.broadcastEmailEnabled === broadcastEmailEnabled) return;
+      await ctx.db.patch(row._id, { broadcastEmailEnabled });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", broadcastEmailEnabled });
+    }
+    await logAudit(ctx, "settings.broadcast_email_enabled", admin.email, String(broadcastEmailEnabled ? "activé" : "désactivé"));
+  },
+});

@@ -27,6 +27,7 @@ export default defineSchema({
       v.object({
         emailNotifications: v.optional(v.boolean()),
         weeklySummary: v.optional(v.boolean()),
+        broadcastEmail: v.optional(v.boolean()),
       }),
     ),
   })
@@ -116,6 +117,9 @@ export default defineSchema({
     cyberRainColors: v.optional(v.array(v.string())),
     /** Opacity of the digital-rain layer, 0–100. Absent = 45. */
     cyberRainOpacity: v.optional(v.number()),
+  /** Enable email notifications for broadcast messages. Default: false. */
+  broadcastEmailEnabled: v.optional(v.boolean()),
+
   }),
 
   /**

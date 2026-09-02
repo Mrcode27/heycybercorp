@@ -2,6 +2,7 @@ import { query, mutation, type MutationCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc, Id } from "./_generated/dataModel";
 import { getCurrentUser } from "./users";
+import { internal } from "./_generated/api";
 
 /**
  * Bell notifications.
@@ -124,8 +125,14 @@ export const markAllRead = mutation({
 
 /** Admin-authored broadcast, e.g. an announcement. */
 export const broadcast = mutation({
-  args: { title: v.string(), body: v.optional(v.string()), href: v.optional(v.string()) },
-  handler: async (ctx, { title, body, href }) => {
+  args: {
+    title: v.string(),
+    body: v.optional(v.string()),
+    href: v.optional(v.string()),
+    /** When true, also email the announcement to users who opted in. */
+    sendEmail: v.optional(v.boolean()),
+  },
+  handler: async (ctx, { title, body, href, sendEmail }) => {
     const user = await getCurrentUser(ctx);
     if (!user || user.role !== "admin") throw new Error("Forbidden: admin access required");
     if (title.trim().length < 3) throw new Error("Titre trop court.");
@@ -140,6 +147,29 @@ export const broadcast = mutation({
         href,
       });
     }
-    return everyone.length;
+
+    // Emails: only when the admin asked for them AND the global toggle is on
+    // AND the recipient hasn't unsubscribed from broadcast emails. Scheduled
+    // one at a time so a slow SMTP server doesn't back the whole transaction
+    // up — the in-app notifications are already committed above.
+    let emailed = 0;
+    if (sendEmail) {
+      const settings = await ctx.db.query("siteSettings").first();
+      const globalEmailOn = settings?.broadcastEmailEnabled === true;
+      if (globalEmailOn) {
+        const cleanTitle = title.trim();
+        const cleanBody = body?.trim() || undefined;
+        for (const target of everyone) {
+          const optedIn = target.prefs?.broadcastEmail !== false; // default opt-in
+          if (!optedIn || !target.email) continue;
+          await ctx.scheduler.runAfter(0, internal.email.sendBroadcastEmail, {
+            payload: { email: target.email, title: cleanTitle, body: cleanBody },
+          });
+          emailed += 1;
+        }
+      }
+    }
+
+    return { inApp: everyone.length, emailed };
   },
 });

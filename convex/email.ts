@@ -2,6 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
+import type { Id } from "./_generated/dataModel";
 import nodemailer from "nodemailer";
 import net from "node:net";
 import tls from "node:tls";
@@ -373,5 +374,38 @@ export const sendTest = internalAction({
       to: cfg.to,
       reason: result.sent ? undefined : result.reason,
     };
+  },
+});
+
+/**
+ * Send a broadcast email to a single recipient.
+ *
+ * Called by `notifications.broadcast` (scheduled) so a mail outage can never
+ * block the in-app notification — that is committed in the same transaction.
+ * The recipient's email is passed in because internalAction has no db access;
+ * the broadcast mutation looks it up before scheduling.
+ */
+export const sendBroadcastEmail = internalAction({
+  args: { payload: v.object({ email: v.string(), title: v.string(), body: v.optional(v.string()) }) },
+  handler: async (_ctx, { payload }) => {
+    const cfg = mailConfig();
+    if (!cfg) return { sent: false, reason: "not-configured" };
+    if (!payload.email) return { sent: false, reason: "no-email" };
+
+    const transportInstance = transport(cfg);
+    const info = await transportInstance.sendMail({
+      from: cfg.from,
+      to: payload.email,
+      subject: `[heycybercorp] ${payload.title}`,
+      html: `
+        <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 560px; margin: 0 auto; color: #1a1a1a;">
+          <h2 style="margin: 0 0 12px; color: #08723d;">${escapeHtml(payload.title)}</h2>
+          ${payload.body ? `<p style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(payload.body)}</p>` : ""}
+          <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
+          <p style="font-size: 12px; color: #888;">Vous recevez cet email car vous avez activé les notifications de diffusion dans votre profil.</p>
+        </div>
+      `,
+    });
+    return { sent: true, messageId: info.messageId };
   },
 });
