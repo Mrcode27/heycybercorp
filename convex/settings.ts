@@ -82,6 +82,8 @@ export type SiteSettings = {
   cyberRainColors: string[];
   /** Opacity of the rain layer, 0–100. */
   cyberRainOpacity: number;
+  /** Enable email notifications for broadcast messages. Default: false. */
+  broadcastEmailEnabled: boolean;
 };
 
 /** Public. Read on every page load, so it stays deliberately tiny. */
@@ -113,6 +115,8 @@ export const get = query({
         : DEFAULT_CYBER_RAIN_COLORS,
       // 45 was the fixed shipped alpha (0.45 in the renderer).
       cyberRainOpacity: row?.cyberRainOpacity ?? 45,
+      // Email notifications for broadcasts are OFF by default; an admin has to opt in.
+      broadcastEmailEnabled: row?.broadcastEmailEnabled ?? false,
     };
   },
 });

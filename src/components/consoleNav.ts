@@ -19,6 +19,7 @@ export const ADMIN_NAV: SidebarItem[] = [
   { icon: "smart_display", label: "Vidéos gratuites", href: "/admin/videos" },
   { icon: "science", label: "Labs", href: "/admin/labs" },
   { icon: "mail", label: "Messages", href: "/admin/messages" },
+  { icon: "campaign", label: "Diffusion", href: "/admin/broadcast" },
   { icon: "assessment", label: "Rapports", href: "/admin/rapports" },
   { icon: "history", label: "Journal", href: "/admin/journal" },
   { icon: "palette", label: "Apparence", href: "/admin/apparence" },
