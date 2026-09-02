@@ -670,9 +670,9 @@ html[data-theme="light"] .terminal-container {
   mask-image: linear-gradient(to bottom, #000 0 80%, transparent 98%);
 }
 
-/* The ring-field host fills its layer; the canvas is created imperatively. */
-.cursor-ring-field,
-.cursor-ring-field-canvas {
+/* The particle host fills its layer; its canvas is created imperatively.
+   CursorRingField is not listed: that one carries its own inline styles. */
+.particle-field {
   width: 100%;
   height: 100%;
   display: block;
@@ -978,7 +978,6 @@ html[data-theme="light"] .terminal-container {
   70%, 100% { box-shadow: 0 0 0 8px transparent; }
 }
 
-.landing-pointer-reticle,
 .landing-click-wave {
   position: absolute;
   z-index: 8;
@@ -987,90 +986,59 @@ html[data-theme="light"] .terminal-container {
   pointer-events: none;
 }
 
-.landing-pointer-reticle {
-  width: 4rem;
-  height: 4rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 58%, transparent);
-  border-radius: 50%;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.72) rotate(-5deg);
-  transition: opacity 150ms ease, transform 180ms ease;
-  box-shadow:
-    0 0 0 5px color-mix(in srgb, var(--color-primary) 7%, transparent),
-    0 0 18px color-mix(in srgb, var(--color-secondary) 16%, transparent);
+/* ------------------------------------------------------------
+   Fluid FX toggle
+   ------------------------------------------------------------
+   A small pill fixed to the viewport's bottom-right corner that
+   turns the fluid cursor trail on or off for this visitor. Styled
+   like the hero chrome (mono type, hairline border, blur) rather
+   than dropped into the navbar. The hero animation is unaffected. */
+.fluid-fx-toggle {
+  position: fixed;
+  z-index: 45; /* above the fluid canvas (40), below the navbar (50) */
+  right: clamp(1rem, 3vw, 2rem);
+  bottom: clamp(1rem, 3vw, 1.75rem);
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--color-surface) 78%, transparent);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-primary) 8%, transparent);
+  color: var(--color-on-surface-variant);
+  font: 500 0.6rem/1 var(--font-jetbrains-mono), monospace;
+  letter-spacing: 0.14em;
+  backdrop-filter: blur(12px);
+  cursor: pointer;
+  transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
 }
 
-.landing-pointer-reticle::before,
-.landing-pointer-reticle::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 50%;
+.fluid-fx-toggle:hover {
+  border-color: color-mix(in srgb, var(--color-secondary) 48%, transparent);
+  box-shadow: 0 10px 34px color-mix(in srgb, var(--color-secondary) 16%, transparent);
+  color: var(--color-on-surface);
 }
 
-.landing-pointer-reticle::before {
-  width: 5rem;
-  height: 5rem;
-  border: 1px dashed color-mix(in srgb, var(--color-secondary) 46%, transparent);
-  border-radius: 50%;
-  transform: translate(-50%, -50%);
+.fluid-fx-toggle:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
 }
 
-.landing-pointer-reticle::after {
-  width: 0.42rem;
-  height: 0.42rem;
-  border-radius: 50%;
-  background: var(--color-secondary);
-  box-shadow: 0 0 9px color-mix(in srgb, var(--color-secondary) 52%, transparent);
-  transform: translate(-50%, -50%);
+.fluid-fx-toggle-state {
+  color: var(--color-primary);
 }
 
-.landing-pointer-reticle > span {
-  position: absolute;
+.fluid-fx-toggle-state.is-off {
+  color: var(--color-on-surface-variant);
 }
 
-.landing-pointer-reticle > span:first-child {
-  inset: 0.62rem;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 38%, transparent);
-  border-radius: 50%;
-}
-
-.landing-pointer-reticle > span:nth-child(2) {
-  top: 50%;
-  left: -0.48rem;
-  right: -0.48rem;
-  height: 1px;
-  background: linear-gradient(90deg, var(--color-primary), transparent 22% 78%, var(--color-primary));
-}
-
-.landing-pointer-reticle > i {
-  position: absolute;
-  inset: 0.2rem;
-  border-radius: 50%;
-  background: conic-gradient(from 15deg, color-mix(in srgb, var(--color-secondary) 18%, transparent), transparent 28% 100%);
-  animation: landing-camera-scan 2.8s linear infinite;
-  animation-play-state: paused;
-}
-
-.landing-pointer-reticle strong {
-  position: absolute;
-  top: calc(100% + 0.45rem);
-  left: 50%;
-  width: max-content;
-  transform: translateX(-50%);
-  color: var(--color-secondary);
-  font: 500 0.54rem/1 var(--font-jetbrains-mono), monospace;
-  letter-spacing: 0.12em;
-  text-shadow: 0 0 9px color-mix(in srgb, var(--color-secondary) 32%, transparent);
-}
-
-.landing-hero.landing-user-active .landing-pointer-reticle {
-  opacity: 0.78;
-  transform: translate(-50%, -50%) scale(1) rotate(0);
-}
-
-.landing-hero.landing-user-active .landing-pointer-reticle > i {
-  animation-play-state: running;
+/* When the visitor toggles the FX off, the trail layer hides immediately,
+   even for the frame before React unmounts the renderer. The
+   IntersectionObserver inside the renderer then also stops its render loop,
+   because the canvas is no longer intersecting. */
+html[data-hero-fx="off"] .fluid-cursor-host {
+  display: none;
 }
 
 .landing-spy-camera {
@@ -1568,16 +1536,12 @@ html[data-theme="light"] .landing-contact-panel {
   .landing-code-cloud span:nth-child(8) { display: none; }
 }
 
-@media (pointer: coarse) {
-  .landing-pointer-reticle { display: none; }
-}
-
 /* ============================================================
    Fluid cursor
    ------------------------------------------------------------
    A viewport-fixed WebGL canvas that trails the pointer everywhere except the
-   hero, which runs its own reticle. It never takes pointer events, and it sits
-   below the navbar so the header stays legible.
+   hero, which runs its own pointer field. It never takes pointer events, and
+   it sits below the navbar so the header stays legible.
    ============================================================ */
 /* The host is the fixed layer; the canvas inside it is created per mount so a
    lost WebGL context is never inherited by the next one. */
@@ -1599,6 +1563,30 @@ html[data-theme="light"] .landing-contact-panel {
   .fluid-cursor-host { display: none; }
 }
 
+/* ============================================================
+   Cyber-defense rain
+   ------------------------------------------------------------
+   A fixed 2D-canvas layer behind the page BELOW the hero. z-index -1 keeps it
+   under every section while still above the root background, so it reads as
+   atmosphere behind transparent content. It never takes pointer events, it is
+   dimmed by the script itself, and it respects reduced motion. */
+.cyber-rain-host {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.cyber-rain-canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cyber-rain-host { display: none; }
+}
+
 /* Respect a reduced-motion preference: keep the colour, drop the movement. */
 @media (prefers-reduced-motion: reduce) {
   .terminal-sweep::before,
@@ -1612,7 +1600,6 @@ html[data-theme="light"] .landing-contact-panel {
   .landing-radar span:nth-child(3),
   .landing-code-cloud span,
   .landing-click-wave,
-  .landing-pointer-reticle > i,
   .landing-spy-lens > i,
   .landing-live-dot,
   .landing-cyber-word,

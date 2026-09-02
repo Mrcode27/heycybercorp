@@ -357,6 +357,14 @@ function hexToRgb(hex: string): RGB {
   };
 }
 
+/**
+ * How fast the rainbow hue sweeps along a stroke, in full wheel turns per unit
+ * of texcoord distance. One full turn ≈ a third of the viewport: a stroke
+ * across the page walks the whole spectrum, while a short flick stays mostly
+ * one hue.
+ */
+const RAINBOW_SWEEP = 3;
+
 /** HSV -> RGB, for the rainbow sweep. Saturated but not blinding. */
 function hsvToRgb(h: number, s: number, v: number): RGB {
   const i = Math.floor(h * 6);
@@ -855,6 +863,14 @@ export default function FluidCursor({
     // admin's order is what people actually see stroke after stroke.
     let paletteCursor = 0;
     let hue = Math.random();
+    // Rainbow strokes sweep the wheel ALONG the path: `strokeHue` is the
+    // stroke's base (golden-ratio stepped so consecutive strokes stay apart)
+    // and `strokeDist` accumulates the distance travelled. The colour a splat
+    // gets is the hue at its position on the stroke, so one stroke paints a
+    // gradient through the whole spectrum instead of one flat colour that only
+    // changes when the next stroke starts.
+    let strokeHue = hue;
+    let strokeDist = 0;
 
     function pickColor(): RGB {
       const cfg = configRef.current;
@@ -863,6 +879,8 @@ export default function FluidCursor({
         // Golden-ratio hue stepping: consecutive strokes stay far apart on the
         // wheel instead of clustering the way plain random does.
         hue = (hue + 0.618033988749895) % 1;
+        strokeHue = hue;
+        strokeDist = 0;
         rgb = hsvToRgb(hue, 0.85, 1);
       } else {
         const list = cfg.palette.length ? cfg.palette : ["#2aa561"];
@@ -894,6 +912,7 @@ export default function FluidCursor({
       pointer.deltaX = correctDeltaX(pointer.texcoordX - pointer.prevTexcoordX);
       pointer.deltaY = correctDeltaY(pointer.texcoordY - pointer.prevTexcoordY);
       pointer.moved = Math.abs(pointer.deltaX) > 0 || Math.abs(pointer.deltaY) > 0;
+      strokeDist += Math.hypot(pointer.deltaX, pointer.deltaY);
     }
 
     let excluded: HTMLElement | null = excludeSelector
@@ -985,13 +1004,24 @@ export default function FluidCursor({
     function applyInputs() {
       if (!pointer.moved) return;
       pointer.moved = false;
-      const force = configRef.current.splatForce;
+      const cfg = configRef.current;
+      const force = cfg.splatForce;
+      let color = pointer.color;
+      if (cfg.colorMode === "rainbow") {
+        // The stroke IS the rainbow: the hue sweeps along the path travelled,
+        // so one stroke paints the whole spectrum as a gradient rather than a
+        // single colour that only changes when the next stroke begins.
+        const h = (((strokeHue + strokeDist * RAINBOW_SWEEP) % 1) + 1) % 1;
+        const rgb = hsvToRgb(h, 0.85, 1);
+        const k = cfg.intensity;
+        color = { r: rgb.r * k, g: rgb.g * k, b: rgb.b * k };
+      }
       splat(
         pointer.texcoordX,
         pointer.texcoordY,
         pointer.deltaX * force,
         pointer.deltaY * force,
-        pointer.color,
+        color,
       );
     }
 

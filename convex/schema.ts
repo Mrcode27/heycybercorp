@@ -97,13 +97,25 @@ export default defineSchema({
     theme: v.union(v.literal("dark"), v.literal("light")),
     ringColors: v.optional(v.array(v.string())),
     fluidColors: v.optional(v.array(v.string())),
-    /** Which of the two hero backgrounds is live. Absent = the rings. */
-    heroAnimation: v.optional(v.union(v.literal("rings"), v.literal("ringField"))),
+    /** Which of the hero backgrounds is live. Absent = the rings. */
+    heroAnimation: v.optional(
+      v.union(v.literal("rings"), v.literal("ringField"), v.literal("cursorRing")),
+    ),
     /**
      * How the fluid cursor picks a colour per stroke: "rainbow" sweeps the hue
      * wheel and ignores the palette; "sequence" walks fluidColors in order.
      */
     fluidColorMode: v.optional(v.union(v.literal("rainbow"), v.literal("sequence"))),
+    /** Whether the fluid cursor trail runs at all. Absent = enabled. */
+    fluidEnabled: v.optional(v.boolean()),
+    /** Strength of the fluid trail, 0–100. Absent = the shipped default. */
+    fluidDensity: v.optional(v.number()),
+    /** Ambient "digital rain" cyber-defense backdrop. Absent = enabled. */
+    cyberRain: v.optional(v.boolean()),
+    /** Palette for the digital-rain glyphs. */
+    cyberRainColors: v.optional(v.array(v.string())),
+    /** Opacity of the digital-rain layer, 0–100. Absent = 45. */
+    cyberRainOpacity: v.optional(v.number()),
   }),
 
   /**

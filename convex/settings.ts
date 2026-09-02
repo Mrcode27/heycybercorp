@@ -24,6 +24,8 @@ export type Theme = "dark" | "light";
  */
 export const DEFAULT_RING_COLORS = ["#08723d", "#087f97"];
 export const DEFAULT_FLUID_COLORS = ["#2aa561", "#0097b2", "#08723d", "#00c2a8"];
+/** The cyber-defence rain's palette — brand green + the cyan scan tint. */
+export const DEFAULT_CYBER_RAIN_COLORS = ["#6add93", "#66d5f1"];
 
 /** Both pickers cap here: past a handful the gradient stops reading as one. */
 export const MAX_COLORS = 8;
@@ -52,9 +54,13 @@ function cleanColors(colors: string[], label: string): string[] {
   return cleaned;
 }
 
-/** The two hero backgrounds an admin can choose between. */
-export type HeroAnimation = "rings" | "ringField";
-const heroAnimationValidator = v.union(v.literal("rings"), v.literal("ringField"));
+/** The three hero backgrounds an admin can choose between. */
+export type HeroAnimation = "rings" | "ringField" | "cursorRing";
+const heroAnimationValidator = v.union(
+  v.literal("rings"),
+  v.literal("ringField"),
+  v.literal("cursorRing"),
+);
 
 /** How the fluid trail colours each stroke. */
 export type FluidColorMode = "rainbow" | "sequence";
@@ -66,6 +72,16 @@ export type SiteSettings = {
   fluidColors: string[];
   heroAnimation: HeroAnimation;
   fluidColorMode: FluidColorMode;
+  /** Whether the fluid cursor trail runs at all. Default: on. */
+  fluidEnabled: boolean;
+  /** Strength of the fluid trail, 0–100. */
+  fluidDensity: number;
+  /** Ambient digital-rain backdrop below the hero. */
+  cyberRain: boolean;
+  /** Colours of the digital-rain glyphs. */
+  cyberRainColors: string[];
+  /** Opacity of the rain layer, 0–100. */
+  cyberRainOpacity: number;
 };
 
 /** Public. Read on every page load, so it stays deliberately tiny. */
@@ -84,6 +100,19 @@ export const get = query({
       heroAnimation: row?.heroAnimation ?? "rings",
       // Walking the brand palette is the on-brand default; rainbow is opt-in.
       fluidColorMode: row?.fluidColorMode ?? "sequence",
+      // The trail ships enabled; an admin has to switch it off deliberately.
+      fluidEnabled: row?.fluidEnabled ?? true,
+      // Centered on the shipped splat radius/force, so 50 looks like the
+      // original design and the dial has room either way.
+      fluidDensity: row?.fluidDensity ?? 55,
+      // The rain ships enabled; it is ambient, not intrusive.
+      cyberRain: row?.cyberRain ?? true,
+      // Brand greens/cyan, matching the shipped look.
+      cyberRainColors: row?.cyberRainColors?.length
+        ? row.cyberRainColors
+        : DEFAULT_CYBER_RAIN_COLORS,
+      // 45 was the fixed shipped alpha (0.45 in the renderer).
+      cyberRainOpacity: row?.cyberRainOpacity ?? 45,
     };
   },
 });
@@ -114,13 +143,21 @@ export const setAnimationColors = mutation({
   args: {
     ringColors: v.optional(v.array(v.string())),
     fluidColors: v.optional(v.array(v.string())),
+    cyberRainColors: v.optional(v.array(v.string())),
   },
-  handler: async (ctx, { ringColors, fluidColors }) => {
+  handler: async (ctx, { ringColors, fluidColors, cyberRainColors }) => {
     const admin = await requireAdmin(ctx);
 
-    const patch: { ringColors?: string[]; fluidColors?: string[] } = {};
+    const patch: {
+      ringColors?: string[];
+      fluidColors?: string[];
+      cyberRainColors?: string[];
+    } = {};
     if (ringColors !== undefined) patch.ringColors = cleanColors(ringColors, "les anneaux");
     if (fluidColors !== undefined) patch.fluidColors = cleanColors(fluidColors, "le curseur fluide");
+    if (cyberRainColors !== undefined) {
+      patch.cyberRainColors = cleanColors(cyberRainColors, "la pluie de données");
+    }
     if (Object.keys(patch).length === 0) return;
 
     const row = await ctx.db.query("siteSettings").first();
@@ -138,6 +175,7 @@ export const setAnimationColors = mutation({
       [
         patch.ringColors ? `anneaux: ${patch.ringColors.join(" ")}` : null,
         patch.fluidColors ? `fluide: ${patch.fluidColors.join(" ")}` : null,
+        patch.cyberRainColors ? `pluie: ${patch.cyberRainColors.join(" ")}` : null,
       ]
         .filter(Boolean)
         .join(" · "),
@@ -177,6 +215,72 @@ export const setFluidColorMode = mutation({
   },
 });
 
+/** Admin only — enables or disables the fluid cursor trail for every visitor. */
+export const setFluidEnabled = mutation({
+  args: { fluidEnabled: v.boolean() },
+  handler: async (ctx, { fluidEnabled }) => {
+    const admin = await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.fluidEnabled === fluidEnabled) return;
+      await ctx.db.patch(row._id, { fluidEnabled });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", fluidEnabled });
+    }
+    await logAudit(ctx, "settings.fluid_enabled", admin.email, fluidEnabled ? "activé" : "désactivé");
+  },
+});
+
+/** Admin only — strength of the fluid trail, 0–100. */
+export const setFluidDensity = mutation({
+  args: { fluidDensity: v.number() },
+  handler: async (ctx, { fluidDensity }) => {
+    const admin = await requireAdmin(ctx);
+    const value = Math.round(Math.min(100, Math.max(0, fluidDensity)));
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.fluidDensity === value) return;
+      await ctx.db.patch(row._id, { fluidDensity: value });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", fluidDensity: value });
+    }
+    await logAudit(ctx, "settings.fluid_density", admin.email, String(value));
+  },
+});
+
+/** Admin only — toggles the ambient digital-rain backdrop. */
+export const setCyberRain = mutation({
+  args: { cyberRain: v.boolean() },
+  handler: async (ctx, { cyberRain }) => {
+    const admin = await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.cyberRain === cyberRain) return;
+      await ctx.db.patch(row._id, { cyberRain });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", cyberRain });
+    }
+    await logAudit(ctx, "settings.cyber_rain", admin.email, cyberRain ? "activée" : "désactivée");
+  },
+});
+
+/** Admin only — how visible the digital-rain layer is, 0–100. */
+export const setCyberRainOpacity = mutation({
+  args: { cyberRainOpacity: v.number() },
+  handler: async (ctx, { cyberRainOpacity }) => {
+    const admin = await requireAdmin(ctx);
+    const value = Math.round(Math.min(100, Math.max(0, cyberRainOpacity)));
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.cyberRainOpacity === value) return;
+      await ctx.db.patch(row._id, { cyberRainOpacity: value });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", cyberRainOpacity: value });
+    }
+    await logAudit(ctx, "settings.cyber_rain_opacity", admin.email, String(value));
+  },
+});
+
 /** Admin only — back to the brand palettes. */
 export const resetAnimationColors = mutation({
   args: {},
@@ -187,6 +291,7 @@ export const resetAnimationColors = mutation({
     await ctx.db.patch(row._id, {
       ringColors: DEFAULT_RING_COLORS,
       fluidColors: DEFAULT_FLUID_COLORS,
+      cyberRainColors: DEFAULT_CYBER_RAIN_COLORS,
     });
     await logAudit(ctx, "settings.animation_colors", admin.email, "réinitialisées");
   },

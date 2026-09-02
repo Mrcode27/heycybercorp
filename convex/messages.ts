@@ -1,6 +1,7 @@
 import { query, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./users";
+import { notifyAdmins } from "./notifications";
 import { internal } from "./_generated/api";
 
 const HOUR_MS = 60 * 60 * 1000;
@@ -48,6 +49,19 @@ export const submit = mutation({
       subject: subject?.trim() || undefined,
       body: body.trim(),
       status: "new",
+    });
+
+    // Ping every admin's bell in the same transaction, so the inbox badge
+    // appears even before they open /admin/messages. Same pattern as
+    // conversations.start.
+    await notifyAdmins(ctx, {
+      kind: "message",
+      title:
+        kind === "devis"
+          ? `Nouvelle demande de devis de ${name.trim()}`
+          : `Nouveau message de ${name.trim()}`,
+      body: subject?.trim() || body.trim().slice(0, 80),
+      href: "/admin/messages",
     });
 
     // Notify by email, but only after the row is safely committed and without

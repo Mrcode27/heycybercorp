@@ -9,6 +9,8 @@ import Socials from "@/components/Socials";
 import LandingMotion from "@/components/LandingMotion";
 import HeroTypingHeadline from "@/components/HeroTypingHeadline";
 import LandingHeroAnimation, { LandingFluidCursor } from "@/components/LandingEffects";
+import HeroFxToggle from "@/components/HeroFxToggle";
+import CyberDefenseRain from "@/components/CyberDefenseRain";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
 import { CONTACT_EMAIL } from "@/lib/site";
 
@@ -51,8 +53,15 @@ export default function Home() {
       <OrganizationJsonLd />
       <LandingMotion />
       {/* Fluid trail for the page below the fold. The hero is excluded: it has
-          its own reticle and pointer choreography. */}
+          its own pointer field and choreography. */}
       <LandingFluidCursor />
+      {/* Ambient cyber-defense rain behind the page below the hero. Sits at
+          z-index -1 (under the body background content), fades in once the
+          hero scrolls out. */}
+      <CyberDefenseRain />
+      {/* Visitor toggle for the fluid trail. Fixed to the viewport, bottom
+          right — not in the navbar. The hero animation is unaffected. */}
+      <HeroFxToggle />
       {/* Hero */}
       <section
         className="landing-hero relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid"
@@ -94,12 +103,6 @@ export default function Home() {
             <div className="landing-hood-stage">
               <div className="landing-hood-mark" />
             </div>
-          </div>
-          <div className="landing-pointer-reticle">
-            <span />
-            <span />
-            <i />
-            <strong data-pointer-readout>USER INPUT</strong>
           </div>
           <div className="landing-click-wave" />
         </div>

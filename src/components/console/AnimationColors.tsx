@@ -12,11 +12,14 @@ const MAX_COLORS = 8;
 /** Must match DEFAULT_RING_COLORS / DEFAULT_FLUID_COLORS in convex/settings.ts. */
 const DEFAULT_RINGS = ["#08723d", "#087f97"];
 const DEFAULT_FLUID = ["#2aa561", "#0097b2", "#08723d", "#00c2a8"];
+/** Must match DEFAULT_CYBER_RAIN_COLORS in convex/settings.ts. */
+const DEFAULT_RAIN = ["#6add93", "#66d5f1"];
 
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
-type Which = "rings" | "fluid";
-type HeroAnimation = "rings" | "ringField";
+type Which = "rings" | "fluid" | "rain";
+/** Must match HeroAnimation in convex/settings.ts. */
+type HeroAnimation = "rings" | "ringField" | "cursorRing";
 type FluidColorMode = "rainbow" | "sequence";
 
 /** How the fluid trail picks a colour for each stroke. */
@@ -35,7 +38,7 @@ const FLUID_MODES: { key: FluidColorMode; name: string; desc: string; icon: stri
   },
 ];
 
-/** The two hero backgrounds. Only the selected one is ever downloaded. */
+/** The three hero backgrounds. Only the selected one is ever downloaded. */
 const HERO_OPTIONS: {
   key: HeroAnimation;
   name: string;
@@ -50,9 +53,15 @@ const HERO_OPTIONS: {
   },
   {
     key: "ringField",
-    name: "Champ de points",
-    icon: "blur_on",
-    desc: "Une grille de points qu'un anneau, accroché au curseur, éclaire et repousse.",
+    name: "Champ de particules",
+    icon: "scatter_plot",
+    desc: "Un disque de barres bleues, vertes et jaunes qui respire comme une méduse ; le curseur creuse un vide à son centre et comprime le disque autour de lui.",
+  },
+  {
+    key: "cursorRing",
+    name: "Anneau de capsules",
+    icon: "flare",
+    desc: "Un champ dense de capsules lumineuses : un anneau suit le curseur, les éclaire en dégradé et les pousse vers l'extérieur.",
   },
 ];
 
@@ -76,6 +85,13 @@ const PICKERS: {
     icon: "gesture",
     desc: "La traînée qui suit la souris sur le reste de la page d'accueil.",
     order: "Utilisée en mode « couleur après couleur », dans cet ordre.",
+  },
+  {
+    key: "rain",
+    name: "Pluie de données",
+    icon: "grain",
+    desc: "La pluie numérique de la défense cyber, derrière la page sous le héros.",
+    order: "Les gouttes alternent ces couleurs, colonne par colonne.",
   },
 ];
 
@@ -269,7 +285,7 @@ function Picker({
 }
 
 /**
- * Colour control for the two landing-page animations.
+ * Colour controls for the landing-page animations and the ambient rain.
  *
  * Saving writes to Convex, which every visitor's page is already subscribed
  * to — the animations repaint live, with no deploy and nothing to rebuild.
@@ -279,9 +295,19 @@ export default function AnimationColors() {
   const setColors = useMutation(api.settings.setAnimationColors);
   const setHeroAnimation = useMutation(api.settings.setHeroAnimation);
   const setFluidColorMode = useMutation(api.settings.setFluidColorMode);
+  const setFluidEnabled = useMutation(api.settings.setFluidEnabled);
+  const setFluidDensity = useMutation(api.settings.setFluidDensity);
+  const setCyberRain = useMutation(api.settings.setCyberRain);
+  const setCyberRainOpacity = useMutation(api.settings.setCyberRainOpacity);
   const [busy, setBusy] = useState<Which | null>(null);
   const [heroBusy, setHeroBusy] = useState<HeroAnimation | null>(null);
   const [modeBusy, setModeBusy] = useState<FluidColorMode | null>(null);
+  const [enabledBusy, setEnabledBusy] = useState(false);
+  const [density, setDensity] = useState<number | null>(null);
+  const [densityBusy, setDensityBusy] = useState(false);
+  const [rainBusy, setRainBusy] = useState(false);
+  const [rainOpacity, setRainOpacity] = useState<number | null>(null);
+  const [rainOpacityBusy, setRainOpacityBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   async function chooseHero(key: HeroAnimation) {
@@ -310,11 +336,69 @@ export default function AnimationColors() {
     }
   }
 
+  async function chooseFluidEnabled(enabled: boolean) {
+    if (settings?.fluidEnabled === enabled) return;
+    setEnabledBusy(true);
+    setError(null);
+    try {
+      await setFluidEnabled({ fluidEnabled: enabled });
+    } catch (err) {
+      setError(cleanConvexError(err, "Le changement a échoué."));
+    } finally {
+      setEnabledBusy(false);
+    }
+  }
+
+  async function chooseRain(enabled: boolean) {
+    if (settings?.cyberRain === enabled) return;
+    setRainBusy(true);
+    setError(null);
+    try {
+      await setCyberRain({ cyberRain: enabled });
+    } catch (err) {
+      setError(cleanConvexError(err, "Le changement a échoué."));
+    } finally {
+      setRainBusy(false);
+    }
+  }
+
+  async function saveDensity() {
+    if (density === null || settings?.fluidDensity === density) return;
+    setDensityBusy(true);
+    setError(null);
+    try {
+      await setFluidDensity({ fluidDensity: density });
+    } catch (err) {
+      setError(cleanConvexError(err, "L'enregistrement de la densité a échoué."));
+    } finally {
+      setDensityBusy(false);
+    }
+  }
+
+  async function saveRainOpacity() {
+    if (rainOpacity === null || settings?.cyberRainOpacity === rainOpacity) return;
+    setRainOpacityBusy(true);
+    setError(null);
+    try {
+      await setCyberRainOpacity({ cyberRainOpacity: rainOpacity });
+    } catch (err) {
+      setError(cleanConvexError(err, "L'enregistrement de l'opacité a échoué."));
+    } finally {
+      setRainOpacityBusy(false);
+    }
+  }
+
   async function save(which: Which, colors: string[]) {
     setBusy(which);
     setError(null);
     try {
-      await setColors(which === "rings" ? { ringColors: colors } : { fluidColors: colors });
+      await setColors(
+        which === "rings"
+          ? { ringColors: colors }
+          : which === "fluid"
+            ? { fluidColors: colors }
+            : { cyberRainColors: colors },
+      );
     } catch (err) {
       setError(cleanConvexError(err, "L'enregistrement des couleurs a échoué."));
     } finally {
@@ -385,7 +469,7 @@ export default function AnimationColors() {
             })}
           </div>
           <p className="mt-3 font-code-sm text-code-sm text-on-surface-variant/80">
-            Les deux utilisent la palette « Anneaux du héros » ci-dessous.
+            Les trois utilisent la palette « Anneaux du héros » ci-dessous.
           </p>
         </section>
 
@@ -440,12 +524,205 @@ export default function AnimationColors() {
           </div>
         </section>
 
+        <section className="rounded-xl border border-outline-variant/40 p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <Icon name="water_drop" className="mt-0.5 text-secondary" fill />
+            <div className="min-w-0">
+              <h4 className="font-headline-lg-mobile text-on-surface">
+                Curseur fluide activé&nbsp;?
+              </h4>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Coupe la traînée pour tous les visiteurs. Chaque visiteur peut aussi la
+                couper pour lui-même avec la pastille «&nbsp;FX CURSEUR&nbsp;» en bas de la page.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { enabled: true, name: "Activé", icon: "check_circle" },
+              { enabled: false, name: "Désactivé", icon: "cancel" },
+            ].map((option) => {
+              const isActive = (settings?.fluidEnabled ?? true) === option.enabled;
+              return (
+                <button
+                  key={option.name}
+                  type="button"
+                  onClick={() => chooseFluidEnabled(option.enabled)}
+                  disabled={enabledBusy || settings === undefined}
+                  aria-pressed={isActive}
+                  className={`rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
+                    isActive
+                      ? "border-primary bg-primary/5"
+                      : "border-outline-variant/40 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Icon name={option.icon} className="text-secondary" fill />
+                    {isActive && (
+                      <span className="flex items-center gap-1 font-code-sm text-code-sm text-primary">
+                        <Icon name="check_circle" className="text-sm" fill /> Actif
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-body-md text-on-surface">{option.name}</div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-outline-variant/40 p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <Icon name="tune" className="mt-0.5 text-secondary" fill />
+            <div className="min-w-0">
+              <h4 className="font-headline-lg-mobile text-on-surface">
+                Densité du curseur fluide
+              </h4>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Quelle quantité de fluide chaque mouvement laisse derrière lui. 55 est
+                le réglage d&apos;origine.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-4">
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={density ?? settings?.fluidDensity ?? 55}
+              onChange={(e) => setDensity(Number(e.target.value))}
+              disabled={settings === undefined}
+              className="flex-1 accent-[color:var(--color-primary)]"
+            />
+            <span className="w-12 text-right font-code-sm text-code-sm text-on-surface-variant tabular-nums">
+              {density ?? settings?.fluidDensity ?? 55}
+            </span>
+            <button
+              type="button"
+              onClick={saveDensity}
+              disabled={
+                densityBusy ||
+                density === null ||
+                settings === undefined ||
+                settings?.fluidDensity === density
+              }
+              className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-bold text-on-primary transition-all hover:brightness-110 disabled:opacity-40"
+            >
+              <Icon name="save" className="text-sm" fill />
+              {densityBusy ? "Enregistrement…" : "Enregistrer"}
+            </button>
+          </div>
+        </section>
+
+        <section className="rounded-xl border border-outline-variant/40 p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <Icon name="security" className="mt-0.5 text-secondary" fill />
+            <div className="min-w-0">
+              <h4 className="font-headline-lg-mobile text-on-surface">
+                Défense cyber ambiante
+              </h4>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                La pluie de données (pluie numérique) qui défile derrière la page sous le
+                héros, avec des alertes d&apos;intrusion bloquées. Reste derrière le contenu.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { enabled: true, name: "Activée", icon: "check_circle" },
+              { enabled: false, name: "Désactivée", icon: "cancel" },
+            ].map((option) => {
+              const isActive = (settings?.cyberRain ?? true) === option.enabled;
+              return (
+                <button
+                  key={option.name}
+                  type="button"
+                  onClick={() => chooseRain(option.enabled)}
+                  disabled={rainBusy || settings === undefined}
+                  aria-pressed={isActive}
+                  className={`rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
+                    isActive
+                      ? "border-primary bg-primary/5"
+                      : "border-outline-variant/40 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Icon name={option.icon} className="text-secondary" fill />
+                    {isActive && (
+                      <span className="flex items-center gap-1 font-code-sm text-code-sm text-primary">
+                        <Icon name="check_circle" className="text-sm" fill /> Actif
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-body-md text-on-surface">{option.name}</div>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="mt-5 rounded-lg border border-outline-variant/40 p-4">
+            <div className="mb-3 flex items-center gap-3">
+              <Icon name="opacity" className="text-secondary" fill />
+              <div className="min-w-0">
+                <h5 className="font-headline-lg-mobile text-on-surface sm:text-base">
+                  Opacité de la pluie
+                </h5>
+                <p className="font-body-md text-body-md text-on-surface-variant">
+                  À quel point la pluie se détache du fond. 45 est le réglage d&apos;origine.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={1}
+                value={rainOpacity ?? settings?.cyberRainOpacity ?? 45}
+                onChange={(e) => setRainOpacity(Number(e.target.value))}
+                disabled={settings === undefined}
+                className="flex-1 accent-[color:var(--color-primary)]"
+              />
+              <span className="w-12 text-right font-code-sm text-code-sm text-on-surface-variant tabular-nums">
+                {rainOpacity ?? settings?.cyberRainOpacity ?? 45}
+              </span>
+              <button
+                type="button"
+                onClick={saveRainOpacity}
+                disabled={
+                  rainOpacityBusy ||
+                  rainOpacity === null ||
+                  settings === undefined ||
+                  settings?.cyberRainOpacity === rainOpacity
+                }
+                className="flex items-center gap-1.5 rounded-lg bg-primary px-4 py-2 font-bold text-on-primary transition-all hover:brightness-110 disabled:opacity-40"
+              >
+                <Icon name="save" className="text-sm" fill />
+                {rainOpacityBusy ? "Enregistrement…" : "Enregistrer"}
+              </button>
+            </div>
+          </div>
+        </section>
+
         {PICKERS.map((spec) => (
           <Picker
             key={spec.key}
             spec={spec}
-            saved={spec.key === "rings" ? settings?.ringColors : settings?.fluidColors}
-            fallback={spec.key === "rings" ? DEFAULT_RINGS : DEFAULT_FLUID}
+            saved={
+              spec.key === "rings"
+                ? settings?.ringColors
+                : spec.key === "fluid"
+                  ? settings?.fluidColors
+                  : settings?.cyberRainColors
+            }
+            fallback={
+              spec.key === "rings"
+                ? DEFAULT_RINGS
+                : spec.key === "fluid"
+                  ? DEFAULT_FLUID
+                  : DEFAULT_RAIN
+            }
             busy={busy === spec.key}
             onSave={(colors) => save(spec.key, colors)}
           />

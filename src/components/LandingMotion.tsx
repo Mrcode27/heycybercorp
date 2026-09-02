@@ -11,7 +11,6 @@ export default function LandingMotion() {
   useEffect(() => {
     const root = document.documentElement;
     const hero = document.querySelector<HTMLElement>("[data-cyber-hero]");
-    const pointerReadout = hero?.querySelector<HTMLElement>("[data-pointer-readout]");
     const reveals = Array.from(
       document.querySelectorAll<HTMLElement>("[data-cyber-reveal]"),
     );
@@ -56,11 +55,6 @@ export default function LandingMotion() {
         hero.style.setProperty("--eye-offset-y", `${((y - 0.5) * 5).toFixed(2)}px`);
         hero.style.setProperty("--code-shift-x", `${((x - 0.5) * 18).toFixed(2)}px`);
         hero.style.setProperty("--code-shift-y", `${((y - 0.5) * 12).toFixed(2)}px`);
-        if (pointerReadout) {
-          const xLabel = Math.round(x * 99).toString().padStart(2, "0");
-          const yLabel = Math.round(y * 99).toString().padStart(2, "0");
-          pointerReadout.textContent = `USER ${xLabel}:${yLabel}`;
-        }
       });
     };
 
@@ -87,7 +81,6 @@ export default function LandingMotion() {
       hero.style.setProperty("--eye-offset-y", "0px");
       hero.style.setProperty("--code-shift-x", "0px");
       hero.style.setProperty("--code-shift-y", "0px");
-      if (pointerReadout) pointerReadout.textContent = "USER INPUT";
     };
 
     hero?.addEventListener("pointermove", updatePointer, { passive: true });

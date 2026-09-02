@@ -4,6 +4,7 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
+import { useHeroFx } from "@/lib/heroFx";
 
 /**
  * The landing-page animations, in the colours an admin picked in
@@ -27,6 +28,7 @@ import { api } from "../../convex/_generated/api";
  */
 
 const MagicRings = dynamic(() => import("./MagicRings"), { ssr: false });
+const ParticleField = dynamic(() => import("./ParticleField"), { ssr: false });
 const CursorRingField = dynamic(() => import("./CursorRingField"), { ssr: false });
 const FluidCursor = dynamic(() => import("./FluidCursor"), { ssr: false });
 
@@ -73,6 +75,8 @@ export default function LandingHeroAnimation() {
   const settings = useQuery(api.settings.get);
   const ready = useAfterIdle();
 
+  // No visitor toggle here: the hero animation always plays. The FX pill
+  // controls the fluid trail below the hero, not this.
   if (!ready) return null;
 
   const colors = settings?.ringColors?.length ? settings.ringColors : FALLBACK_RINGS;
@@ -80,7 +84,17 @@ export default function LandingHeroAnimation() {
   if (settings?.heroAnimation === "ringField") {
     return (
       <div className="landing-rings">
-        <CursorRingField colors={colors} />
+        <ParticleField />
+      </div>
+    );
+  }
+
+  if (settings?.heroAnimation === "cursorRing") {
+    // Transparent background: the hero paints its own surface (grid, auroras).
+    // The palette is the admin's "Anneaux du héros" ramp, capped at 5 stops.
+    return (
+      <div className="landing-rings">
+        <CursorRingField background="transparent" colors={colors.slice(0, 5)} />
       </div>
     );
   }
@@ -119,10 +133,17 @@ export default function LandingHeroAnimation() {
 export function LandingFluidCursor() {
   const settings = useQuery(api.settings.get);
   const ready = useAfterIdle();
+  // Two gates: the site admin can switch the trail off for everyone, and any
+  // visitor can switch it off for themselves with the FX pill. When either is
+  // off the renderer is not mounted at all — no canvas, no context, no loop.
+  const fxOn = useHeroFx();
 
-  if (!ready) return null;
+  if (!ready || !fxOn || settings?.fluidEnabled === false) return null;
 
   const fluidColors = settings?.fluidColors?.length ? settings.fluidColors : FALLBACK_FLUID;
+  // The admin's density dial (0–100) drives how much fluid a stroke leaves
+  // behind: splat radius and push force. 55 ≈ the shipped look.
+  const density = Math.min(100, Math.max(0, settings?.fluidDensity ?? 55)) / 100;
 
   return (
     <FluidCursor
@@ -132,8 +153,8 @@ export function LandingFluidCursor() {
       velocityDissipation={2}
       pressure={0.1}
       curl={3}
-      splatRadius={0.2}
-      splatForce={6000}
+      splatRadius={0.08 + density * 0.32}
+      splatForce={2500 + density * 7500}
       transparent
       excludeSelector="[data-cyber-hero]"
     />
