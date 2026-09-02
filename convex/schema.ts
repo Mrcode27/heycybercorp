@@ -97,6 +97,13 @@ export default defineSchema({
     theme: v.union(v.literal("dark"), v.literal("light")),
     ringColors: v.optional(v.array(v.string())),
     fluidColors: v.optional(v.array(v.string())),
+    /** Which of the two hero backgrounds is live. Absent = the rings. */
+    heroAnimation: v.optional(v.union(v.literal("rings"), v.literal("ringField"))),
+    /**
+     * How the fluid cursor picks a colour per stroke: "rainbow" sweeps the hue
+     * wheel and ignores the palette; "sequence" walks fluidColors in order.
+     */
+    fluidColorMode: v.optional(v.union(v.literal("rainbow"), v.literal("sequence"))),
   }),
 
   /**

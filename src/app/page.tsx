@@ -8,7 +8,7 @@ import FreeContent from "@/components/FreeContent";
 import Socials from "@/components/Socials";
 import LandingMotion from "@/components/LandingMotion";
 import HeroTypingHeadline from "@/components/HeroTypingHeadline";
-import LandingRings, { LandingFluidCursor } from "@/components/LandingEffects";
+import LandingHeroAnimation, { LandingFluidCursor } from "@/components/LandingEffects";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
 import { CONTACT_EMAIL } from "@/lib/site";
 
@@ -58,7 +58,7 @@ export default function Home() {
         className="landing-hero relative min-h-screen flex items-center pt-24 overflow-hidden cyber-grid"
         data-cyber-hero
       >
-        <LandingRings />
+        <LandingHeroAnimation />
         <div className="landing-atmosphere" aria-hidden="true">
           <div className="landing-aurora landing-aurora-primary" />
           <div className="landing-aurora landing-aurora-secondary" />
@@ -93,17 +93,6 @@ export default function Home() {
           <div className="landing-hood-observer">
             <div className="landing-hood-stage">
               <div className="landing-hood-mark" />
-              <div className="landing-hood-gaze">
-                <span className="landing-hood-eye">
-                  <i />
-                </span>
-                <span className="landing-hood-eye">
-                  <i />
-                </span>
-              </div>
-              <div className="landing-hood-caption">
-                <span /> VISUAL TRACE // LIVE
-              </div>
             </div>
           </div>
           <div className="landing-pointer-reticle">

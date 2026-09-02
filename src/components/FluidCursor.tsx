@@ -35,8 +35,16 @@ interface FluidCursorProps {
   simResolution?: number;
   /** Dye grid resolution (the visible colour). */
   dyeResolution?: number;
-  /** Colours the splats are drawn from. */
+  /** Colours the splats are drawn from, when colorMode is "sequence". */
   palette?: string[];
+  /**
+   * "rainbow" sweeps the hue wheel and ignores the palette; "sequence" walks
+   * the palette in order so consecutive strokes are the brand colours, in the
+   * order an admin arranged them.
+   */
+  colorMode?: "rainbow" | "sequence";
+  /** How strongly a stroke tints the dye. Higher reads more on a light page. */
+  intensity?: number;
   /** Region where the pointer must not produce splats. */
   excludeSelector?: string;
   className?: string;
@@ -349,6 +357,29 @@ function hexToRgb(hex: string): RGB {
   };
 }
 
+/** HSV -> RGB, for the rainbow sweep. Saturated but not blinding. */
+function hsvToRgb(h: number, s: number, v: number): RGB {
+  const i = Math.floor(h * 6);
+  const f = h * 6 - i;
+  const p = v * (1 - s);
+  const q = v * (1 - f * s);
+  const t = v * (1 - (1 - f) * s);
+  switch (i % 6) {
+    case 0:
+      return { r: v, g: t, b: p };
+    case 1:
+      return { r: q, g: v, b: p };
+    case 2:
+      return { r: p, g: v, b: t };
+    case 3:
+      return { r: p, g: q, b: v };
+    case 4:
+      return { r: t, g: p, b: v };
+    default:
+      return { r: v, g: p, b: q };
+  }
+}
+
 function scaleByPixelRatio(input: number): number {
   const ratio = Math.min(window.devicePixelRatio || 1, 2);
   return Math.floor(input * ratio);
@@ -380,10 +411,12 @@ export default function FluidCursor({
   simResolution = 128,
   dyeResolution = 1024,
   palette = ["#2aa561", "#0097b2", "#08723d", "#00c2a8"],
+  colorMode = "sequence",
+  intensity = 0.42,
   excludeSelector,
   className,
 }: FluidCursorProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
   // The simulation loop must see live prop values without being torn down and
   // rebuilt (which would lose the dye buffers), so it reads them from a ref
   // that is refreshed after every render.
@@ -396,6 +429,8 @@ export default function FluidCursor({
     splatForce,
     transparent,
     palette,
+    colorMode,
+    intensity,
   });
 
   useEffect(() => {
@@ -408,21 +443,36 @@ export default function FluidCursor({
       splatForce,
       transparent,
       palette,
+      colorMode,
+      intensity,
     };
   });
 
   useEffect(() => {
-    const mounted = canvasRef.current;
-    if (!mounted) return;
-    // Re-bound with an explicit type so the hoisted helpers below, which the
-    // control-flow analysis cannot see the guard from, still read it as present.
-    const canvas: HTMLCanvasElement = mounted;
+    const host = hostRef.current;
+    if (!host) return;
+    const canvas: HTMLCanvasElement = document.createElement("canvas");
+    canvas.className = "fluid-cursor-canvas";
+    canvas.setAttribute("aria-hidden", "true");
+    host.appendChild(canvas);
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     // A fluid trail needs a pointer to trail; touch devices get nothing.
     if (window.matchMedia("(pointer: coarse)").matches) return;
 
+    const onContextLost = (event: Event) => {
+      // Without preventDefault the context can never be restored; and a lost
+      // context on a viewport-sized canvas renders as an opaque sheet over the
+      // page, so it is hidden rather than left to blanket the content.
+      event.preventDefault();
+      canvas.style.display = "none";
+    };
+    canvas.addEventListener("webglcontextlost", onContextLost);
+
     const context = getWebGLContext(canvas);
-    if (!context) return;
+    if (!context) {
+      canvas.remove();
+      return;
+    }
     const { gl, ext } = context;
 
     /* ---------------------------------------------------------- gl plumbing */
@@ -801,12 +851,28 @@ export default function FluidCursor({
       color: { r: 0, g: 0, b: 0 },
     };
 
+    // "sequence" walks the palette rather than sampling it at random, so the
+    // admin's order is what people actually see stroke after stroke.
+    let paletteCursor = 0;
+    let hue = Math.random();
+
     function pickColor(): RGB {
-      const list = configRef.current.palette;
-      const chosen = list[Math.floor(Math.random() * list.length)] ?? "#2aa561";
-      const rgb = hexToRgb(chosen);
+      const cfg = configRef.current;
+      let rgb: RGB;
+      if (cfg.colorMode === "rainbow") {
+        // Golden-ratio hue stepping: consecutive strokes stay far apart on the
+        // wheel instead of clustering the way plain random does.
+        hue = (hue + 0.618033988749895) % 1;
+        rgb = hsvToRgb(hue, 0.85, 1);
+      } else {
+        const list = cfg.palette.length ? cfg.palette : ["#2aa561"];
+        const chosen = list[paletteCursor % list.length];
+        paletteCursor += 1;
+        rgb = hexToRgb(chosen);
+      }
       // The dye buffer is HDR; the raw colour is far too bright once splatted.
-      return { r: rgb.r * 0.18, g: rgb.g * 0.18, b: rgb.b * 0.18 };
+      const k = cfg.intensity;
+      return { r: rgb.r * k, g: rgb.g * k, b: rgb.b * k };
     }
 
     /** Aspect-correct the horizontal delta so diagonal strokes stay symmetric. */
@@ -1055,18 +1121,15 @@ export default function FluidCursor({
       window.removeEventListener("pointermove", onPointerMove);
       window.removeEventListener("pointerdown", onPointerDown);
       window.removeEventListener("pointerup", onPointerUp);
-      const ctx = gl.getExtension("WEBGL_lose_context");
-      ctx?.loseContext();
+      canvas.removeEventListener("webglcontextlost", onContextLost);
+      // Removing the element releases the context with it. Calling
+      // loseContext() here instead would permanently poison a canvas that
+      // React may hand straight back on the next mount.
+      canvas.remove();
     };
     // The simulation owns its own lifecycle; live values arrive through
     // configRef, so it is built once for a given resolution and dead zone.
   }, [simResolution, dyeResolution, excludeSelector]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      aria-hidden="true"
-      className={className ?? "fluid-cursor-canvas"}
-    />
-  );
+  return <div ref={hostRef} aria-hidden="true" className={className ?? "fluid-cursor-host"} />;
 }

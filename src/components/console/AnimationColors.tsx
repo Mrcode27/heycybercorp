@@ -16,6 +16,45 @@ const DEFAULT_FLUID = ["#2aa561", "#0097b2", "#08723d", "#00c2a8"];
 const HEX = /^#[0-9a-fA-F]{6}$/;
 
 type Which = "rings" | "fluid";
+type HeroAnimation = "rings" | "ringField";
+type FluidColorMode = "rainbow" | "sequence";
+
+/** How the fluid trail picks a colour for each stroke. */
+const FLUID_MODES: { key: FluidColorMode; name: string; desc: string; icon: string }[] = [
+  {
+    key: "sequence",
+    name: "Couleur après couleur",
+    icon: "palette",
+    desc: "Chaque trait prend la couleur suivante de la liste ci-dessous, dans l'ordre.",
+  },
+  {
+    key: "rainbow",
+    name: "Arc-en-ciel",
+    icon: "gradient",
+    desc: "Chaque trait prend une teinte différente sur tout le spectre. La liste est ignorée.",
+  },
+];
+
+/** The two hero backgrounds. Only the selected one is ever downloaded. */
+const HERO_OPTIONS: {
+  key: HeroAnimation;
+  name: string;
+  desc: string;
+  icon: string;
+}[] = [
+  {
+    key: "rings",
+    name: "Anneaux concentriques",
+    icon: "radio_button_checked",
+    desc: "Des cercles lumineux qui s'étendent en boucle et suivent légèrement la souris.",
+  },
+  {
+    key: "ringField",
+    name: "Champ de points",
+    icon: "blur_on",
+    desc: "Une grille de points qu'un anneau, accroché au curseur, éclaire et repousse.",
+  },
+];
 
 const PICKERS: {
   key: Which;
@@ -36,7 +75,7 @@ const PICKERS: {
     name: "Curseur fluide",
     icon: "gesture",
     desc: "La traînée qui suit la souris sur le reste de la page d'accueil.",
-    order: "Une couleur est tirée au hasard dans la liste à chaque mouvement.",
+    order: "Utilisée en mode « couleur après couleur », dans cet ordre.",
   },
 ];
 
@@ -238,8 +277,38 @@ function Picker({
 export default function AnimationColors() {
   const settings = useQuery(api.settings.get);
   const setColors = useMutation(api.settings.setAnimationColors);
+  const setHeroAnimation = useMutation(api.settings.setHeroAnimation);
+  const setFluidColorMode = useMutation(api.settings.setFluidColorMode);
   const [busy, setBusy] = useState<Which | null>(null);
+  const [heroBusy, setHeroBusy] = useState<HeroAnimation | null>(null);
+  const [modeBusy, setModeBusy] = useState<FluidColorMode | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function chooseHero(key: HeroAnimation) {
+    if (settings?.heroAnimation === key) return;
+    setHeroBusy(key);
+    setError(null);
+    try {
+      await setHeroAnimation({ heroAnimation: key });
+    } catch (err) {
+      setError(cleanConvexError(err, "Le changement d'animation a échoué."));
+    } finally {
+      setHeroBusy(null);
+    }
+  }
+
+  async function chooseFluidMode(key: FluidColorMode) {
+    if (settings?.fluidColorMode === key) return;
+    setModeBusy(key);
+    setError(null);
+    try {
+      await setFluidColorMode({ fluidColorMode: key });
+    } catch (err) {
+      setError(cleanConvexError(err, "Le changement de mode a échoué."));
+    } finally {
+      setModeBusy(null);
+    }
+  }
 
   async function save(which: Which, colors: string[]) {
     setBusy(which);
@@ -268,6 +337,109 @@ export default function AnimationColors() {
       </div>
 
       <div className="space-y-5 p-6">
+        <section className="rounded-xl border border-outline-variant/40 p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <Icon name="animation" className="mt-0.5 text-secondary" fill />
+            <div className="min-w-0">
+              <h4 className="font-headline-lg-mobile text-on-surface">Animation du héros</h4>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Le fond animé derrière le titre. Une seule est chargée par visiteur.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {HERO_OPTIONS.map((option) => {
+              const isActive = settings?.heroAnimation === option.key;
+              return (
+                <button
+                  key={option.key}
+                  type="button"
+                  onClick={() => chooseHero(option.key)}
+                  disabled={heroBusy !== null || settings === undefined}
+                  aria-pressed={isActive}
+                  className={`rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
+                    isActive
+                      ? "border-primary bg-primary/5"
+                      : "border-outline-variant/40 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Icon name={option.icon} className="text-secondary" fill />
+                    {isActive && (
+                      <span className="flex items-center gap-1 font-code-sm text-code-sm text-primary">
+                        <Icon name="check_circle" className="text-sm" fill /> Actif
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-body-md text-on-surface">{option.name}</div>
+                  <p className="mt-1 font-code-sm text-code-sm text-on-surface-variant">
+                    {option.desc}
+                  </p>
+                  {heroBusy === option.key && (
+                    <p className="mt-2 font-code-sm text-code-sm text-on-surface-variant">
+                      Application…
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <p className="mt-3 font-code-sm text-code-sm text-on-surface-variant/80">
+            Les deux utilisent la palette « Anneaux du héros » ci-dessous.
+          </p>
+        </section>
+
+        <section className="rounded-xl border border-outline-variant/40 p-5">
+          <div className="mb-4 flex items-start gap-3">
+            <Icon name="gesture" className="mt-0.5 text-secondary" fill />
+            <div className="min-w-0">
+              <h4 className="font-headline-lg-mobile text-on-surface">
+                Couleurs du curseur fluide
+              </h4>
+              <p className="font-body-md text-body-md text-on-surface-variant">
+                Comment la traînée choisit sa couleur à chaque mouvement.
+              </p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {FLUID_MODES.map((mode) => {
+              const isActive = settings?.fluidColorMode === mode.key;
+              return (
+                <button
+                  key={mode.key}
+                  type="button"
+                  onClick={() => chooseFluidMode(mode.key)}
+                  disabled={modeBusy !== null || settings === undefined}
+                  aria-pressed={isActive}
+                  className={`rounded-xl border p-4 text-left transition-all disabled:opacity-60 ${
+                    isActive
+                      ? "border-primary bg-primary/5"
+                      : "border-outline-variant/40 hover:border-primary/50"
+                  }`}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <Icon name={mode.icon} className="text-secondary" fill />
+                    {isActive && (
+                      <span className="flex items-center gap-1 font-code-sm text-code-sm text-primary">
+                        <Icon name="check_circle" className="text-sm" fill /> Actif
+                      </span>
+                    )}
+                  </div>
+                  <div className="font-body-md text-on-surface">{mode.name}</div>
+                  <p className="mt-1 font-code-sm text-code-sm text-on-surface-variant">
+                    {mode.desc}
+                  </p>
+                  {modeBusy === mode.key && (
+                    <p className="mt-2 font-code-sm text-code-sm text-on-surface-variant">
+                      Application…
+                    </p>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {PICKERS.map((spec) => (
           <Picker
             key={spec.key}

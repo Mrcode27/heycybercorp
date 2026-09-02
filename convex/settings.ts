@@ -52,10 +52,20 @@ function cleanColors(colors: string[], label: string): string[] {
   return cleaned;
 }
 
+/** The two hero backgrounds an admin can choose between. */
+export type HeroAnimation = "rings" | "ringField";
+const heroAnimationValidator = v.union(v.literal("rings"), v.literal("ringField"));
+
+/** How the fluid trail colours each stroke. */
+export type FluidColorMode = "rainbow" | "sequence";
+const fluidColorModeValidator = v.union(v.literal("rainbow"), v.literal("sequence"));
+
 export type SiteSettings = {
   theme: Theme;
   ringColors: string[];
   fluidColors: string[];
+  heroAnimation: HeroAnimation;
+  fluidColorMode: FluidColorMode;
 };
 
 /** Public. Read on every page load, so it stays deliberately tiny. */
@@ -70,6 +80,10 @@ export const get = query({
       // animations colourless.
       ringColors: row?.ringColors?.length ? row.ringColors : DEFAULT_RING_COLORS,
       fluidColors: row?.fluidColors?.length ? row.fluidColors : DEFAULT_FLUID_COLORS,
+      // The rings shipped first, so they stay the default.
+      heroAnimation: row?.heroAnimation ?? "rings",
+      // Walking the brand palette is the on-brand default; rainbow is opt-in.
+      fluidColorMode: row?.fluidColorMode ?? "sequence",
     };
   },
 });
@@ -128,6 +142,38 @@ export const setAnimationColors = mutation({
         .filter(Boolean)
         .join(" · "),
     );
+  },
+});
+
+/** Admin only — swaps which animation fills the hero. */
+export const setHeroAnimation = mutation({
+  args: { heroAnimation: heroAnimationValidator },
+  handler: async (ctx, { heroAnimation }) => {
+    const admin = await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.heroAnimation === heroAnimation) return;
+      await ctx.db.patch(row._id, { heroAnimation });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", heroAnimation });
+    }
+    await logAudit(ctx, "settings.hero_animation", admin.email, heroAnimation);
+  },
+});
+
+/** Admin only — rainbow hues, or the brand palette in order. */
+export const setFluidColorMode = mutation({
+  args: { fluidColorMode: fluidColorModeValidator },
+  handler: async (ctx, { fluidColorMode }) => {
+    const admin = await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if (row.fluidColorMode === fluidColorMode) return;
+      await ctx.db.patch(row._id, { fluidColorMode });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", fluidColorMode });
+    }
+    await logAudit(ctx, "settings.fluid_color_mode", admin.email, fluidColorMode);
   },
 });
 

@@ -32,6 +32,10 @@ export default function Terminal({
   const [cmdLog, setCmdLog] = useState<string[]>([]);
   const [logIndex, setLogIndex] = useState(-1);
   const [demoState, setDemoState] = useState({ index: 0, length: 0, deleting: false });
+  // The demo is a placeholder, not content: the first click on the prompt ends
+  // it permanently. Re-starting it after someone has begun typing would fight
+  // the person for their own input line.
+  const [demoDismissed, setDemoDismissed] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -46,7 +50,7 @@ export default function Terminal({
   }, [history]);
 
   useEffect(() => {
-    if (demoCommands.length === 0 || input || cmdLog.length > 0) return;
+    if (demoCommands.length === 0 || input || cmdLog.length > 0 || demoDismissed) return;
 
     const target = demoCommands[demoState.index % demoCommands.length];
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -85,7 +89,10 @@ export default function Terminal({
     }, delay);
 
     return () => window.clearTimeout(timer);
-  }, [cmdLog.length, demoCommands, demoState, input]);
+  }, [cmdLog.length, demoCommands, demoState, input, demoDismissed]);
+
+  const showDemo =
+    demoCommands.length > 0 && cmdLog.length === 0 && !input && !demoDismissed;
 
   function run(raw: string) {
     const { lines, clear } = runCommand(config, files, cmdLog, raw);
@@ -183,14 +190,6 @@ export default function Terminal({
           );
         })}
 
-        {demoCommands.length > 0 && cmdLog.length === 0 && !input && (
-          <div className="terminal-demo-suggestion" aria-hidden="true">
-            <span>ESSAYEZ</span>
-            <code>{demoCommands[demoState.index]?.slice(0, demoState.length)}</code>
-            <i />
-          </div>
-        )}
-
         <form
           className="terminal-command-form relative z-10"
           onSubmit={(event) => {
@@ -199,16 +198,29 @@ export default function Terminal({
           }}
         >
           <span className="text-secondary shrink-0">{prompt}</span>
-          <input
-            ref={inputRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={onKeyDown}
-            spellCheck={false}
-            autoComplete="off"
-            aria-label="Terminal interactif"
-            className="flex-1 ml-2 bg-transparent border-none outline-none text-primary-fixed-dim font-code-sm text-code-sm"
-          />
+          {/* The ghost sits behind the real input and shares its box, so the
+              typed suggestion lines up with the caret exactly. It never holds
+              a value — the input stays genuinely empty until someone types. */}
+          <span className="terminal-input-slot flex-1 ml-2">
+            {showDemo && (
+              <span className="terminal-input-ghost" aria-hidden="true">
+                {demoCommands[demoState.index]?.slice(0, demoState.length)}
+                <i />
+              </span>
+            )}
+            <input
+              ref={inputRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={onKeyDown}
+              onFocus={() => setDemoDismissed(true)}
+              onPointerDown={() => setDemoDismissed(true)}
+              spellCheck={false}
+              autoComplete="off"
+              aria-label="Terminal interactif"
+              className="terminal-input w-full bg-transparent border-none outline-none text-primary-fixed-dim font-code-sm text-code-sm"
+            />
+          </span>
           <button
             type="submit"
             disabled={!input.trim()}
