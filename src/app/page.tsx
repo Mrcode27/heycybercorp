@@ -295,7 +295,7 @@ export default function Home() {
                 </div>
                 <div>
                   <div className="text-on-surface font-medium">Bureaux</div>
-                  <div className="text-on-surface-variant text-sm">Paris · Douala</div>
+                  <div className="text-on-surface-variant text-sm">Paris, France</div>
                 </div>
               </div>
             </div>

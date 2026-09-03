@@ -1033,6 +1033,16 @@ html[data-theme="light"] .terminal-container {
   color: var(--color-on-surface-variant);
 }
 
+/* The trail is a mouse effect — FluidCursor bails out on a coarse pointer — so
+   on a touch device the pill is a switch for nothing. `display: none` (rather
+   than visibility) also takes it out of the tab order and the a11y tree, which
+   is what a control that cannot do anything deserves. */
+@media (pointer: coarse), (max-width: 767px) {
+  .fluid-fx-toggle {
+    display: none;
+  }
+}
+
 /* When the visitor toggles the FX off, the trail layer hides immediately,
    even for the frame before React unmounts the renderer. The
    IntersectionObserver inside the renderer then also stops its render loop,

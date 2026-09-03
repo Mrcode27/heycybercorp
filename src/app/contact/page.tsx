@@ -18,8 +18,7 @@ const labelClass = "font-label-mono text-label-mono text-on-surface-variant uppe
 
 const CHANNELS = [
   { icon: "mail", color: "text-primary", label: "Email", value: CONTACT_EMAIL },
-  { icon: "call", color: "text-secondary", label: "Téléphone", value: "+33 1 84 80 00 00" },
-  { icon: "location_on", color: "text-primary", label: "Bureaux", value: "Paris · Douala" },
+  { icon: "location_on", color: "text-secondary", label: "Bureaux", value: "Paris, France" },
 ];
 
 export default function ContactPage() {

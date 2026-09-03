@@ -141,7 +141,7 @@ export default function EntreprisePage() {
                   <div className="font-label-mono text-label-mono text-secondary uppercase">
                     Siège
                   </div>
-                  <div className="text-on-surface">Paris, France · Douala, Cameroun</div>
+                  <div className="text-on-surface">Paris, France</div>
                 </div>
               </div>
             </div>

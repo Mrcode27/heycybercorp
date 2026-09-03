@@ -15,15 +15,15 @@ const FILTERS = ["Tous", "Débutant", "Intermédiaire", "Avancé"] as const;
 const TIERS = [
   { level: "Débutant", icon: "shield", color: "text-primary", label: "01. Fondamentaux" },
   { level: "Intermédiaire", icon: "terminal", color: "text-secondary", label: "02. Spécialiste" },
-  { level: "Avancé", icon: "warning", color: "text-error", label: "03. Expert" },
+  { level: "Avancé", icon: "military_tech", color: "text-tertiary", label: "03. Expert" },
 ] as const;
 
 function accent(level: string) {
-  return level === "Avancé" ? "error" : level === "Intermédiaire" ? "secondary" : "primary";
+  return level === "Avancé" ? "tertiary" : level === "Intermédiaire" ? "secondary" : "primary";
 }
 function accentText(level: string) {
   const a = accent(level);
-  return a === "primary" ? "text-primary" : a === "secondary" ? "text-secondary" : "text-error";
+  return a === "primary" ? "text-primary" : a === "secondary" ? "text-secondary" : "text-tertiary";
 }
 function accentBadge(level: string) {
   const a = accent(level);
@@ -31,7 +31,7 @@ function accentBadge(level: string) {
     ? "bg-primary/10 text-primary border-primary/20"
     : a === "secondary"
       ? "bg-secondary/10 text-secondary border-secondary/20"
-      : "bg-error/10 text-error border-error/20";
+      : "bg-tertiary/10 text-tertiary border-tertiary/20";
 }
 
 function CourseCard({
@@ -52,9 +52,7 @@ function CourseCard({
   return (
     <Link
       href={`/formations/${course.slug}`}
-      className={`glass-panel p-6 rounded-xl cyber-glow-border flex flex-col h-full group cursor-pointer ${
-        course.level === "Avancé" ? "bg-error-container/5 border-error/20" : ""
-      }`}
+      className="glass-panel p-6 rounded-xl cyber-glow-border flex flex-col h-full group cursor-pointer"
     >
       <div className="flex items-center gap-2 mb-3">
         <span
@@ -66,11 +64,7 @@ function CourseCard({
         </span>
         <span className="text-on-surface-variant font-code-sm text-code-sm">{meta}</span>
       </div>
-      <h3
-        className={`font-headline-lg text-headline-lg-mobile mb-3 ${
-          course.level === "Avancé" ? "text-error" : "text-on-surface"
-        }`}
-      >
+      <h3 className="font-headline-lg text-headline-lg-mobile mb-3 text-on-surface">
         {course.title}
       </h3>
       <p className="text-on-surface-variant font-body-md text-body-md mb-6 flex-grow">

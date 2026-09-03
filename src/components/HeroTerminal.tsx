@@ -147,7 +147,7 @@ const EXTRAS: Record<string, Command> = {
     usage: "contact",
     desc: "nous joindre",
     run: () =>
-      out(["Email   : heycyberpro@gmail.com", "Bureaux : Paris · Douala", "", "→ heycybercorp.fr/contact"].join("\n")),
+      out(["Email   : heycyberpro@gmail.com", "Bureaux : Paris, France", "", "→ heycybercorp.fr/contact"].join("\n")),
   },
 };
 
