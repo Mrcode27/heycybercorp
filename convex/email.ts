@@ -2,6 +2,7 @@
 
 import { internalAction } from "./_generated/server";
 import { v } from "convex/values";
+import { internal } from "./_generated/api";
 import type { Id } from "./_generated/dataModel";
 import nodemailer from "nodemailer";
 import net from "node:net";
@@ -20,8 +21,9 @@ import tls from "node:tls";
  *                  NOT your normal Google password — app passwords require
  *                  2-Step Verification to be switched on first, at
  *                  https://myaccount.google.com/apppasswords
- *   MAIL_TO        where contact-form notifications land. Optional, defaults
- *                  to SMTP_USER.
+ *   MAIL_TO        fallback recipient for team notifications. The address set
+ *                  in /admin/messages takes priority; this is only used when
+ *                  none is set there. Optional, defaults to SMTP_USER.
  *   MAIL_FROM      optional display From, e.g. "heycybercorp <you@gmail.com>".
  *                  Gmail will silently rewrite this to SMTP_USER unless the
  *                  address is a verified alias on that account, so leaving it
@@ -103,13 +105,11 @@ type SendResult =
   | { sent: true }
   | { sent: false; reason: "not-configured" | "send-failed" };
 
-async function deliverContactNotification({
-  kind,
-  name,
-  email,
-  subject,
-  body,
-}: ContactPayload): Promise<SendResult> {
+async function deliverContactNotification(
+  { kind, name, email, subject, body }: ContactPayload,
+  /** Recipient chosen by an admin in /admin/messages; overrides MAIL_TO. */
+  recipient?: string | null,
+): Promise<SendResult> {
   {
     const cfg = mailConfig();
     if (!cfg) {
@@ -126,7 +126,7 @@ async function deliverContactNotification({
     try {
       await transport(cfg).sendMail({
         from: cfg.from,
-        to: cfg.to,
+        to: recipient?.trim() || cfg.to,
         // Hitting "Reply" in the inbox answers the person who wrote in,
         // instead of mailing ourselves.
         replyTo: `${name} <${email}>`,
@@ -167,7 +167,12 @@ async function deliverContactNotification({
   }
 }
 
-/** Scheduled by `messages.submit`; the work lives in the helper above. */
+/**
+ * Scheduled by `messages.submit`; the work lives in the helper above.
+ *
+ * The recipient is read from the database first so an admin can redirect the
+ * team inbox from /admin/messages without a deploy, a CLI or an env change.
+ */
 export const sendContactNotification = internalAction({
   args: {
     kind: v.union(v.literal("contact"), v.literal("devis")),
@@ -176,7 +181,10 @@ export const sendContactNotification = internalAction({
     subject: v.optional(v.string()),
     body: v.string(),
   },
-  handler: async (_ctx, args): Promise<SendResult> => deliverContactNotification(args),
+  handler: async (ctx, args): Promise<SendResult> => {
+    const chosen = await ctx.runQuery(internal.settings.notifyEmail, {});
+    return deliverContactNotification(args, chosen);
+  },
 });
 
 /**
@@ -200,7 +208,7 @@ export const sendConversationNotification = internalAction({
     fromEmail: v.optional(v.string()),
     link: v.string(),
   },
-  handler: async (_ctx, args): Promise<SendResult> => {
+  handler: async (ctx, args): Promise<SendResult> => {
     const cfg = mailConfig();
     if (!cfg) {
       console.error(
@@ -210,7 +218,11 @@ export const sendConversationNotification = internalAction({
       return { sent: false as const, reason: "not-configured" as const };
     }
 
-    const recipient = args.to === "admins" ? cfg.to : args.studentEmail?.trim();
+    // Same resolution as the contact form: the admin's choice wins, so the
+    // team inbox has one answer and not two.
+    const chosen = await ctx.runQuery(internal.settings.notifyEmail, {});
+    const recipient =
+      args.to === "admins" ? chosen?.trim() || cfg.to : args.studentEmail?.trim();
     if (!recipient) {
       console.error("Destinataire manquant pour la notification de conversation.");
       return { sent: false as const, reason: "not-configured" as const };
@@ -355,15 +367,19 @@ export const diagnose = internalAction({
  */
 export const sendTest = internalAction({
   args: {},
-  handler: async (): Promise<{ sent: boolean; to?: string; reason?: string }> => {
+  handler: async (ctx): Promise<{ sent: boolean; to?: string; reason?: string }> => {
     const cfg = mailConfig();
     if (!cfg) return { sent: false, reason: "not-configured" };
+    // Resolve the same way the real thing does, otherwise a passing test says
+    // nothing about where contact messages actually arrive.
+    const chosen = await ctx.runQuery(internal.settings.notifyEmail, {});
+    const target = chosen?.trim() || cfg.to;
     // Reuse the exact path the contact form uses, so a passing test means the
     // real thing works — not merely that some email can be sent.
     const result = await deliverContactNotification({
       kind: "contact",
       name: "Test heycybercorp",
-      email: cfg.to,
+      email: target,
       subject: "Test de configuration SMTP",
       body:
         "Si vous lisez ceci, l'envoi d'emails depuis Convex fonctionne.\n" +
@@ -371,7 +387,7 @@ export const sendTest = internalAction({
     });
     return {
       sent: result.sent,
-      to: cfg.to,
+      to: target,
       reason: result.sent ? undefined : result.reason,
     };
   },

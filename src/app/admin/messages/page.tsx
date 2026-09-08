@@ -5,6 +5,7 @@ import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminMessages from "@/components/console/AdminMessages";
 import AdminConversations from "@/components/console/AdminConversations";
+import AdminNotifyEmail from "@/components/console/AdminNotifyEmail";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +20,9 @@ export default function Page() {
           title="Messages"
           subtitle="Messagerie avec les étudiants, et demandes reçues depuis le site."
         />
+        {/* Where these messages get emailed — set next to the messages
+            themselves, since that is where the question arises. */}
+        <AdminNotifyEmail />
         <div className="space-y-6">
           <AdminConversations />
           <AdminMessages />

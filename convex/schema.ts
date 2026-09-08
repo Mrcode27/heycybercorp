@@ -96,6 +96,12 @@ export default defineSchema({
    */
   siteSettings: defineTable({
     theme: v.union(v.literal("dark"), v.literal("light")),
+    /**
+     * Where contact-form and quote notifications are emailed. Set from
+     * /admin/messages. Absent = fall back to the MAIL_TO environment variable,
+     * then to the authenticating SMTP account.
+     */
+    notifyEmail: v.optional(v.string()),
     ringColors: v.optional(v.array(v.string())),
     fluidColors: v.optional(v.array(v.string())),
     /** Which of the hero backgrounds is live. Absent = the rings. */

@@ -1,4 +1,4 @@
-import { query, mutation } from "./_generated/server";
+import { query, internalQuery, mutation } from "./_generated/server";
 import { v } from "convex/values";
 import { requireAdmin } from "./users";
 import { logAudit } from "./lib/audit";
@@ -314,5 +314,62 @@ export const setBroadcastEmailEnabled = mutation({
       await ctx.db.insert("siteSettings", { theme: "dark", broadcastEmailEnabled });
     }
     await logAudit(ctx, "settings.broadcast_email_enabled", admin.email, String(broadcastEmailEnabled ? "activé" : "désactivé"));
+  },
+});
+
+// ---- Contact notification recipient ----
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+/**
+ * Who receives contact-form notifications.
+ *
+ * Deliberately NOT part of `get`, which is public and runs on every page load:
+ * the team inbox is not something a visitor needs, and a setting is easier to
+ * keep out of a payload than to remove from one later.
+ *
+ * Resolution order is DB → MAIL_TO → the SMTP account. The database wins so an
+ * admin can change it without a deploy or a CLI, which was the whole point.
+ */
+export const notifyEmail = internalQuery({
+  args: {},
+  handler: async (ctx): Promise<string | null> => {
+    const row = await ctx.db.query("siteSettings").first();
+    return row?.notifyEmail?.trim() || null;
+  },
+});
+
+/** Admin only — the current recipient, for the settings card. */
+export const adminNotifyEmail = query({
+  args: {},
+  handler: async (ctx): Promise<string | null> => {
+    await requireAdmin(ctx);
+    const row = await ctx.db.query("siteSettings").first();
+    return row?.notifyEmail?.trim() || null;
+  },
+});
+
+/**
+ * Admin only — change where contact messages are emailed.
+ *
+ * An empty string clears the override and returns to the environment value,
+ * so an admin can always undo without needing to know what it used to be.
+ */
+export const setNotifyEmail = mutation({
+  args: { notifyEmail: v.string() },
+  handler: async (ctx, { notifyEmail }) => {
+    const admin = await requireAdmin(ctx);
+    const value = notifyEmail.trim().toLowerCase();
+    if (value && !EMAIL_RE.test(value)) {
+      throw new Error("Adresse email invalide.");
+    }
+    const row = await ctx.db.query("siteSettings").first();
+    if (row) {
+      if ((row.notifyEmail ?? "") === value) return;
+      await ctx.db.patch(row._id, { notifyEmail: value || undefined });
+    } else {
+      await ctx.db.insert("siteSettings", { theme: "dark", notifyEmail: value || undefined });
+    }
+    await logAudit(ctx, "settings.notify_email", admin.email, value || "(par défaut)");
   },
 });
