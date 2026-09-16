@@ -17,7 +17,10 @@ import { formatDuration } from "@/lib/format";
  * (.m3u8) pasted as a bare URL only plays natively in Safari, so Bunny content
  * belongs here as an iframe embed rather than as a raw playlist link.
  */
-function toPlayerSource(url: string): { type: "iframe" | "video"; src: string } {
+function toPlayerSource(
+  url: string,
+  bunnyPlaybackUrl?: string,
+): { type: "iframe" | "video"; src: string } {
   const yt = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/,
   );
@@ -27,12 +30,20 @@ function toPlayerSource(url: string): { type: "iframe" | "video"; src: string } 
   // Bunny Stream: both the /embed/ and /play/ forms name the same video, and
   // only /embed/ is meant to be framed.
   const bunny = url.match(
-    /iframe\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([\w-]+)/,
+    /(?:iframe|player)\.mediadelivery\.net\/(?:embed|play)\/(\d+)\/([\w-]+)/,
   );
   if (bunny) {
+    const query = (() => {
+      try {
+        return new URL(url).search;
+      } catch {
+        return "";
+      }
+    })();
     return {
       type: "iframe",
-      src: `https://iframe.mediadelivery.net/embed/${bunny[1]}/${bunny[2]}`,
+      src: bunnyPlaybackUrl ??
+        `https://player.mediadelivery.net/embed/${bunny[1]}/${bunny[2]}${query}`,
     };
   }
   return { type: "video", src: url };
@@ -216,7 +227,10 @@ export default function CoursePlayer({ slug }: { slug: string }) {
                   </div>
                 ) : playback.kind === "url" && playback.url ? (
                   (() => {
-                    const source = toPlayerSource(playback.url);
+                    const source = toPlayerSource(
+                      playback.url,
+                      `/api/bunny/playback/${current._id}`,
+                    );
                     return source.type === "iframe" ? (
                       <iframe
                         key={current._id}

@@ -33,10 +33,10 @@ const CSP = [
   "img-src 'self' data: blob: https://img.clerk.com https://i.ytimg.com",
   // Convex talks over both HTTPS and a websocket; the wildcard covers the dev
   // and production deployments without hard-coding either.
-  "connect-src 'self' https://*.convex.cloud wss://*.convex.cloud https://*.convex.site https://*.clerk.accounts.dev https://clerk.heycybercorp.fr",
+  "connect-src 'self' https://video.bunnycdn.com https://*.convex.cloud wss://*.convex.cloud https://*.convex.site https://*.clerk.accounts.dev https://clerk.heycybercorp.fr",
   // Lesson players. Stripe is absent on purpose: checkout is a top-level
   // redirect, never an embed.
-  "frame-src https://www.youtube-nocookie.com https://player.vimeo.com https://iframe.mediadelivery.net https://challenges.cloudflare.com",
+  "frame-src 'self' https://www.youtube-nocookie.com https://player.vimeo.com https://iframe.mediadelivery.net https://player.mediadelivery.net https://challenges.cloudflare.com",
   "worker-src 'self' blob:",
   "frame-ancestors 'none'",
   "base-uri 'self'",

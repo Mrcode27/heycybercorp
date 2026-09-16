@@ -7,6 +7,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
 import { formatDuration } from "@/lib/format";
+import BunnyVideoUploader from "./BunnyVideoUploader";
 
 const inputClass =
   "w-full bg-field border border-outline-variant text-on-surface px-3 py-2 rounded focus:border-primary focus:ring-0 outline-none transition-colors text-sm";
@@ -160,6 +161,10 @@ export default function AdminLessons({ courseId }: { courseId: string }) {
           <div>
             <label className="font-label-mono text-xs uppercase text-on-surface-variant">URL vidéo (mp4 / YouTube / Vimeo)</label>
             <input value={form.videoUrl} onChange={(e) => setForm({ ...form, videoUrl: e.target.value })} className={inputClass} placeholder="YouTube · Vimeo · Bunny Stream · .mp4" type="url" />
+            <BunnyVideoUploader
+              title={form.title}
+              onUploaded={(embedUrl) => setForm((current) => ({ ...current, videoUrl: embedUrl }))}
+            />
           </div>
           <div>
             <label className="font-label-mono text-xs uppercase text-on-surface-variant">Durée (minutes)</label>
