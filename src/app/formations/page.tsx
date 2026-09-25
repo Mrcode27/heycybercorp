@@ -11,9 +11,9 @@ import { pageMetadata } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = pageMetadata({
-  title: "heycybercorp | Catalogue des Formations",
+  title: "Formations en cybersécurité en ligne | heycybercorp",
   description:
-    "Le catalogue complet des formations heycybercorp : fondamentaux de la cybersécurité, OSINT, sécurité des réseaux, hacking éthique et gouvernance. Du débutant à l'expert.",
+    "Explorez les formations en cybersécurité de heycybercorp accessibles depuis la France : fondamentaux, OSINT, sécurité des réseaux, hacking éthique et gouvernance.",
   path: "/formations",
 });
 

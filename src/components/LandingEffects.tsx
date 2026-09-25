@@ -70,10 +70,51 @@ function useAfterIdle(): boolean {
   return ready;
 }
 
+/** Leave the first paint and hydration free of the optional WebGL renderer. */
+function useHeroAnimationReady(): boolean {
+  const idle = useAfterIdle();
+  const [ready, setReady] = useState(false);
+
+  useEffect(() => {
+    if (!idle) return;
+
+    const hero = document.querySelector("[data-cyber-hero]");
+    const start = () => setReady(true);
+    const timer = window.setTimeout(start, 8000);
+    hero?.addEventListener("pointermove", start, { once: true, passive: true });
+    hero?.addEventListener("pointerdown", start, { once: true, passive: true });
+
+    return () => {
+      window.clearTimeout(timer);
+      hero?.removeEventListener("pointermove", start);
+      hero?.removeEventListener("pointerdown", start);
+    };
+  }, [idle]);
+
+  return ready;
+}
+/** Mount the below-hero fluid canvas only while that section can be seen. */
+function useHeroPassed(): boolean {
+  const [passed, setPassed] = useState(false);
+
+  useEffect(() => {
+    const hero = document.querySelector("[data-cyber-hero]");
+    if (!hero) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => setPassed(!entry.isIntersecting),
+      { threshold: 0 },
+    );
+    observer.observe(hero);
+    return () => observer.disconnect();
+  }, []);
+
+  return passed;
+}
+
 /** The hero background — whichever of the two the admin selected. */
 export default function LandingHeroAnimation() {
   const settings = useQuery(api.settings.get);
-  const ready = useAfterIdle();
+  const ready = useHeroAnimationReady();
 
   // No visitor toggle here: the hero animation always plays. The FX pill
   // controls the fluid trail below the hero, not this.
@@ -133,12 +174,13 @@ export default function LandingHeroAnimation() {
 export function LandingFluidCursor() {
   const settings = useQuery(api.settings.get);
   const ready = useAfterIdle();
+  const heroPassed = useHeroPassed();
   // Two gates: the site admin can switch the trail off for everyone, and any
   // visitor can switch it off for themselves with the FX pill. When either is
   // off the renderer is not mounted at all — no canvas, no context, no loop.
   const fxOn = useHeroFx();
 
-  if (!ready || !fxOn || settings?.fluidEnabled === false) return null;
+  if (!ready || !heroPassed || !fxOn || settings?.fluidEnabled === false) return null;
 
   const fluidColors = settings?.fluidColors?.length ? settings.fluidColors : FALLBACK_FLUID;
   // The admin's density dial (0–100) drives how much fluid a stroke leaves

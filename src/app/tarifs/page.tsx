@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Tarifs | heycybercorp - Excellence en Cybersécurité",
+  title: "Tarifs des formations en cybersécurité en euros | heycybercorp",
   description:
     "Nos formules de formation en cybersécurité : Débutant, Intermédiaire et Piratage Éthique. Tarifs en euros et en FCFA, paiement unique, accès à vie aux formations du niveau.",
   path: "/tarifs",

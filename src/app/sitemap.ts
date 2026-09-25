@@ -14,6 +14,7 @@ const STATIC_ROUTES: Array<{
 }> = [
   { path: "", priority: 1, changeFrequency: "weekly" },
   { path: "/formations", priority: 0.9, changeFrequency: "weekly" },
+  { path: "/formation-cybersecurite-france", priority: 0.8, changeFrequency: "monthly" },
   { path: "/tarifs", priority: 0.8, changeFrequency: "monthly" },
   { path: "/entreprise", priority: 0.6, changeFrequency: "monthly" },
   { path: "/contact", priority: 0.5, changeFrequency: "yearly" },
@@ -22,11 +23,8 @@ const STATIC_ROUTES: Array<{
 ];
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const now = new Date();
-
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((r) => ({
     url: `${SITE_URL}${r.path}`,
-    lastModified: now,
     changeFrequency: r.changeFrequency,
     priority: r.priority,
   }));
@@ -38,7 +36,6 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const courses = await fetchQuery(api.courses.listPublished, {});
     courseEntries = courses.map((c) => ({
       url: `${SITE_URL}/formations/${c.slug}`,
-      lastModified: new Date(c._creationTime),
       changeFrequency: "monthly" as const,
       priority: 0.7,
     }));

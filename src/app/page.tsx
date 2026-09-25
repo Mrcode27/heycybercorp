@@ -12,6 +12,7 @@ import LandingHeroAnimation, { LandingFluidCursor } from "@/components/LandingEf
 import HeroFxToggle from "@/components/HeroFxToggle";
 import CyberDefenseRain from "@/components/CyberDefenseRain";
 import OrganizationJsonLd from "@/components/seo/OrganizationJsonLd";
+import FranceFaq from "@/components/FranceFaq";
 import { CONTACT_EMAIL } from "@/lib/site";
 
 const COURSES = [
@@ -50,6 +51,7 @@ const COURSES = [
 export default function Home() {
   return (
     <PublicShell>
+      <link rel="preload" as="image" href="/logo-master-mask.webp" fetchPriority="high" />
       <OrganizationJsonLd />
       <LandingMotion />
       {/* Fluid trail for the page below the fold. The hero is excluded: it has
@@ -149,6 +151,9 @@ export default function Home() {
                 />
               </Link>
             </div>
+            <p className="text-on-surface-variant text-sm" data-cyber-reveal>
+              Vous êtes en France ? <Link href="/formation-cybersecurite-france" className="text-secondary underline">Découvrez les parcours accessibles depuis la France</Link>.
+            </p>
             <div className="landing-proof flex items-center gap-6 pt-8" data-cyber-reveal>
               <div className="landing-proof-avatars flex -space-x-3">
                 {["#2aa561", "#0097b2", "#004630"].map((c, i) => (
@@ -265,6 +270,8 @@ export default function Home() {
         </div>
       </section>
 
+      <FranceFaq />
+
       {/* Quote request form */}
       <section className="py-24 px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto">
         <div
@@ -310,10 +317,11 @@ export default function Home() {
             >
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-2">
-                  <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
+                  <label htmlFor="devis-nom" className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                     Nom Complet
                   </label>
                   <input
+                    id="devis-nom"
                     name="nom"
                     className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="Jean Dupont"
@@ -322,10 +330,11 @@ export default function Home() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
+                  <label htmlFor="devis-email" className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                     Email Professionnel
                   </label>
                   <input
+                    id="devis-email"
                     name="email"
                     className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                     placeholder="jean@entreprise.com"
@@ -335,10 +344,11 @@ export default function Home() {
                 </div>
               </div>
               <div className="space-y-2">
-                <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
+                <label htmlFor="devis-type" className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                   Type de Formation
                 </label>
                 <select
+                  id="devis-type"
                   name="type"
                   className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                 >
@@ -349,10 +359,11 @@ export default function Home() {
                 </select>
               </div>
               <div className="space-y-2">
-                <label className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
+                <label htmlFor="devis-message" className="font-label-mono text-xs uppercase tracking-tighter text-on-surface-variant">
                   Votre Message
                 </label>
                 <textarea
+                  id="devis-message"
                   name="message"
                   className="w-full bg-field border border-outline-variant text-on-surface focus:border-secondary focus:ring-0 rounded p-3 transition-colors outline-none"
                   placeholder="Décrivez votre projet..."

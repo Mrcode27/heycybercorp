@@ -264,6 +264,15 @@ body {
   scrollbar-width: none;
 }
 
+/* Local subset of Material Symbols Outlined. Update the font when icon names change. */
+@font-face {
+  font-family: "Material Symbols Outlined";
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url("/fonts/material-symbols-subset.woff2") format("woff2");
+}
+
 /* Material Symbols icon font base */
 .material-symbols-outlined {
   font-family: "Material Symbols Outlined";
@@ -273,6 +282,10 @@ body {
   letter-spacing: normal;
   text-transform: none;
   display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  overflow: hidden;
   white-space: nowrap;
   word-wrap: normal;
   direction: ltr;
@@ -959,10 +972,10 @@ html[data-theme="light"] .terminal-container {
      rather than whatever a filter chain lands on. The second layer keeps the
      hood and fades the wordmark banner underneath it. */
   -webkit-mask-image:
-    url("/logo-master-mark.png"),
+    url("/logo-master-mask.webp"),
     linear-gradient(to bottom, transparent 0 3%, #000 16% 62%, transparent 82%);
   mask-image:
-    url("/logo-master-mark.png"),
+    url("/logo-master-mask.webp"),
     linear-gradient(to bottom, transparent 0 3%, #000 16% 62%, transparent 82%);
   -webkit-mask-size: 100% 100%, 100% 100%;
   mask-size: 100% 100%, 100% 100%;
@@ -1260,6 +1273,10 @@ html[data-hero-fx="off"] .fluid-cursor-host {
 .hero-type-shell {
   position: relative;
   display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex: none;
+  overflow: hidden;
   white-space: nowrap;
 }
 

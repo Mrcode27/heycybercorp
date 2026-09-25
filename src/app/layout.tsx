@@ -23,13 +23,13 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 const DESCRIPTION =
-  "Formations de pointe en cybersécurité pour les talents africains et européens. Du débutant au hacking éthique avancé.";
+  "Formations en cybersécurité accessibles en France : fondamentaux, sécurité des réseaux et hacking éthique. Découvrez les parcours et les tarifs en euros de heycybercorp.";
 
 export const metadata: Metadata = {
   // Without metadataBase, every relative og:image/canonical resolves against
   // localhost at build time and ships broken absolute URLs.
   metadataBase: new URL(SITE_URL),
-  title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
+  title: "Formation cybersécurité en France | heycybercorp",
   description: DESCRIPTION,
   // Child pages override this with their own path; the root claims the origin.
   alternates: { canonical: "/" },
@@ -46,12 +46,12 @@ export const metadata: Metadata = {
     locale: "fr_FR",
     siteName: SITE_NAME,
     url: SITE_URL,
-    title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
+    title: "Formation cybersécurité en France | heycybercorp",
     description: DESCRIPTION,
   },
   twitter: {
     card: "summary_large_image",
-    title: "heycybercorp | Maîtrisez l'Art de la Cyberdéfense",
+    title: "Formation cybersécurité en France | heycybercorp",
     description: DESCRIPTION,
   },
   robots: {
@@ -85,11 +85,6 @@ export default function RootLayout({
             __html:
               "try{var t=localStorage.getItem('hcc-theme');if(t==='light'||t==='dark')document.documentElement.dataset.theme=t}catch(e){}",
           }}
-        />
-        {/* Material Symbols icon font (icon fonts can't be self-hosted via next/font) */}
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap"
         />
       </head>
       <body className="font-body-md text-on-surface antialiased selection:bg-primary/30 selection:text-primary" suppressHydrationWarning>

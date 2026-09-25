@@ -54,16 +54,16 @@ export default function CyberDefenseRain() {
   const hostRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Latest palette/opacity for the running loop. Refs are assigned on every
-  // render, so saving in the admin panel is picked up by the next frame
-  // without tearing down and rebuilding the animation.
+  // Keep the running loop in sync with admin settings without restarting it.
   const colorsRef = useRef<string[]>(FALLBACK_COLORS);
   const opacityRef = useRef(0.45);
-  colorsRef.current = settings?.cyberRainColors?.length
-    ? settings.cyberRainColors
-    : FALLBACK_COLORS;
-  opacityRef.current =
-    Math.min(100, Math.max(0, settings?.cyberRainOpacity ?? 45)) / 100;
+  useEffect(() => {
+    colorsRef.current = settings?.cyberRainColors?.length
+      ? settings.cyberRainColors
+      : FALLBACK_COLORS;
+    opacityRef.current =
+      Math.min(100, Math.max(0, settings?.cyberRainOpacity ?? 45)) / 100;
+  }, [settings?.cyberRainColors, settings?.cyberRainOpacity]);
 
   const rainOn = settings?.cyberRain !== false;
 
@@ -129,18 +129,22 @@ export default function CyberDefenseRain() {
     // Dim the layer while the hero occupies the viewport; fade it in once the
     // hero has scrolled out.
     const hero = document.querySelector("[data-cyber-hero]");
+    let heroVisible = Boolean(hero);
     host.style.transition = "opacity 900ms ease";
     host.style.opacity = "0";
     let io: IntersectionObserver | null = null;
     if (hero && "IntersectionObserver" in window) {
       io = new IntersectionObserver(
         ([entry]) => {
-          host.style.opacity = entry.isIntersecting ? "0" : "1";
+          heroVisible = entry.isIntersecting;
+          host.style.opacity = heroVisible ? "0" : "1";
+          syncLoop();
         },
         { threshold: 0.35 },
       );
       io.observe(hero);
     } else {
+      heroVisible = false;
       host.style.opacity = "1";
     }
 
@@ -151,6 +155,7 @@ export default function CyberDefenseRain() {
     let last = performance.now();
 
     const step = (now: number) => {
+      raf = 0;
       const dt = Math.min(50, now - last) / 16.667;
       last = now;
 
@@ -233,13 +238,27 @@ export default function CyberDefenseRain() {
       }
 
       ctx.globalAlpha = 1;
-      raf = requestAnimationFrame(step);
+      if (!heroVisible && !document.hidden) raf = requestAnimationFrame(step);
     };
 
-    raf = requestAnimationFrame(step);
+    // The rain is invisible behind the hero; drawing it there wastes frames.
+    const syncLoop = () => {
+      if (!heroVisible && !document.hidden) {
+        if (raf === 0) {
+          last = performance.now();
+          raf = requestAnimationFrame(step);
+        }
+      } else if (raf !== 0) {
+        cancelAnimationFrame(raf);
+        raf = 0;
+      }
+    };
+    document.addEventListener("visibilitychange", syncLoop);
+    syncLoop();
 
     return () => {
       cancelAnimationFrame(raf);
+      document.removeEventListener("visibilitychange", syncLoop);
       window.removeEventListener("resize", resize);
       io?.disconnect();
       host.style.transition = "";

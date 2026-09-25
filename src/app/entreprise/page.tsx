@@ -8,7 +8,7 @@ import { CONTACT_EMAIL } from "@/lib/site";
 import { pageMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = pageMetadata({
-  title: "heycybercorp | Solutions Entreprise",
+  title: "Formation cybersécurité pour entreprises | heycybercorp",
   description:
     "Formez vos équipes à la cybersécurité : sensibilisation, hygiène numérique, gouvernance et tests d'intrusion. Programmes sur mesure pour entreprises en Afrique et en Europe.",
   path: "/entreprise",

@@ -20,6 +20,9 @@ export default function Footer() {
           {/* Same social links as the homepage — edit them in src/lib/site.ts */}
           <Socials variant="footer" />
           <div className="flex flex-wrap justify-center gap-6">
+            <Link href="/formation-cybersecurite-france" className="font-body-md text-body-md text-on-surface-variant hover:text-secondary transition-colors">
+              Formation cybersécurité en France
+            </Link>
             {LEGAL.map((item) => (
               <Link
                 key={item.label}
