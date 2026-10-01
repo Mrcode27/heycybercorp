@@ -145,13 +145,12 @@ export const grant = mutation({
       .unique();
     if (existing) throw new Error("Cet utilisateur possède déjà ce package.");
 
-    const currency = user.region === "AFRIQUE" ? "XOF" : "EUR";
     const orderId = await ctx.db.insert("orders", {
       userId,
       packageId,
       provider: "manual",
-      amount: currency === "XOF" ? pkg.priceXof : pkg.priceEur,
-      currency,
+      amount: pkg.priceEur,
+      currency: "EUR",
       status: "paid",
     });
     await ctx.db.insert("entitlements", { userId, packageId, orderId, grantedAt: Date.now() });

@@ -24,7 +24,7 @@ export default function CourseJsonLd({
     name: title,
     description,
     url,
-    inLanguage: "fr",
+    inLanguage: "fr-FR",
     educationalLevel: level,
     provider: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },
     ...(priceEurCents != null
@@ -42,7 +42,7 @@ export default function CourseJsonLd({
     hasCourseInstance: {
       "@type": "CourseInstance",
       courseMode: "online",
-      inLanguage: "fr",
+      inLanguage: "fr-FR",
     },
   };
 

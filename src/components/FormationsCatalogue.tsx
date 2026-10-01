@@ -6,7 +6,7 @@ import { useQuery, usePreloadedQuery, type Preloaded } from "convex/react";
 import type { FunctionReturnType } from "convex/server";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
-import { formatCoursePrice, formatDuration, type Region } from "@/lib/format";
+import { formatDuration, formatPrice } from "@/lib/format";
 
 type LiveCourse = FunctionReturnType<typeof api.courses.listPublished>[number];
 
@@ -34,15 +34,7 @@ function accentBadge(level: string) {
       : "bg-tertiary/10 text-tertiary border-tertiary/20";
 }
 
-function CourseCard({
-  course,
-  region,
-  owned,
-}: {
-  course: LiveCourse;
-  region: Region;
-  owned: boolean;
-}) {
+function CourseCard({ course, owned }: { course: LiveCourse; owned: boolean }) {
   const duration = formatDuration(course.durationSec);
   const meta =
     course.lessonCount > 0
@@ -77,9 +69,9 @@ function CourseCard({
             <Icon name="verified" className="text-sm" fill />
             POSSÉDÉ · ACCÈS À VIE
           </span>
-        ) : course.priceEur != null && course.priceXof != null ? (
+        ) : course.priceEur != null ? (
           <span className={`font-headline-lg-mobile font-bold ${accentText(course.level)}`}>
-            {formatCoursePrice(course.priceEur, course.priceXof, region)}
+            {formatPrice(course.priceEur)}
           </span>
         ) : (
           <span className="font-code-sm text-code-sm text-on-surface-variant">Bientôt</span>
@@ -106,13 +98,9 @@ export default function FormationsCatalogue({
   preloaded: Preloaded<typeof api.courses.listPublished>;
 }) {
   const courses = usePreloadedQuery(preloaded);
-  const me = useQuery(api.users.current);
   const ownedIds = useQuery(api.entitlements.myCourseIds);
 
   const [filter, setFilter] = useState<(typeof FILTERS)[number]>("Tous");
-  const [regionOverride, setRegionOverride] = useState<Region | null>(null);
-
-  const region: Region = regionOverride ?? me?.region ?? "EUROPE";
   const owned = new Set(ownedIds ?? []);
   const visible = (courses ?? []).filter((c) => filter === "Tous" || c.level === filter);
 
@@ -144,22 +132,6 @@ export default function FormationsCatalogue({
                   }`}
                 >
                   {f}
-                </button>
-              ))}
-            </div>
-            <div className="flex items-center gap-2">
-              {(["EUROPE", "AFRIQUE"] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRegionOverride(r)}
-                  className={`px-3 py-1 rounded font-label-mono text-xs uppercase tracking-widest border transition-all ${
-                    region === r
-                      ? "bg-primary/10 text-primary border-primary/40"
-                      : "border-outline-variant/40 text-on-surface-variant hover:border-primary/40"
-                  }`}
-                >
-                  {r === "EUROPE" ? "Europe (€)" : "Afrique (FCFA)"}
                 </button>
               ))}
             </div>
@@ -206,7 +178,7 @@ export default function FormationsCatalogue({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
               {tierCourses.map((c) => (
-                <CourseCard key={c._id} course={c} region={region} owned={owned.has(c._id)} />
+                <CourseCard key={c._id} course={c} owned={owned.has(c._id)} />
               ))}
               {tier.level === "Avancé" && (
                 <div className="border-2 border-dashed border-outline-variant/20 rounded-xl flex items-center justify-center p-12 text-center group">

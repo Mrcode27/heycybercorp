@@ -52,7 +52,7 @@ export const analytics = query({
     const paid = orders.filter((o) => o.status === "paid");
 
     // --- 6 monthly buckets (oldest → newest) for the charts ---
-    const buckets: { key: string; label: string; eur: number; xof: number; signups: number }[] = [];
+    const buckets: { key: string; label: string; eur: number; signups: number }[] = [];
     const anchor = new Date(now);
     for (let i = 5; i >= 0; i--) {
       const d = new Date(anchor.getFullYear(), anchor.getMonth() - i, 1);
@@ -60,7 +60,6 @@ export const analytics = query({
         key: `${d.getFullYear()}-${d.getMonth()}`,
         label: MONTH_LABELS[d.getMonth()],
         eur: 0,
-        xof: 0,
         signups: 0,
       });
     }
@@ -68,11 +67,11 @@ export const analytics = query({
       const d = new Date(ts);
       return buckets.find((b) => b.key === `${d.getFullYear()}-${d.getMonth()}`);
     };
+    // Everything is sold in euros; the currency check only keeps a stray
+    // non-euro row from being added as if it were cents.
     for (const o of paid) {
       const b = bucketOf(o._creationTime);
-      if (!b) continue;
-      if (o.currency === "EUR") b.eur += o.amount / 100;
-      else b.xof += o.amount;
+      if (b && o.currency === "EUR") b.eur += o.amount / 100;
     }
     for (const u of users) {
       const b = bucketOf(u._creationTime);
@@ -84,13 +83,9 @@ export const analytics = query({
     const inPrev30 = (ts: number) => ts > now - 60 * DAY_MS && ts <= now - 30 * DAY_MS;
     const sumRevenue = (filter: (ts: number) => boolean) =>
       paid.reduce(
-        (acc, o) => {
-          if (!filter(o._creationTime)) return acc;
-          if (o.currency === "EUR") acc.eur += o.amount / 100;
-          else acc.xof += o.amount;
-          return acc;
-        },
-        { eur: 0, xof: 0 },
+        (eur, o) =>
+          filter(o._creationTime) && o.currency === "EUR" ? eur + o.amount / 100 : eur,
+        0,
       );
 
     // --- Top packages by number of purchases (all time) ---
@@ -140,7 +135,7 @@ export const analytics = query({
     }
 
     return {
-      months: buckets.map(({ label, eur, xof, signups }) => ({ label, eur, xof, signups })),
+      months: buckets.map(({ label, eur, signups }) => ({ label, eur, signups })),
       revenue30d: sumRevenue(in30),
       revenuePrev30d: sumRevenue(inPrev30),
       newStudents30d: users.filter((u) => in30(u._creationTime)).length,

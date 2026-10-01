@@ -15,7 +15,6 @@ const PACKAGES: {
   name: string;
   tagline: string;
   priceEur: number; // cents
-  priceXof: number; // FCFA
   levels: Level[];
   featured: boolean;
   order: number;
@@ -26,7 +25,6 @@ const PACKAGES: {
     name: "Débutant",
     tagline: "Les fondamentaux pour bien démarrer",
     priceEur: 4000,
-    priceXof: 15000,
     levels: ["Débutant"],
     featured: false,
     order: 1,
@@ -44,7 +42,6 @@ const PACKAGES: {
     name: "Intermédiaire",
     tagline: "Passez à la pratique offensive et défensive",
     priceEur: 6000,
-    priceXof: 30000,
     levels: ["Intermédiaire"],
     featured: true,
     order: 2,
@@ -61,7 +58,6 @@ const PACKAGES: {
     name: "Piratage Éthique",
     tagline: "Techniques avancées, cadre 100% éthique",
     priceEur: 8000,
-    priceXof: 45000,
     levels: ["Avancé"],
     featured: false,
     order: 3,
@@ -211,7 +207,6 @@ export const setup = mutation({
         name: p.name,
         tagline: p.tagline,
         priceEur: p.priceEur,
-        priceXof: p.priceXof,
         features: p.features,
         levels: p.levels,
         published: true,

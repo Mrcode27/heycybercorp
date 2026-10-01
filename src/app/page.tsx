@@ -120,8 +120,8 @@ export default function Home() {
               className="font-body-lg text-body-lg text-on-surface-variant max-w-xl"
               data-cyber-reveal
             >
-              Formations de pointe pour les talents africains et européens. Apprenez auprès des
-              experts du renseignement et de la sécurité offensive.
+              Formations en cybersécurité en ligne, en français, pour la France et l&apos;Europe.
+              Apprenez auprès des experts du renseignement et de la sécurité offensive.
             </p>
             <div className="flex flex-wrap gap-4 pt-4" data-cyber-reveal>
               <Link
@@ -152,7 +152,8 @@ export default function Home() {
               </Link>
             </div>
             <p className="text-on-surface-variant text-sm" data-cyber-reveal>
-              Vous êtes en France ? <Link href="/formation-cybersecurite-france" className="text-secondary underline">Découvrez les parcours accessibles depuis la France</Link>.
+              Prix en euros, paiement unique.{" "}
+              <Link href="/formation-cybersecurite-france" className="text-secondary underline">Choisir sa formation cybersécurité en France</Link>.
             </p>
             <div className="landing-proof flex items-center gap-6 pt-8" data-cyber-reveal>
               <div className="landing-proof-avatars flex -space-x-3">

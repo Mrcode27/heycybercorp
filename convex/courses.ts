@@ -30,7 +30,6 @@ async function coursePricing(ctx: QueryCtx, course: Doc<"courses">) {
   const pkg = await primaryPackage(ctx, course.level);
   return {
     priceEur: pkg?.priceEur ?? null,
-    priceXof: pkg?.priceXof ?? null,
     packageId: pkg?._id ?? null,
     packageSlug: pkg?.slug ?? null,
     packageName: pkg?.name ?? null,
@@ -114,14 +113,12 @@ export const detail = query({
       course,
       lessons: lessonDocs.map(sanitizeLesson),
       owned,
-      region: user?.region ?? null,
       pkg: pkg
         ? {
             _id: pkg._id,
             slug: pkg.slug,
             name: pkg.name,
             priceEur: pkg.priceEur,
-            priceXof: pkg.priceXof,
           }
         : null,
     };

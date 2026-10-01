@@ -3,6 +3,7 @@
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../Icon";
+import { formatPrice } from "@/lib/format";
 
 function statusClasses(status: string) {
   switch (status) {
@@ -15,12 +16,6 @@ function statusClasses(status: string) {
     default:
       return "bg-secondary/10 text-secondary border-secondary/30"; // pending
   }
-}
-
-function money(amount: number, currency: string) {
-  return currency === "EUR"
-    ? `${(amount / 100).toLocaleString("fr-FR")} €`
-    : `${amount.toLocaleString("fr-FR")} FCFA`;
 }
 
 export default function AdminSales() {
@@ -61,7 +56,7 @@ export default function AdminSales() {
                 <tr key={o._id} className={`border-t border-outline-variant/20 ${i % 2 ? "bg-surface-container-lowest/50" : ""}`}>
                   <td className="p-4 text-on-surface-variant text-sm">{o.userEmail}</td>
                   <td className="p-4 text-on-surface font-medium">{o.label}</td>
-                  <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{money(o.amount, o.currency)}</td>
+                  <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{formatPrice(o.amount)}</td>
                   <td className="p-4 text-on-surface-variant capitalize">{o.provider}</td>
                   <td className="p-4">
                     <span className={`px-2 py-0.5 text-xs font-bold rounded border capitalize ${statusClasses(o.status)}`}>

@@ -120,7 +120,6 @@ export const createCheckoutSession = action({
     // tell exactly what was bought, without trusting anything from the client.
     const orderId: Id<"orders"> = await ctx.runMutation(internal.orders.createPending, {
       packageId,
-      currency: "EUR", // African mobile-money (XOF) arrives in Phase 7
     });
     const info = await ctx.runQuery(internal.orders.getWithPackage, { orderId });
     if (!info) throw new Error("Commande introuvable.");

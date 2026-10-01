@@ -42,8 +42,8 @@ export const listAll = query({
  * (see AuthSync on the client). Idempotent.
  */
 export const store = mutation({
-  args: { region: v.optional(v.union(v.literal("AFRIQUE"), v.literal("EUROPE"))) },
-  handler: async (ctx, { region }) => {
+  args: {},
+  handler: async (ctx) => {
     const identity = await ctx.auth.getUserIdentity();
     if (!identity) throw new Error("Not authenticated");
 
@@ -59,7 +59,6 @@ export const store = mutation({
       const patch: Partial<Doc<"users">> = {};
       if (existing.email !== email && email) patch.email = email;
       if (existing.name !== name && name) patch.name = name;
-      if (region && existing.region !== region) patch.region = region;
       if (Object.keys(patch).length > 0) await ctx.db.patch(existing._id, patch);
       return existing._id;
     }
@@ -68,7 +67,6 @@ export const store = mutation({
       clerkId: identity.subject,
       email,
       name,
-      region,
       role: "student",
     });
   },

@@ -1,57 +1,24 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Icon from "./Icon";
 import BuyPackageButton from "./BuyPackageButton";
-import { formatCoursePrice, type Region } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 
 /** Homepage pricing — live packages from Convex, with working buy buttons. */
 export default function PricingPreview() {
   const packages = useQuery(api.packages.listPublished);
-  const me = useQuery(api.users.current);
-  const [regionOverride, setRegionOverride] = useState<Region | null>(null);
-  const region: Region = regionOverride ?? me?.region ?? "EUROPE";
 
   return (
     <div className="px-margin-mobile md:px-margin-desktop max-w-container-max mx-auto text-center">
       <h2 className="font-headline-xl text-headline-xl text-on-surface mb-6">
         Investissez dans votre Futur
       </h2>
-      <p className="text-on-surface-variant mb-12 max-w-2xl mx-auto">
-        Des packs adaptés pour démocratiser l&apos;accès à l&apos;expertise cyber, quel que soit
-        votre continent. Achat unique, accès à vie à toutes les formations du pack.
+      <p className="text-on-surface-variant mb-16 max-w-2xl mx-auto">
+        Des packs pensés pour rendre l&apos;expertise cyber accessible. Prix en euros, achat
+        unique, accès à vie à toutes les formations du pack.
       </p>
-
-      {/* Region toggle */}
-      <div className="flex items-center justify-center gap-4 mb-16">
-        <span
-          className={`font-label-mono text-on-surface-variant transition-opacity ${
-            region === "EUROPE" ? "opacity-100" : "opacity-50"
-          }`}
-        >
-          Europe
-        </span>
-        <button
-          type="button"
-          onClick={() => setRegionOverride(region === "EUROPE" ? "AFRIQUE" : "EUROPE")}
-          aria-label="Basculer la région"
-          className="relative w-16 h-8 rounded-full bg-surface-container-highest border border-outline-variant p-1 transition-all"
-        >
-          <div
-            className="absolute top-1 w-6 h-6 rounded-full bg-primary transition-all duration-300"
-            style={{ left: region === "EUROPE" ? "4px" : "32px" }}
-          />
-        </button>
-        <span
-          className={`font-label-mono text-on-surface-variant transition-opacity ${
-            region === "EUROPE" ? "opacity-50" : "opacity-100"
-          }`}
-        >
-          Afrique
-        </span>
-      </div>
 
       {packages === undefined && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -88,7 +55,7 @@ export default function PricingPreview() {
             )}
             <div className="flex items-baseline gap-1 mb-8">
               <span className="font-headline-xl text-headline-xl text-on-surface">
-                {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
+                {formatPrice(pkg.priceEur)}
               </span>
               <span className="text-on-surface-variant text-sm">· à vie</span>
             </div>

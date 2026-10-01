@@ -177,7 +177,6 @@ export default function AdminUsers({ title = "Utilisateurs" }: { title?: string 
           <thead>
             <tr className="bg-surface-container-high font-label-mono text-label-mono uppercase text-on-surface-variant text-xs">
               <th className="p-4">Utilisateur</th>
-              <th className="p-4 hidden md:table-cell">Région</th>
               <th className="p-4">Rôle</th>
               <th className="p-4 hidden sm:table-cell">Inscrit</th>
               <th className="p-4 text-right">Gérer</th>
@@ -186,7 +185,7 @@ export default function AdminUsers({ title = "Utilisateurs" }: { title?: string 
           {users === undefined && (
             <tbody>
               <tr>
-                <td colSpan={5} className="p-6 text-on-surface-variant font-code-sm">
+                <td colSpan={4} className="p-6 text-on-surface-variant font-code-sm">
                   Chargement…
                 </td>
               </tr>
@@ -221,9 +220,6 @@ export default function AdminUsers({ title = "Utilisateurs" }: { title?: string 
                     </div>
                   </div>
                 </td>
-                <td className="p-4 hidden md:table-cell text-on-surface-variant">
-                  {u.region ?? "—"}
-                </td>
                 <td className="p-4">
                   <span className={`px-2 py-0.5 text-xs font-bold rounded border ${roleClasses(u.role)}`}>
                     {u.role}
@@ -248,7 +244,7 @@ export default function AdminUsers({ title = "Utilisateurs" }: { title?: string 
               </tr>
               {expanded === u._id && (
                 <tr>
-                  <td colSpan={5} className="p-0">
+                  <td colSpan={4} className="p-0">
                     <UserManagePanel
                       user={u}
                       packages={(packages ?? []).map((p) => ({ _id: p._id, name: p.name }))}

@@ -6,14 +6,11 @@ import { getCurrentUser, requireAdmin } from "./users";
  * Create a pending order for a PACKAGE before redirecting to Stripe Checkout.
  * INTERNAL — only `stripe.createCheckoutSession` may call it, so the provider
  * and the amount are always decided server-side. The client never sends a
- * price, a currency or a provider.
+ * price, a currency or a provider. Everything is sold in euros.
  */
 export const createPending = internalMutation({
-  args: {
-    packageId: v.id("packages"),
-    currency: v.union(v.literal("EUR"), v.literal("XOF")),
-  },
-  handler: async (ctx, { packageId, currency }) => {
+  args: { packageId: v.id("packages") },
+  handler: async (ctx, { packageId }) => {
     const user = await getCurrentUser(ctx);
     if (!user) throw new Error("Not authenticated");
     if (user.suspended) throw new Error("Ce compte est suspendu.");
@@ -29,7 +26,7 @@ export const createPending = internalMutation({
       .unique();
     if (already) throw new Error("Vous possédez déjà ce pack.");
 
-    const amount = currency === "EUR" ? pkg.priceEur : pkg.priceXof;
+    const amount = pkg.priceEur;
     if (!amount || amount <= 0) {
       throw new Error("Le prix de ce pack n'est pas configuré.");
     }
@@ -38,7 +35,7 @@ export const createPending = internalMutation({
       packageId,
       provider: "stripe",
       amount,
-      currency,
+      currency: "EUR",
       status: "pending",
     });
   },

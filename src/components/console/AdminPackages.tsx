@@ -6,6 +6,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
 import { cleanConvexError } from "@/lib/errors";
+import { formatPrice } from "@/lib/format";
 
 const LEVELS = ["Débutant", "Intermédiaire", "Avancé"] as const;
 type Level = (typeof LEVELS)[number];
@@ -18,7 +19,6 @@ const EMPTY = {
   slug: "",
   tagline: "",
   priceEur: "",
-  priceXof: "",
   features: "",
   levels: [] as Level[],
   published: true,
@@ -58,7 +58,6 @@ export default function AdminPackages() {
       slug: pkg.slug,
       tagline: pkg.tagline ?? "",
       priceEur: String(pkg.priceEur / 100),
-      priceXof: String(pkg.priceXof),
       features: pkg.features.join("\n"),
       levels: pkg.levels,
       published: pkg.published,
@@ -88,7 +87,6 @@ export default function AdminPackages() {
         name: form.name.trim(),
         tagline: form.tagline.trim() || undefined,
         priceEur: Math.round(parseFloat(form.priceEur || "0") * 100),
-        priceXof: Math.round(parseFloat(form.priceXof || "0")),
         features: form.features.split("\n").map((s) => s.trim()).filter(Boolean),
         levels: form.levels,
         published: form.published,
@@ -144,12 +142,8 @@ export default function AdminPackages() {
             <input value={form.tagline} onChange={(e) => setForm({ ...form, tagline: e.target.value })} className={inputClass} placeholder="Les fondamentaux de la cyberdéfense" />
           </div>
           <div>
-            <label className="font-label-mono text-xs uppercase text-on-surface-variant">Prix Europe (€)</label>
+            <label className="font-label-mono text-xs uppercase text-on-surface-variant">Prix (€)</label>
             <input type="number" min="0" step="1" required value={form.priceEur} onChange={(e) => setForm({ ...form, priceEur: e.target.value })} className={inputClass} placeholder="40" />
-          </div>
-          <div>
-            <label className="font-label-mono text-xs uppercase text-on-surface-variant">Prix Afrique (FCFA)</label>
-            <input type="number" min="0" step="1" required value={form.priceXof} onChange={(e) => setForm({ ...form, priceXof: e.target.value })} className={inputClass} placeholder="15000" />
           </div>
           <div className="md:col-span-2">
             <label className="font-label-mono text-xs uppercase text-on-surface-variant">Niveaux débloqués</label>
@@ -219,7 +213,7 @@ export default function AdminPackages() {
                 )}
               </div>
               <div className="text-on-surface-variant text-xs font-code-sm tabular-nums">
-                {(pkg.priceEur / 100).toLocaleString("fr-FR")} € · {pkg.priceXof.toLocaleString("fr-FR")} FCFA · {pkg.levels.join(", ")}
+                {formatPrice(pkg.priceEur)} · {pkg.levels.join(", ")}
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">

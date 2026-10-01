@@ -1,14 +1,6 @@
-export type Region = "AFRIQUE" | "EUROPE";
-
-/** "40 €" or "15 000 FCFA" from the stored units (EUR cents / whole XOF). */
-export function formatCoursePrice(
-  priceEur: number,
-  priceXof: number,
-  region: Region,
-): string {
-  return region === "AFRIQUE"
-    ? `${priceXof.toLocaleString("fr-FR")} FCFA`
-    : `${(priceEur / 100).toLocaleString("fr-FR")} €`;
+/** "40 €" from a stored price in euro cents. */
+export function formatPrice(priceEurCents: number): string {
+  return `${(priceEurCents / 100).toLocaleString("fr-FR")} €`;
 }
 
 /** "1 h 25 min" / "45 min" from seconds; null-ish → "". */

@@ -1,12 +1,11 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
 import BuyPackageButton from "@/components/BuyPackageButton";
 import CheckoutResultBanner from "@/components/CheckoutResultBanner";
-import { formatCoursePrice, type Region } from "@/lib/format";
+import { formatPrice } from "@/lib/format";
 
 const TABLE_ROWS = [
   { feature: "Nombre de Labs Virtuels", deb: "05", inter: "20", pro: "ILLIMITÉ" },
@@ -27,7 +26,7 @@ const FAQ = [
   },
   {
     q: "Quel est le mode de paiement accepté ?",
-    a: "Carte bancaire (Visa, Mastercard) et les autres moyens proposés par Stripe selon votre pays — la liste s'affiche au moment du paiement. Le Mobile Money (Orange, MTN, Wave) arrive prochainement pour l'Afrique.",
+    a: "Carte bancaire (Visa, Mastercard) et les autres moyens proposés par Stripe selon votre pays — la liste s'affiche au moment du paiement. Le paiement est sécurisé et se fait en euros.",
   },
 ];
 
@@ -40,9 +39,6 @@ function Cell({ value }: { value: string }) {
 
 export default function TarifsContent() {
   const packages = useQuery(api.packages.listPublished);
-  const me = useQuery(api.users.current);
-  const [regionOverride, setRegionOverride] = useState<Region | null>(null);
-  const region: Region = regionOverride ?? me?.region ?? "AFRIQUE";
 
   return (
     <>
@@ -63,30 +59,10 @@ export default function TarifsContent() {
             Préparez-vous à <span className="text-primary glow-text-primary">Maîtriser</span>{" "}
             le Cyber-espace
           </h1>
-          <p className="max-w-2xl mx-auto text-on-surface-variant font-body-lg text-body-lg mb-12">
-            Choisissez le pack adapté à votre trajectoire. Un achat unique débloque à vie toutes
-            les formations de son niveau.
+          <p className="max-w-2xl mx-auto text-on-surface-variant font-body-lg text-body-lg mb-16">
+            Choisissez le pack adapté à votre trajectoire. Prix en euros : un achat unique
+            débloque à vie toutes les formations de son niveau.
           </p>
-
-          {/* Region toggle */}
-          <div className="flex justify-center mb-16">
-            <div className="bg-surface-container-high p-1 rounded-xl flex border border-outline-variant/30">
-              {(["AFRIQUE", "EUROPE"] as const).map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setRegionOverride(r)}
-                  className={`px-8 py-2 rounded-lg font-bold transition-all duration-300 ${
-                    region === r
-                      ? "bg-primary text-on-primary glow-primary"
-                      : "text-on-surface-variant hover:text-on-surface"
-                  }`}
-                >
-                  {r === "AFRIQUE" ? "Afrique (FCFA)" : "Europe (EUR)"}
-                </button>
-              ))}
-            </div>
-          </div>
 
           {/* Plan cards — live packages */}
           {packages === undefined ? (
@@ -123,7 +99,7 @@ export default function TarifsContent() {
                   <div className="mb-8">
                     <div className="flex items-baseline gap-1">
                       <span className="font-headline-xl text-headline-xl text-primary">
-                        {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
+                        {formatPrice(pkg.priceEur)}
                       </span>
                       <span className="text-on-surface-variant font-body-md">· à vie</span>
                     </div>

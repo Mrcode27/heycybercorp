@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../Icon";
@@ -14,21 +13,17 @@ function delta(current: number, previous: number): string {
 function fmtEur(v: number) {
   return `${v.toLocaleString("fr-FR", { maximumFractionDigits: 0 })} €`;
 }
-function fmtXof(v: number) {
-  return `${v.toLocaleString("fr-FR")} FCFA`;
-}
 
 /** Live analytics computed by convex/admin.ts → analytics. No sample data. */
 export default function AdminReports() {
   const data = useQuery(api.admin.analytics, {});
-  const [currency, setCurrency] = useState<"eur" | "xof">("eur");
 
   if (data === undefined) {
     return <p className="text-on-surface-variant font-code-sm">Chargement des analyses…</p>;
   }
 
-  const hasRevenue = data.months.some((m) => m.eur > 0 || m.xof > 0);
-  const chartValues = data.months.map((m) => (currency === "eur" ? m.eur : m.xof));
+  const hasRevenue = data.months.some((m) => m.eur > 0);
+  const chartValues = data.months.map((m) => m.eur);
   const chartMax = Math.max(...chartValues, 1);
   const topMax = Math.max(...data.topPackages.map((t) => t.count), 1);
 
@@ -36,18 +31,8 @@ export default function AdminReports() {
     {
       icon: "trending_up",
       label: "Revenu (30 j)",
-      value:
-        data.revenue30d.eur > 0 || data.revenue30d.xof === 0
-          ? fmtEur(data.revenue30d.eur)
-          : fmtXof(data.revenue30d.xof),
-      sub:
-        data.revenue30d.xof > 0 && data.revenue30d.eur > 0
-          ? `+ ${fmtXof(data.revenue30d.xof)}`
-          : undefined,
-      delta: delta(
-        data.revenue30d.eur + data.revenue30d.xof,
-        data.revenuePrev30d.eur + data.revenuePrev30d.xof,
-      ),
+      value: fmtEur(data.revenue30d),
+      delta: delta(data.revenue30d, data.revenuePrev30d),
       color: "text-primary",
     },
     {
@@ -96,11 +81,6 @@ export default function AdminReports() {
             <div className="text-headline-lg-mobile font-bold text-on-surface tabular-nums">
               {k.value}
             </div>
-            {k.sub && (
-              <div className="font-code-sm text-code-sm text-on-surface-variant tabular-nums">
-                {k.sub}
-              </div>
-            )}
             <div className="font-label-mono text-label-mono text-on-surface-variant uppercase text-xs">
               {k.label}
             </div>
@@ -111,26 +91,9 @@ export default function AdminReports() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Revenue chart */}
         <div className="glass-card rounded-xl p-6">
-          <div className="flex items-start justify-between gap-4 mb-1">
-            <h3 className="font-headline-lg-mobile text-on-surface">Revenus mensuels</h3>
-            <div className="flex gap-1">
-              {(["eur", "xof"] as const).map((c) => (
-                <button
-                  key={c}
-                  onClick={() => setCurrency(c)}
-                  className={`px-2.5 py-1 rounded font-label-mono text-xs uppercase border transition-all ${
-                    currency === c
-                      ? "bg-primary/10 text-primary border-primary/40"
-                      : "border-outline-variant/40 text-on-surface-variant hover:border-primary/40"
-                  }`}
-                >
-                  {c === "eur" ? "€" : "FCFA"}
-                </button>
-              ))}
-            </div>
-          </div>
+          <h3 className="font-headline-lg-mobile text-on-surface mb-1">Revenus mensuels</h3>
           <p className="text-on-surface-variant text-sm mb-6">
-            6 derniers mois ({currency === "eur" ? "euros" : "FCFA"}, commandes payées)
+            6 derniers mois (euros, commandes payées)
           </p>
           <div className="flex items-end justify-between gap-3 h-48">
             {data.months.map((m, i) => (

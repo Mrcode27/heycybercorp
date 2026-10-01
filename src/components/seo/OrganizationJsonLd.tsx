@@ -18,7 +18,20 @@ export default function OrganizationJsonLd() {
     url: SITE_URL,
     logo: `${SITE_URL}/logo.png`,
     description:
-      "Formations en cybersécurité pour les talents africains et européens : fondamentaux, hacking éthique, OSINT et gouvernance.",
+      "Formations en cybersécurité en ligne, en français, pour la France et l'Europe : fondamentaux, hacking éthique, OSINT et gouvernance.",
+    // Locality + country only: the full street address belongs here once
+    // LEGAL.address in src/lib/site.ts is filled in.
+    address: { "@type": "PostalAddress", addressLocality: "Paris", addressCountry: "FR" },
+    // The market the site is built for. Listed countries rather than the
+    // continent alone, so the francophone neighbours of France count too.
+    areaServed: [
+      { "@type": "Country", name: "France" },
+      { "@type": "Country", name: "Belgique" },
+      { "@type": "Country", name: "Suisse" },
+      { "@type": "Country", name: "Luxembourg" },
+      { "@type": "Place", name: "Europe" },
+    ],
+    knowsLanguage: "fr-FR",
     ...(sameAs.length > 0 ? { sameAs } : {}),
   };
 
@@ -27,7 +40,7 @@ export default function OrganizationJsonLd() {
     "@id": `${SITE_URL}/#website`,
     url: SITE_URL,
     name: SITE_NAME,
-    inLanguage: "fr",
+    inLanguage: "fr-FR",
     publisher: { "@id": `${SITE_URL}/#organization` },
   };
 

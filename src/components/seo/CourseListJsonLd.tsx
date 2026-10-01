@@ -35,7 +35,7 @@ export default function CourseListJsonLd({ courses }: { courses: Courses }) {
           name: c.title,
           description: c.description,
           url: `${SITE_URL}/formations/${c.slug}`,
-          inLanguage: "fr",
+          inLanguage: "fr-FR",
           educationalLevel: c.level,
           provider: {
             "@type": "Organization",
@@ -59,7 +59,7 @@ export default function CourseListJsonLd({ courses }: { courses: Courses }) {
             "@type": "CourseInstance",
             courseMode: "online",
             courseWorkload: workload,
-            inLanguage: "fr",
+            inLanguage: "fr-FR",
           },
         },
       };

@@ -19,7 +19,14 @@ export default function DashboardConsole() {
       value: myCourses === undefined ? "—" : owned.length,
       color: "text-primary",
     },
-    { icon: "public", label: "Région", value: me?.region ?? "—", color: "text-secondary" },
+    {
+      icon: "schedule",
+      label: "Membre depuis",
+      value: me
+        ? new Date(me._creationTime).toLocaleDateString("fr-FR", { month: "long", year: "numeric" })
+        : "—",
+      color: "text-secondary",
+    },
     { icon: "verified_user", label: "Type d'accès", value: "À vie", color: "text-primary" },
   ];
 

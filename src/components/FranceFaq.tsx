@@ -15,8 +15,8 @@ const questions = [
     question: "Où trouver le prix d'une formation pour la France ?",
     answer: (
       <>
-        La <Link href="/tarifs" className="text-secondary underline">page Tarifs</Link> affiche les offres
-        en euros lorsque la région Europe est sélectionnée. Vérifiez les détails de chaque offre avant de vous inscrire.
+        Les prix sont affichés en euros sur la <Link href="/tarifs" className="text-secondary underline">page Tarifs</Link>,
+        avec un paiement unique par pack. Vérifiez les détails de chaque offre avant de vous inscrire.
       </>
     ),
   },

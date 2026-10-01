@@ -20,7 +20,6 @@ export default defineSchema({
     clerkId: v.string(),
     email: v.string(),
     name: v.optional(v.string()),
-    region: v.optional(v.union(v.literal("AFRIQUE"), v.literal("EUROPE"))),
     role: v.union(v.literal("student"), v.literal("admin")),
     suspended: v.optional(v.boolean()),
     prefs: v.optional(
@@ -39,8 +38,8 @@ export default defineSchema({
     slug: v.string(),
     name: v.string(),
     tagline: v.optional(v.string()),
-    priceEur: v.number(), // cents
-    priceXof: v.number(), // whole FCFA
+    priceEur: v.number(), // cents — euros are the only currency sold
+    priceXof: v.optional(v.number()), // legacy FCFA price, no longer read or written
     features: v.array(v.string()),
     levels: v.array(levelValidator), // which course levels this package unlocks
     published: v.boolean(),
@@ -198,7 +197,7 @@ export default defineSchema({
     ),
     providerRef: v.optional(v.string()),
     amount: v.number(),
-    currency: v.string(), // "EUR" | "XOF"
+    currency: v.string(), // always "EUR"
     status: v.union(
       v.literal("pending"),
       v.literal("paid"),

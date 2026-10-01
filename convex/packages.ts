@@ -84,7 +84,6 @@ export const create = mutation({
     slug: v.optional(v.string()),
     tagline: v.optional(v.string()),
     priceEur: v.number(),
-    priceXof: v.number(),
     features: v.array(v.string()),
     levels: v.array(levelValidator),
     published: v.boolean(),
@@ -110,7 +109,6 @@ export const update = mutation({
       slug: v.optional(v.string()),
       tagline: v.optional(v.string()),
       priceEur: v.optional(v.number()),
-      priceXof: v.optional(v.number()),
       features: v.optional(v.array(v.string())),
       levels: v.optional(v.array(levelValidator)),
       published: v.optional(v.boolean()),
@@ -174,7 +172,6 @@ export const seed = mutation({
         name: "Débutant",
         tagline: "Les fondamentaux de la cyberdéfense",
         priceEur: 4000,
-        priceXof: 15000,
         levels: ["Débutant" as const],
         features: [
           "Accès à vie à toutes les formations Débutant",
@@ -190,7 +187,6 @@ export const seed = mutation({
         name: "Intermédiaire",
         tagline: "Montez en compétences",
         priceEur: 6000,
-        priceXof: 30000,
         levels: ["Intermédiaire" as const],
         features: [
           "Accès à vie à toutes les formations Intermédiaire",
@@ -206,7 +202,6 @@ export const seed = mutation({
         name: "Avancé",
         tagline: "Niveau expert / Red Team",
         priceEur: 8000,
-        priceXof: 45000,
         levels: ["Avancé" as const],
         features: [
           "Accès à vie à toutes les formations Avancé",

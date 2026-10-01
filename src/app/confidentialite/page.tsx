@@ -44,8 +44,8 @@ export default function ConfidentialitePage() {
           <h2 className={h2}>2. Données que nous collectons</h2>
           <ul className="space-y-2">
             <li className={li}>
-              <span className="text-on-surface">Compte utilisateur</span> : nom, adresse e-mail,
-              région tarifaire (Afrique/Europe) — collectés à l&apos;inscription.
+              <span className="text-on-surface">Compte utilisateur</span> : nom et adresse e-mail,
+              collectés à l&apos;inscription.
             </li>
             <li className={li}>
               <span className="text-on-surface">Achats</span> : historique de commandes et droits

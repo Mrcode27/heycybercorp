@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useQuery } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../Icon";
+import { formatPrice } from "@/lib/format";
 
 function statusClasses(status: string) {
   switch (status) {
@@ -18,12 +19,6 @@ function statusClasses(status: string) {
 
 function statusLabel(status: string) {
   return { paid: "Payé", pending: "En attente", failed: "Échoué", refunded: "Remboursé" }[status] ?? status;
-}
-
-function money(amount: number, currency: string) {
-  return currency === "EUR"
-    ? `${(amount / 100).toLocaleString("fr-FR")} €`
-    : `${amount.toLocaleString("fr-FR")} FCFA`;
 }
 
 export default function StudentPurchases() {
@@ -71,7 +66,7 @@ export default function StudentPurchases() {
                   {new Date(o._creationTime).toLocaleDateString("fr-FR")}
                 </td>
                 <td className="p-4 text-on-surface font-medium">{o.label}</td>
-                <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{money(o.amount, o.currency)}</td>
+                <td className="p-4 font-code-sm tabular-nums whitespace-nowrap">{formatPrice(o.amount)}</td>
                 <td className="p-4">
                   <span className={`px-2 py-0.5 text-xs font-bold rounded border ${statusClasses(o.status)}`}>
                     {statusLabel(o.status)}

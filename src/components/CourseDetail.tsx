@@ -6,7 +6,7 @@ import { api } from "../../convex/_generated/api";
 import Icon from "@/components/Icon";
 import BuyPackageButton from "@/components/BuyPackageButton";
 import CheckoutResultBanner from "@/components/CheckoutResultBanner";
-import { formatCoursePrice, formatDuration, type Region } from "@/lib/format";
+import { formatDuration, formatPrice } from "@/lib/format";
 
 function levelBadge(level: string) {
   return level === "Avancé"
@@ -52,7 +52,6 @@ export default function CourseDetail({ slug }: { slug: string }) {
   }
 
   const { course, lessons, owned, pkg } = detail;
-  const region: Region = detail.region ?? "EUROPE";
   const totalSec = lessons.reduce((s, l) => s + (l.durationSec ?? 0), 0);
   const duration = formatDuration(totalSec);
 
@@ -209,17 +208,11 @@ export default function CourseDetail({ slug }: { slug: string }) {
                 </div>
                 <div className="flex items-baseline gap-2 mb-1">
                   <span className="font-headline-xl text-headline-xl text-on-surface">
-                    {formatCoursePrice(pkg.priceEur, pkg.priceXof, region)}
+                    {formatPrice(pkg.priceEur)}
                   </span>
                 </div>
                 <div className="text-on-surface-variant text-sm mb-6">
-                  soit{" "}
-                  {formatCoursePrice(
-                    pkg.priceEur,
-                    pkg.priceXof,
-                    region === "EUROPE" ? "AFRIQUE" : "EUROPE",
-                  )}{" "}
-                  · débloque toutes les formations {course.level}
+                  Débloque toutes les formations {course.level}
                 </div>
 
                 <BuyPackageButton
@@ -237,13 +230,6 @@ export default function CourseDetail({ slug }: { slug: string }) {
                     <Icon name="credit_card" className="text-sm text-primary" /> Carte bancaire
                     et autres moyens proposés par Stripe
                   </p>
-                  {region === "AFRIQUE" && (
-                    <p className="flex items-start gap-2">
-                      <Icon name="phone_iphone" className="text-sm text-secondary mt-0.5" />
-                      Mobile Money (Orange/MTN/Wave) arrive bientôt — en attendant, le paiement
-                      par carte est disponible.
-                    </p>
-                  )}
                 </div>
               </>
             ) : (

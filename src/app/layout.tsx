@@ -3,6 +3,7 @@ import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import AppProviders from "@/components/AppProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
+import { pageAlternates } from "@/lib/seo";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -32,7 +33,7 @@ export const metadata: Metadata = {
   title: "Formation cybersécurité en France | heycybercorp",
   description: DESCRIPTION,
   // Child pages override this with their own path; the root claims the origin.
-  alternates: { canonical: "/" },
+  alternates: pageAlternates(""),
   // Icons come from the app-directory file convention (src/app/favicon.ico,
   // icon.png, apple-icon.png) — Next emits the <link> tags with correct sizes
   // and types, and serves /favicon.ico for browsers that request it directly.
@@ -68,7 +69,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="fr"
+      lang="fr-FR"
       suppressHydrationWarning
       className={`dark ${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable}`}
     >

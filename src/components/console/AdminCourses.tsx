@@ -8,6 +8,7 @@ import { api } from "../../../convex/_generated/api";
 import type { Id } from "../../../convex/_generated/dataModel";
 import Icon from "../Icon";
 import { cleanConvexError } from "@/lib/errors";
+import { formatPrice } from "@/lib/format";
 
 const LEVELS = ["Débutant", "Intermédiaire", "Avancé"] as const;
 type Level = (typeof LEVELS)[number];
@@ -309,11 +310,11 @@ export default function AdminCourses() {
                   </Link>
                 </td>
                 <td className="p-4 whitespace-nowrap">
-                  {c.packageName && c.priceEur != null && c.priceXof != null ? (
+                  {c.packageName && c.priceEur != null ? (
                     <>
                       <div className="text-on-surface text-sm">{c.packageName}</div>
                       <div className="text-on-surface-variant text-xs font-code-sm tabular-nums">
-                        {(c.priceEur / 100).toLocaleString("fr-FR")} € · {c.priceXof.toLocaleString("fr-FR")} FCFA
+                        {formatPrice(c.priceEur)}
                       </div>
                     </>
                   ) : (

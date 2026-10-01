@@ -10,7 +10,7 @@ import { pageMetadata } from "@/lib/seo";
 export const metadata: Metadata = pageMetadata({
   title: "Formation cybersécurité pour entreprises | heycybercorp",
   description:
-    "Formez vos équipes à la cybersécurité : sensibilisation, hygiène numérique, gouvernance et tests d'intrusion. Programmes sur mesure pour entreprises en Afrique et en Europe.",
+    "Formez vos équipes à la cybersécurité : sensibilisation, hygiène numérique, gouvernance et tests d'intrusion. Programmes sur mesure pour les entreprises en France et en Europe.",
   path: "/entreprise",
 });
 
