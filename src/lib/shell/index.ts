@@ -36,6 +36,15 @@ export type ShellConfig = {
   allowed?: string[];
   /** Extra commands only this shell has — the site-info verbs on the homepage. */
   extras?: Record<string, Command>;
+  /**
+   * Per-case canned output for the recon/inspection commands (nmap, ss, ps,
+   * dig, systemctl…). Keys are either a bare command name ("ps") or a full
+   * command line ("nmap 10.0.0.0/24"); a full-line match wins over the bare
+   * name. This is what makes a case's machine feel like *its own* machine
+   * rather than one generic host — and it is still only a lookup table, so the
+   * two security rules hold: nothing is evaluated, nothing leaves the browser.
+   */
+  sim?: Record<string, string>;
 };
 
 export type Command = {
@@ -56,6 +65,24 @@ export type RunContext = {
 export const out = (text: string): Line[] => [{ type: "output", text }];
 export const ok = (text: string): Line[] => [{ type: "success", text }];
 export const err = (text: string): Line[] => [{ type: "error", text }];
+
+/**
+ * Per-case canned output for a recon/inspection command. Tries the full command
+ * line first ("nmap 10.0.0.0/24"), then the bare verb ("nmap"). Returns null
+ * when the case declares no `sim` entry, so each command can fall back to its
+ * generic built-in output.
+ */
+function simFor(ctx: RunContext, name: string): Line[] | null {
+  const sim = ctx.cfg.sim;
+  if (!sim) return null;
+  const arg = ctx.arg.trim();
+  const keys = arg ? [`${name} ${arg}`, name] : [name];
+  for (const key of keys) {
+    const hit = Object.keys(sim).find((s) => s.trim().toLowerCase() === key.toLowerCase());
+    if (hit !== undefined) return out(sim[hit]);
+  }
+  return null;
+}
 
 /** Deterministic pseudo-random: output looks alive but never changes between renders. */
 export function seeded(input: string, max: number): number {
@@ -200,7 +227,8 @@ export const BASE_COMMANDS: Record<string, Command> = {
     group: "Système",
     usage: "ps",
     desc: "processus actifs",
-    run: () =>
+    run: (ctx) =>
+      simFor(ctx, "ps") ??
       out(
         [
           "  PID TTY          TIME CMD",
@@ -229,7 +257,10 @@ export const BASE_COMMANDS: Record<string, Command> = {
     group: "Réseau",
     usage: "ping <hôte>",
     desc: "teste la joignabilité",
-    run: ({ arg }) => {
+    run: (ctx) => {
+      const sim = simFor(ctx, "ping");
+      if (sim) return sim;
+      const { arg } = ctx;
       const host = arg || "target.local";
       const ip = fakeIp(host);
       const t = (n: number) => (10 + seeded(host + n, 40) / 10).toFixed(1);
@@ -250,7 +281,10 @@ export const BASE_COMMANDS: Record<string, Command> = {
     group: "Réseau",
     usage: "nmap <cible>",
     desc: "scan de ports (simulation)",
-    run: ({ arg }) => {
+    run: (ctx) => {
+      const sim = simFor(ctx, "nmap");
+      if (sim) return sim;
+      const { arg } = ctx;
       const target = arg || "target.local";
       return out(
         [
@@ -270,7 +304,10 @@ export const BASE_COMMANDS: Record<string, Command> = {
     group: "Réseau",
     usage: "traceroute <hôte>",
     desc: "trace le chemin réseau",
-    run: ({ arg }) => {
+    run: (ctx) => {
+      const sim = simFor(ctx, "traceroute");
+      if (sim) return sim;
+      const { arg } = ctx;
       const host = arg || "target.local";
       return out(
         [
@@ -287,7 +324,8 @@ export const BASE_COMMANDS: Record<string, Command> = {
     group: "Réseau",
     usage: "netstat",
     desc: "connexions établies",
-    run: () =>
+    run: (ctx) =>
+      simFor(ctx, "netstat") ??
       out(
         [
           "Proto Local Address        Foreign Address      State",
@@ -297,11 +335,34 @@ export const BASE_COMMANDS: Record<string, Command> = {
         ].join("\n"),
       ),
   },
+  ss: {
+    group: "Réseau",
+    usage: "ss -tunp",
+    desc: "sockets et processus associés",
+    run: (ctx) =>
+      simFor(ctx, "ss") ??
+      out(
+        [
+          "Netid State   Local Address:Port    Peer Address:Port   Process",
+          "tcp   LISTEN  0.0.0.0:22            0.0.0.0:*           sshd",
+          "tcp   ESTAB   10.0.0.24:443         104.18.2.7:44120    nginx",
+        ].join("\n"),
+      ),
+  },
+  dig: {
+    group: "Réseau",
+    usage: "dig <domaine>",
+    desc: "résolution DNS",
+    run: (ctx) =>
+      simFor(ctx, "dig") ??
+      out(`; <<>> DiG <<>> ${ctx.arg || "exemple.fr"}\n;; réponse non disponible dans ce laboratoire`),
+  },
   ifconfig: {
     group: "Réseau",
     usage: "ifconfig",
     desc: "interfaces réseau",
-    run: () =>
+    run: (ctx) =>
+      simFor(ctx, "ifconfig") ??
       out(
         [
           "eth0: flags=4163<UP,BROADCAST,RUNNING,MULTICAST>  mtu 1500",
@@ -330,6 +391,62 @@ export const BASE_COMMANDS: Record<string, Command> = {
         ].join("\n"),
       );
     },
+  },
+  systemctl: {
+    group: "Sécurité",
+    usage: "systemctl status <service>",
+    desc: "état d'un service",
+    run: (ctx) =>
+      simFor(ctx, "systemctl") ??
+      out("Unité inconnue ou non renseignée dans ce laboratoire."),
+  },
+  last: {
+    group: "Sécurité",
+    usage: "last",
+    desc: "dernières connexions",
+    run: (ctx) =>
+      simFor(ctx, "last") ?? out("wtmp commence sans entrée pertinente dans ce laboratoire."),
+  },
+  crontab: {
+    group: "Sécurité",
+    usage: "crontab -l",
+    desc: "tâches planifiées de l'utilisateur",
+    run: (ctx) =>
+      simFor(ctx, "crontab") ?? out("no crontab for " + ctx.cfg.user),
+  },
+  sha256sum: {
+    group: "Sécurité",
+    usage: "sha256sum <fichier>",
+    desc: "empreinte SHA-256 d'un fichier",
+    run: (ctx) =>
+      simFor(ctx, "sha256sum") ??
+      (ctx.arg
+        ? out(`sha256sum: ${ctx.arg}: empreinte non disponible dans ce laboratoire`)
+        : err("usage: sha256sum <fichier>")),
+  },
+  stat: {
+    group: "Sécurité",
+    usage: "stat <fichier>",
+    desc: "métadonnées d'un fichier",
+    run: (ctx) =>
+      simFor(ctx, "stat") ??
+      (ctx.arg ? out(`stat: ${ctx.arg}: détails non disponibles ici`) : err("usage: stat <fichier>")),
+  },
+  file: {
+    group: "Sécurité",
+    usage: "file <fichier>",
+    desc: "type d'un fichier",
+    run: (ctx) =>
+      simFor(ctx, "file") ??
+      (ctx.arg ? out(`${ctx.arg}: data`) : err("usage: file <fichier>")),
+  },
+  id: {
+    group: "Système",
+    usage: "id",
+    desc: "identité et groupes",
+    run: (ctx) =>
+      simFor(ctx, "id") ??
+      out(`uid=1000(${ctx.cfg.user}) gid=1000(${ctx.cfg.user}) groupes=1000(${ctx.cfg.user})`),
   },
   sudo: {
     group: "Sécurité",
@@ -412,7 +529,7 @@ export function complete(
     if (hits.length > 1) return { suggestions: hits };
     return {};
   }
-  if (["cat", "grep", "wc", "head", "tail"].includes(parts[0].toLowerCase())) {
+  if (["cat", "grep", "wc", "head", "tail", "sha256sum", "stat", "file"].includes(parts[0].toLowerCase())) {
     const frag = parts[parts.length - 1].toLowerCase();
     const hits = fileNames(files).filter((f) => f.toLowerCase().startsWith(frag));
     if (hits.length === 1) {

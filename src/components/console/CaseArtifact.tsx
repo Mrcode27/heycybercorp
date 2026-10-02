@@ -204,6 +204,7 @@ function TerminalBody({ content }: { content: string }) {
       host: parsed.host ?? "poste-soc",
       cwd: parsed.cwd ?? "/home/analyste",
       allowed: parsed.allowed,
+      sim: parsed.sim,
     } satisfies ShellConfig;
   })();
 
@@ -231,6 +232,7 @@ function WebOSBody({ content, dossier }: { content: string; dossier?: DossierDat
     host: parsed.host ?? "poste-soc",
     cwd: parsed.cwd ?? "/home/analyste",
     allowed: parsed.allowed,
+    sim: parsed.sim,
     apps: parsed.apps,
     openOnStart: parsed.openOnStart,
     incident: parsed.incident,

@@ -11,6 +11,7 @@
 import type * as admin from "../admin.js";
 import type * as audit from "../audit.js";
 import type * as caseSeeds from "../caseSeeds.js";
+import type * as caseSeedsV2 from "../caseSeedsV2.js";
 import type * as cases from "../cases.js";
 import type * as catalog from "../catalog.js";
 import type * as certificates from "../certificates.js";
@@ -42,6 +43,7 @@ declare const fullApi: ApiFromModules<{
   admin: typeof admin;
   audit: typeof audit;
   caseSeeds: typeof caseSeeds;
+  caseSeedsV2: typeof caseSeedsV2;
   cases: typeof cases;
   catalog: typeof catalog;
   certificates: typeof certificates;

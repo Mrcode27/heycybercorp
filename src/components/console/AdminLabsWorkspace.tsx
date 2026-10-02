@@ -1,11 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "convex/react";
+import { useQuery, useMutation } from "convex/react";
 import { api } from "../../../convex/_generated/api";
 import Icon from "../Icon";
 import AdminCases from "./AdminCases";
 import AdminLabs from "./AdminLabs";
+import { cleanConvexError } from "@/lib/errors";
 import type { AdminCasePreview, AdminChallengePreview } from "./AdminLabTester";
 
 type Tab = "practical" | "challenge";
@@ -18,6 +19,9 @@ type PreviewData = {
 
 export default function AdminLabsWorkspace({ preview }: { preview?: PreviewData } = {}) {
   const [tab, setTab] = useState<Tab>("practical");
+  const seedCatalog = useMutation(api.caseSeedsV2.seedCatalogV2);
+  const [seeding, setSeeding] = useState(false);
+  const [seedMsg, setSeedMsg] = useState<{ ok: boolean; text: string } | null>(null);
   const queriedMe = useQuery(api.users.current, preview ? "skip" : {});
   const queriedCases = useQuery(api.cases.adminList, preview ? "skip" : {});
   const queriedLabs = useQuery(api.labs.adminList, preview ? "skip" : {});
@@ -54,6 +58,48 @@ export default function AdminLabsWorkspace({ preview }: { preview?: PreviewData 
           <TabButton active={tab === "challenge"} icon="flag" title="Challenges" count={labs?.length} description="Brief court et flag" onClick={() => setTab("challenge")} />
         </nav>
       </section>
+
+      {tab === "practical" && !preview && (
+        <section className="glass-card rounded-xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 border-secondary/20">
+          <div className="w-11 h-11 shrink-0 rounded-xl grid place-items-center bg-secondary/10 text-secondary">
+            <Icon name="deployed_code" fill />
+          </div>
+          <div className="min-w-0 flex-1">
+            <h3 className="font-headline-lg-mobile text-on-surface">Cas pratiques livrés avec la plateforme</h3>
+            <p className="font-code-sm text-code-sm text-on-surface-variant mt-0.5">
+              Installe ou remet à l&apos;état d&apos;origine les 4 cas WebOS (Poste 14, L&apos;appli qui a trop parlé,
+              Vendredi 17h02, L&apos;audit mandaté). Réécrit pièces et étapes et remet leur progression à zéro.
+            </p>
+            {seedMsg && (
+              <p className={`font-code-sm text-code-sm mt-2 flex items-center gap-1.5 ${seedMsg.ok ? "text-primary" : "text-error"}`}>
+                <Icon name={seedMsg.ok ? "check_circle" : "error"} className="text-sm" fill={seedMsg.ok} />
+                {seedMsg.text}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            disabled={seeding}
+            onClick={async () => {
+              if (!window.confirm("Installer / rafraîchir les 4 cas pratiques livrés ?\n\nLeurs pièces, étapes et la progression des étudiants sur ces cas seront réécrites. Vos autres cas ne sont pas touchés.")) return;
+              setSeeding(true);
+              setSeedMsg(null);
+              try {
+                const res = await seedCatalog({});
+                const created = res.filter((r) => r.created).length;
+                setSeedMsg({ ok: true, text: `Terminé : ${created} créé(s), ${res.length - created} mis à jour.` });
+              } catch (err) {
+                setSeedMsg({ ok: false, text: cleanConvexError(err, "Installation impossible.") });
+              } finally {
+                setSeeding(false);
+              }
+            }}
+            className="shrink-0 px-5 py-2.5 rounded-lg bg-secondary text-on-secondary font-bold text-sm inline-flex items-center gap-2 hover:brightness-110 disabled:opacity-60"
+          >
+            <Icon name="deployed_code" /> {seeding ? "Installation…" : "Installer / rafraîchir"}
+          </button>
+        </section>
+      )}
 
       {tab === "practical" ? <AdminCases previewCases={preview?.cases} /> : <AdminLabs previewLabs={preview?.labs} />}
     </div>
