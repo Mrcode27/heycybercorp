@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
-import ConsoleSidebar from "@/components/ConsoleSidebar";
-import { ADMIN_NAV } from "@/components/consoleNav";
+import AdminShell from "@/components/AdminShell";
+import { adminMetadata } from "@/lib/adminAuth";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminBroadcast from "@/components/console/AdminBroadcast";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Diffusion | Admin heycybercorp" };
+export const generateMetadata = adminMetadata("Diffusion | Admin heycybercorp");
 
 export default function Page() {
   return (
-    <ConsoleSidebar title="Diffusion" subtitle="Console SOC" items={ADMIN_NAV}>
+    <AdminShell title="Diffusion">
       <AdminGate>
         <SectionHeader
           icon="campaign"
@@ -20,7 +19,7 @@ export default function Page() {
         />
         <AdminBroadcast />
       </AdminGate>
-    </ConsoleSidebar>
+    </AdminShell>
   );
 }
 

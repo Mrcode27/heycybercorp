@@ -1,4 +1,4 @@
-import { query, mutation, type QueryCtx } from "./_generated/server";
+import { query, mutation, internalMutation, type QueryCtx } from "./_generated/server";
 import { v } from "convex/values";
 import type { Doc } from "./_generated/dataModel";
 import { logAudit } from "./lib/audit";
@@ -128,9 +128,12 @@ export const setSuspended = mutation({
 
 /**
  * One-time bootstrap: promote a user to admin, but ONLY while no admin exists.
- * Safe to leave deployed — it refuses once the first admin is set.
+ * Internal, so only the CLI or dashboard can call it: if the last admin were
+ * ever demoted, a public version would let any visitor promote themselves.
+ *
+ * Run with:  npx convex run users:bootstrapAdmin '{"clerkId":"user_..."}'
  */
-export const bootstrapAdmin = mutation({
+export const bootstrapAdmin = internalMutation({
   args: { clerkId: v.string() },
   handler: async (ctx, { clerkId }) => {
     const admins = await ctx.db

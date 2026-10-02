@@ -1,17 +1,16 @@
-import type { Metadata } from "next";
-import ConsoleSidebar from "@/components/ConsoleSidebar";
-import { ADMIN_NAV } from "@/components/consoleNav";
+import AdminShell from "@/components/AdminShell";
+import { adminMetadata } from "@/lib/adminAuth";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminJournal from "@/components/console/AdminJournal";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Journal | Admin heycybercorp" };
+export const generateMetadata = adminMetadata("Journal | Admin heycybercorp");
 
 export default function Page() {
   return (
-    <ConsoleSidebar title="Journal" subtitle="Console SOC" items={ADMIN_NAV}>
+    <AdminShell title="Journal">
       <AdminGate>
         <SectionHeader
           icon="history"
@@ -20,6 +19,6 @@ export default function Page() {
         />
         <AdminJournal />
       </AdminGate>
-    </ConsoleSidebar>
+    </AdminShell>
   );
 }

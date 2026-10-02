@@ -2,9 +2,10 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 
 // Only these areas require authentication. Everything else — the marketing
 // site and the auth pages themselves — stays public.
+// /admin is deliberately absent: a redirect to the login page would confirm it
+// exists. AdminShell answers anyone who isn't an admin with a 404 instead.
 const isProtectedRoute = createRouteMatcher([
   "/dashboard(.*)",
-  "/admin(.*)",
   "/api/bunny/manage(.*)",
   "/api/bunny/uploads(.*)",
 ]);

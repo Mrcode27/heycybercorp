@@ -163,6 +163,7 @@ export const move = mutation({
 export const seed = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db.query("packages").take(1);
     if (existing.length > 0) return "Des packages existent déjà — seed ignoré.";
 

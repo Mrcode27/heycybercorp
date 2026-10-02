@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import ConsoleSidebar from "@/components/ConsoleSidebar";
-import { ADMIN_NAV } from "@/components/consoleNav";
+import AdminShell from "@/components/AdminShell";
+import { adminMetadata } from "@/lib/adminAuth";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminAppearance from "@/components/console/AdminAppearance";
@@ -8,11 +7,11 @@ import AnimationColors from "@/components/console/AnimationColors";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Apparence | Admin heycybercorp" };
+export const generateMetadata = adminMetadata("Apparence | Admin heycybercorp");
 
 export default function Page() {
   return (
-    <ConsoleSidebar title="Apparence" subtitle="Console SOC" items={ADMIN_NAV}>
+    <AdminShell title="Apparence">
       <AdminGate>
         <SectionHeader
           icon="palette"
@@ -24,6 +23,6 @@ export default function Page() {
           <AnimationColors />
         </div>
       </AdminGate>
-    </ConsoleSidebar>
+    </AdminShell>
   );
 }

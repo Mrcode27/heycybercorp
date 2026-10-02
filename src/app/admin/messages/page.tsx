@@ -1,6 +1,5 @@
-import type { Metadata } from "next";
-import ConsoleSidebar from "@/components/ConsoleSidebar";
-import { ADMIN_NAV } from "@/components/consoleNav";
+import AdminShell from "@/components/AdminShell";
+import { adminMetadata } from "@/lib/adminAuth";
 import AdminGate from "@/components/console/AdminGate";
 import SectionHeader from "@/components/console/SectionHeader";
 import AdminMessages from "@/components/console/AdminMessages";
@@ -9,11 +8,11 @@ import AdminNotifyEmail from "@/components/console/AdminNotifyEmail";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = { title: "Messages | Admin heycybercorp" };
+export const generateMetadata = adminMetadata("Messages | Admin heycybercorp");
 
 export default function Page() {
   return (
-    <ConsoleSidebar title="Messages" subtitle="Console SOC" items={ADMIN_NAV}>
+    <AdminShell title="Messages">
       <AdminGate>
         <SectionHeader
           icon="mail"
@@ -28,6 +27,6 @@ export default function Page() {
           <AdminMessages />
         </div>
       </AdminGate>
-    </ConsoleSidebar>
+    </AdminShell>
   );
 }

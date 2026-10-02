@@ -278,6 +278,7 @@ export const remove = mutation({
 export const seed = mutation({
   args: {},
   handler: async (ctx) => {
+    await requireAdmin(ctx);
     const existing = await ctx.db.query("courses").take(1);
     if (existing.length > 0) return "Des cours existent déjà — seed ignoré.";
 

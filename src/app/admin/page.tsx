@@ -1,18 +1,15 @@
-import type { Metadata } from "next";
-import ConsoleSidebar from "@/components/ConsoleSidebar";
-import { ADMIN_NAV } from "@/components/consoleNav";
+import AdminShell from "@/components/AdminShell";
+import { adminMetadata } from "@/lib/adminAuth";
 import AdminConsole from "@/components/AdminConsole";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Admin | heycybercorp",
-};
+export const generateMetadata = adminMetadata("Admin | heycybercorp");
 
 export default function AdminPage() {
   return (
-    <ConsoleSidebar title="Panneau d'Administration" subtitle="Console SOC" items={ADMIN_NAV}>
+    <AdminShell title="Panneau d'Administration">
       <AdminConsole />
-    </ConsoleSidebar>
+    </AdminShell>
   );
 }

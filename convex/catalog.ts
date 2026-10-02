@@ -1,4 +1,4 @@
-import { mutation } from "./_generated/server";
+import { internalMutation } from "./_generated/server";
 
 type Level = "Débutant" | "Intermédiaire" | "Avancé";
 
@@ -6,6 +6,9 @@ type Level = "Débutant" | "Intermédiaire" | "Avancé";
  * One-time real catalogue setup for heycybercorp.
  * Upserts the 3 packages (by slug) and their courses, and removes the old
  * placeholder demo courses. Idempotent — safe to re-run.
+ *
+ * Internal because it resets every package's price and publishes every course:
+ * a public mutation would let any visitor undo admin edits from the browser.
  *
  * Run with:  npx convex run catalog:setup
  */
@@ -193,7 +196,7 @@ const DEMO_SLUGS = [
   "reverse-engineering",
 ];
 
-export const setup = mutation({
+export const setup = internalMutation({
   args: {},
   handler: async (ctx) => {
     // 1) Upsert packages by slug
