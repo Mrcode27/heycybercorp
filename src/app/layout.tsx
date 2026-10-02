@@ -1,14 +1,20 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Inter, JetBrains_Mono } from "next/font/google";
+import { Space_Grotesk, JetBrains_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 import AppProviders from "@/components/AppProviders";
 import { SITE_NAME, SITE_URL } from "@/lib/site";
 import { pageAlternates } from "@/lib/seo";
 
-const inter = Inter({
+// Inter ships with the app instead of coming from next/font/google: on
+// Vercel's build machines Google's Inter stylesheet broke the build ("next/font/google
+// queries have exactly one entry") while it built fine locally. One variable
+// file (Google's latin subset, weights 300–600) covers French, œ and €.
+const inter = localFont({
+  src: "./fonts/inter-latin-variable.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
-  weight: ["300", "400", "500", "600"],
+  weight: "300 600",
+  display: "swap",
 });
 
 const spaceGrotesk = Space_Grotesk({
